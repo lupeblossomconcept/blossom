@@ -1182,7 +1182,7 @@ async function fbPush(path, data){
     });
     const d=await r.json();
     setSyncState(d.name?'ok':'error');
-    return d.name?true:false;
+    return d.name||false;
   }catch(e){setSyncState('error');return false;}
 }
 
@@ -1192,6 +1192,14 @@ async function fbSet(path, data){
     await fetch(`${FIREBASE}/${path}.json`,{method:'PUT',body:JSON.stringify(data)});
     setSyncState('ok');
     return true;
+  }catch(e){setSyncState('error');return false;}
+}
+
+async function fbDelete(path){
+  setSyncState('syncing');
+  try{
+    await fetch(`${FIREBASE}/${path}.json`,{method:'DELETE'});
+    setSyncState('ok');return true;
   }catch(e){setSyncState('error');return false;}
 }
 
@@ -1205,7 +1213,7 @@ async function loadAllData(){
     // Cargar ventas de Firebase
     const fbVentas=await fbGet('ventas');
     if(fbVentas){
-      const vArr=Object.values(fbVentas).filter(v=>v&&v.fecha&&v.total>0);
+      const vArr=Object.entries(fbVentas).map(([k,v])=>v&&v.fecha?{...v,_fbKey:k}:null).filter(Boolean).filter(v=>v.total>0);
       if(vArr.length>0){
         ventas=vArr.sort((a,b)=>b.fecha.localeCompare(a.fecha));
         renderDash();renderVList();
@@ -1418,8 +1426,10 @@ async function regVenta(){
   if(!camas.length){toast('Selecciona al menos una cama','err');return;}
   const total=p*pr;
   for(const cam of camas){
-    ventas.unshift({fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota});
-    await fbPush('ventas',{fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota});
+    const v={fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota};
+    ventas.unshift(v);
+    const key=await fbPush('ventas',v);
+    if(key) v._fbKey=key;
   }
   renderVList();renderDash();
   ['f-cli','f-paq','f-pre','f-nota'].forEach(id=>document.getElementById(id).value='');
@@ -1710,12 +1720,30 @@ function renderDash(){
   '</div>';
   if(el('d-b2b')) el('d-b2b').innerHTML=b2bHtml;
 }
+async function eliminarVenta(idx){
+  if(!confirm('¿Eliminar esta venta?')) return;
+  const v=ventas[idx];
+  ventas.splice(idx,1);
+  renderVList();renderDash();
+  if(v._fbKey) await fbDelete('ventas/'+v._fbKey);
+  toast('✓ Venta eliminada','ok');
+}
+
 function renderVList(){
   const espEl=document.getElementById('fv-esp');
   const esp=espEl?espEl.value:'';
   const vf=(esp?ventas.filter(v=>v.especie===esp):ventas).slice(0,40);
   const el=document.getElementById('v-lst');if(!el)return;
-  el.innerHTML=vf.length?vf.map(v=>`<div class="vi"><div class="vt"><span class="vn">${v.cliente}</span><span class="va">${fmt(v.total)}</span></div><div class="vb"><span class="pill pv">${v.especie}</span><span class="pill pv">${v.paquetes} paq.</span>${v.b2b?`<span class="pill ${v.b2b==='B2B'?'pb':'px'}">${v.b2b}</span>`:''}<span class="pd">${v.fecha}</span></div></div>`).join(''):'<div class="empty">Sin ventas</div>';
+  el.innerHTML=vf.length?vf.map(v=>{
+    const idx=ventas.indexOf(v);
+    return `<div class="vi" style="display:flex;align-items:flex-start;gap:6px">
+      <div style="flex:1;min-width:0">
+        <div class="vt"><span class="vn">${v.cliente}</span><span class="va">${fmt(v.total)}</span></div>
+        <div class="vb"><span class="pill pv">${v.especie}</span><span class="pill pv">${v.paquetes} paq.</span>${v.b2b?`<span class="pill ${v.b2b==='B2B'?'pb':'px'}">${v.b2b}</span>`:''}<span class="pd">${v.fecha}</span></div>
+      </div>
+      <button class="btn-sm del" onclick="eliminarVenta(${idx})" style="padding:5px 10px;font-size:15px;margin-top:2px;flex-shrink:0">✕</button>
+    </div>`;
+  }).join(''):'<div class="empty">Sin ventas</div>';
 }
 
 function renderGList(){
@@ -1802,7 +1830,7 @@ setInterval(async()=>{
   try{
     const fbVentas=await fbGet('ventas');
     if(fbVentas){
-      const vArr=Object.values(fbVentas).filter(v=>v&&v.fecha&&v.total>0);
+      const vArr=Object.entries(fbVentas).map(([k,v])=>v&&v.fecha?{...v,_fbKey:k}:null).filter(Boolean).filter(v=>v.total>0);
       if(vArr.length>ventas.length){
         ventas=vArr.sort((a,b)=>b.fecha.localeCompare(a.fecha));
         renderDash();renderVList();
