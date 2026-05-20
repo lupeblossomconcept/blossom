@@ -241,7 +241,7 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
       </div>
       <div class="field"><label>Especie</label><select id="f-esp" onchange="updateCamasV()"></select></div>
     </div>
-    <div class="field"><label>Cama</label><select id="f-cam"></select></div>
+    <div id="f-cama-sel"></div>
     <div class="r2">
       <div class="field"><label>N° paquetes</label><input type="number" id="f-paq" min="1" placeholder="0" inputmode="numeric"></div>
       <div class="field"><label>Precio por paquete ($)</label><input type="number" id="f-pre" min="0" placeholder="0" inputmode="numeric"></div>
@@ -1335,10 +1335,10 @@ function renderVSels(){
   updateCamasV();
   document.getElementById('fv-esp').innerHTML='<option value="">Todas las especies</option>'+especies.map(e=>`<option>${e}</option>`).join('');
 }
+
 function updateCamasV(){
   const esp=document.getElementById('f-esp').value;
-  const nums=getCamasDeEspecie(esp);
-  document.getElementById('f-cam').innerHTML=nums.map(n=>`<option>${esp} Cama ${n}</option>`).join('');
+  renderSelectorCamas('f-cama-sel',esp,[]);
 }
 function renderGSels(){
   document.getElementById('ga-esp').innerHTML=especies.map(e=>`<option>${e}</option>`).join('');
@@ -1409,16 +1409,19 @@ function calcTrab(){
 async function regVenta(){
   const f=document.getElementById('f-fec').value,c=document.getElementById('f-cli').value.trim();
   const b2b=document.getElementById('f-b2b').value,esp=document.getElementById('f-esp').value;
-  const cam=document.getElementById('f-cam').value;
+  const camas=getSelectedCamas('f-cama-sel');
   const p=parseInt(document.getElementById('f-paq').value),pr=parseInt(document.getElementById('f-pre').value);
   const nota=document.getElementById('f-nota').value.trim();
   if(!f||!c||!p||!pr){toast('Completa todos los campos','err');return;}
+  if(!camas.length){toast('Selecciona al menos una cama','err');return;}
   const total=p*pr;
-  ventas.unshift({fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota});
+  for(const cam of camas){
+    ventas.unshift({fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota});
+    await fbPush('ventas',{fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota});
+  }
   renderVList();renderDash();
   ['f-cli','f-paq','f-pre','f-nota'].forEach(id=>document.getElementById(id).value='');
-  toast('✓ Venta registrada','ok');
-  await fbPush('ventas',{fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota});
+  toast(`✓ ${camas.length>1?camas.length+' ventas registradas':'Venta registrada'}`,'ok');
 }
 
 async function regAplic(){
