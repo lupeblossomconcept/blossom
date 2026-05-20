@@ -1202,16 +1202,12 @@ async function loadAllData(){
   try{
     // Cargar ventas de Firebase
     const fbVentas=await fbGet('ventas');
-    const fbVentasNuevas=await fbGet('ventas_nuevas');
     if(fbVentas){
       const vArr=Object.values(fbVentas).filter(v=>v&&v.fecha&&v.total>0);
-      const vNuevas=fbVentasNuevas?Object.values(fbVentasNuevas).filter(v=>v&&v.fecha&&v.total>0):[];
-      const combined=[...vArr,...vNuevas];
-      if(combined.length>0){
-        ventas=combined.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+      if(vArr.length>0){
+        ventas=vArr.sort((a,b)=>b.fecha.localeCompare(a.fecha));
         renderDash();renderVList();
       } else {
-        // Primera vez — subir histórico
         uploadHistorico();
       }
     } else {
@@ -1422,7 +1418,7 @@ async function regVenta(){
   renderVList();renderDash();
   ['f-cli','f-paq','f-pre','f-nota'].forEach(id=>document.getElementById(id).value='');
   toast('✓ Venta registrada','ok');
-  await fbPush('ventas_nuevas',{fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota});
+  await fbPush('ventas',{fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota});
 }
 
 async function regAplic(){
@@ -1439,7 +1435,7 @@ async function regAplic(){
   for(const cam of camas){
     const g={tipo:'aplic',fecha:f,mes:f.slice(0,7),cama:cam,des:prod,qty,uni,monto:montoPorCama,nom:'',cat,tarea:''};
     gastos.unshift(g);
-    await fbPush('gastos_nuevos',g);
+    await fbPush('gastos',g);
   }
   renderGList();
   document.getElementById('ga-qty').value='';
@@ -1759,6 +1755,28 @@ renderDash();renderVList();renderGList();renderCamasActivas();
 
 // Sync Firebase en segundo plano sin bloquear nada
 setTimeout(()=>loadAllData(), 100);
+
+// Sincronización en tiempo real cada 60 segundos
+setInterval(async()=>{
+  try{
+    const fbVentas=await fbGet('ventas');
+    if(fbVentas){
+      const vArr=Object.values(fbVentas).filter(v=>v&&v.fecha&&v.total>0);
+      if(vArr.length>ventas.length){
+        ventas=vArr.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+        renderDash();renderVList();
+      }
+    }
+    const fbGastos=await fbGet('gastos');
+    if(fbGastos){
+      const gArr=Object.values(fbGastos).filter(g=>g&&g.monto>0);
+      if(gArr.length>gastos.length){
+        gastos=gArr.sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
+        renderGList();renderDash();
+      }
+    }
+  }catch(e){}
+},60000);
 }
 document.addEventListener('DOMContentLoaded', initApp);
 </script>
