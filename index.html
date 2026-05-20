@@ -1531,8 +1531,16 @@ async function darBaja(idx){
   const hoy=new Date().toISOString().split('T')[0];
   const c=camasVida[idx];
   if(confirm(`¿Dar de baja ${c.especie} Cama ${c.num}?`)){
-    camasVida[idx].fechaBaja=hoy;renderCamasActivas();toast('Cama dada de baja');
+    camasVida[idx].fechaBaja=hoy;renderCamasActivas();renderCamasHist();renderDash();toast('Cama dada de baja');
     await fbPush('camas_nuevas',{...c,fechaBaja:hoy});
+  }
+}
+
+async function reactivarCama(idx){
+  const c=camasVida[idx];
+  if(confirm(`¿Reactivar ${c.especie} Cama ${c.num}?`)){
+    camasVida[idx].fechaBaja=null;renderCamasActivas();renderCamasHist();renderDash();toast(`✓ ${c.especie} Cama ${c.num} reactivada`,'ok');
+    await fbPush('camas_nuevas',{...c,fechaBaja:null});
   }
 }
 
@@ -1823,9 +1831,10 @@ function renderCamasHist(){
   const dadas=camasVida.filter(c=>c.fechaBaja);
   if(!dadas.length){el.innerHTML='<div class="empty">Sin camas dadas de baja aún</div>';return;}
   el.innerHTML=dadas.map(c=>{
+    const cidx=camasVida.indexOf(c);
     const dias=Math.round((new Date(c.fechaBaja)-new Date(c.fechaInicio))/86400000);
     const gv=gastos.filter(g=>(g.cama||'').includes(`${c.especie} Cama ${c.num}`)).reduce((s,g)=>s+g.monto,0);
-    return`<div class="clife"><div class="cl-h"><span class="cl-n">${c.especie} — Cama ${c.num}</span><span class="cl-b cl-baja">Baja</span></div><div class="cl-info">${c.fechaInicio} → ${c.fechaBaja} · ${dias} días</div><div class="cl-cost">Costo total: ${fmt(c.costoPlantin+gv)}</div></div>`;
+    return`<div class="clife"><div class="cl-h"><span class="cl-n">${c.especie} — Cama ${c.num}</span><span class="cl-b cl-baja">Baja</span></div><div class="cl-info">${c.fechaInicio} → ${c.fechaBaja} · ${dias} días</div><div class="cl-cost">Costo total: ${fmt(c.costoPlantin+gv)}</div><div class="cl-actions"><button class="btn-sm" onclick="reactivarCama(${cidx})">Reactivar</button></div></div>`;
   }).join('');
 }
 
