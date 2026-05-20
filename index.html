@@ -192,10 +192,7 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 8V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2"/><line x1="12" y1="8" x2="12" y2="21"/></svg>
     Camas
   </button>
-  <button class="ntab" onclick="sw('analisis')" id="nt-analisis">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    Análisis
-  </button>
+
 </nav>
 
 <!-- DASHBOARD -->
@@ -372,24 +369,8 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
   <div id="sub-chist" class="sub"><div id="camas-hist-list"></div></div>
 </div>
 
-<!-- ANÁLISIS -->
-<div id="sec-analisis" class="sec">
-  <div class="stit">Tendencia de ventas mensual</div>
-  <div class="an-card" id="an-tend"></div>
-  <div class="stit">Fertilizantes aplicados</div>
-  <div class="an-card" id="an-fert"><div class="empty">Registra aplicaciones para ver análisis</div></div>
-  <div class="stit">Fitosanitarios aplicados</div>
-  <div class="an-card" id="an-fito"><div class="empty">Registra aplicaciones para ver análisis</div></div>
-  <div class="stit">RRHH por persona</div>
-  <div class="an-card" id="an-rrhh"><div class="empty">Registra RRHH para ver análisis</div></div>
-  <div class="stit">Ciclo de vida por especie</div>
-  <div class="an-card" id="an-ciclo"></div>
-  <div class="stit">Recomendaciones próxima temporada</div>
-  <div class="an-card" id="an-recom"></div>
-</div>
-</div>
 
-<div id="toast" class="toast"></div>
+<div id="toast"<div id="toast" class="toast"></div>
 
 <script>
 const FIREBASE='https://blossom-concept-default-rtdb.firebaseio.com';
@@ -1301,7 +1282,6 @@ function sw(t){
   if(t==='venta'){renderVSels();renderVList();}
   if(t==='gasto'){renderGSels();}
   if(t==='camas'){renderCamasSels();renderCamasActivas();}
-  if(t==='analisis')renderAnalisis();
 }
 function subV(s){['nueva','lista'].forEach(x=>{document.getElementById('vi-'+x).classList.remove('on');document.getElementById('sub-v'+x).classList.remove('on');});document.getElementById('vi-'+s).classList.add('on');document.getElementById('sub-v'+s).classList.add('on');if(s==='lista')renderVList();}
 function subG(s){['aplic','insumo','fijo','trab'].forEach(x=>{document.getElementById('gi-'+x).classList.remove('on');document.getElementById('sub-'+x).classList.remove('on');});document.getElementById('gi-'+s).classList.add('on');document.getElementById('sub-'+s).classList.add('on');}
@@ -1758,126 +1738,7 @@ function renderCamasHist(){
   }).join('');
 }
 
-function renderAnalisis(){
-  var nm={'01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun','07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'};
 
-  // Tendencia ventas por mes
-  var porMes={};
-  ventas.forEach(function(v){var m=v.fecha.slice(0,7);porMes[m]=(porMes[m]||0)+v.total;});
-  var mesesV=Object.entries(porMes).sort(function(a,b){return a[0].localeCompare(b[0]);});
-  var maxV=mesesV.length?Math.max.apply(null,mesesV.map(function(m){return m[1];})):1;
-  var tendHtml='<div class="an-title">Ingresos por mes</div>'+mesesV.map(function(entry){
-    var m=entry[0],v=entry[1];var parts=m.split('-');
-    return '<div class="trend-row"><span class="trend-mes">'+nm[parts[1]]+' '+parts[0].slice(2)+'</span><div class="trend-bar-w"><div class="trend-bar" style="width:'+Math.round(v/maxV*100)+'%"></div></div><span class="trend-val">'+fmt(v)+'</span></div>';
-  }).join('');
-  // Comparar con mes anterior
-  if(mesesV.length>=2){
-    var ultimo=mesesV[mesesV.length-1][1];var penultimo=mesesV[mesesV.length-2][1];
-    var diff=Math.round((ultimo-penultimo)/penultimo*100);
-    tendHtml+='<div style="margin-top:10px;padding:9px 12px;background:'+(diff>=0?'var(--verde-l)':'var(--rojo-l)')+';border-radius:8px;font-size:12px;color:'+(diff>=0?'var(--verde)':'var(--rojo)')+'">'+
-      (diff>=0?'↑':'↓')+' '+Math.abs(diff)+'% vs mes anterior — '+(diff>=0?'¡Buen ritmo!':'Atencion, bajaron las ventas')+'</div>';
-  }
-  var tendEl=document.getElementById('an-tend');if(tendEl)tendEl.innerHTML=tendHtml;
-
-  // Fertilizantes con % del total
-  var ferts=gastos.filter(function(g){return g.cat==='Fertilizacion';});
-  var pF={};ferts.forEach(function(g){pF[g.des]=(pF[g.des]||0)+g.monto;});
-  var fSrt=Object.entries(pF).sort(function(a,b){return b[1]-a[1];});
-  var totFert=ferts.reduce(function(s,g){return s+g.monto;},0)||1;
-  var fertEl=document.getElementById('an-fert');
-  if(fertEl) fertEl.innerHTML=fSrt.length?'<div class="an-title">Fertilización — '+fmt(totFert)+' total</div>'+fSrt.map(function(entry){
-    var p=entry[0],m=entry[1];var pct=Math.round(m/totFert*100);
-    return '<div class="prod-row"><div><div class="prod-nom">'+p+'</div><div class="prod-cat">'+pct+'% del gasto total</div></div><div class="prod-precio">'+fmt(m)+'</div></div>';
-  }).join(''):'<div class="empty">Sin aplicaciones de fertilizantes aún</div>';
-
-  // Fitosanitarios
-  var fitos=gastos.filter(function(g){return g.cat==='Fitosanitario';});
-  var pI={};fitos.forEach(function(g){pI[g.des]=(pI[g.des]||0)+g.monto;});
-  var iSrt=Object.entries(pI).sort(function(a,b){return b[1]-a[1];});
-  var totFito=fitos.reduce(function(s,g){return s+g.monto;},0)||1;
-  var fitoEl=document.getElementById('an-fito');
-  if(fitoEl) fitoEl.innerHTML=iSrt.length?'<div class="an-title">Fitosanitarios — '+fmt(totFito)+' total</div>'+iSrt.map(function(entry){
-    var p=entry[0],m=entry[1];var pct=Math.round(m/totFito*100);
-    return '<div class="prod-row"><div><div class="prod-nom">'+p+'</div><div class="prod-cat">'+pct+'% del gasto total</div></div><div class="prod-precio">'+fmt(m)+'</div></div>';
-  }).join(''):'<div class="empty">Sin aplicaciones fitosanitarias aún</div>';
-
-  // RRHH
-  var rrhh=gastos.filter(function(g){return g.tipo==='trab';});
-  var pR={};rrhh.forEach(function(g){pR[g.nom]=(pR[g.nom]||0)+g.monto;});
-  var rSrt=Object.entries(pR).sort(function(a,b){return b[1]-a[1];});
-  var totRRHH=rrhh.reduce(function(s,g){return s+g.monto;},0);
-  var rrhhEl=document.getElementById('an-rrhh');
-  if(rrhhEl) rrhhEl.innerHTML=rSrt.length?'<div class="an-title">RRHH — '+fmt(totRRHH)+' total</div>'+rSrt.map(function(entry){
-    var n=entry[0],m=entry[1];
-    return '<div class="prod-row"><div class="prod-nom">'+n+'</div><div class="prod-precio">'+fmt(m)+'</div></div>';
-  }).join(''):'<div class="empty">Sin registros de RRHH aún</div>';
-
-  // Recomendaciones próxima temporada
-  var ing={};ventas.forEach(function(v){ing[v.especie]=(ing[v.especie]||0)+v.total;});
-  var recom=Object.entries(ing).map(function(entry){
-    var e=entry[0],i=entry[1];
-    var cb=COSTOS_BASE[e]||0;
-    var cg=gastos.filter(function(g){return (g.cama||'').includes(e);}).reduce(function(s,g){return s+g.monto;},0);
-    var mg=i>0?Math.round((i-cb-cg)/i*100):0;
-    var nCamas=camasVida.filter(function(c){return c.especie===e;}).length||1;
-    return {e:e,i:i,mg:mg,nCamas:nCamas};
-  }).sort(function(a,b){return b.mg-a.mg;});
-
-  // Ciclo de vida por especie
-  var porEspCiclo={};
-  camasVida.forEach(function(c){
-    if(!porEspCiclo[c.especie]) porEspCiclo[c.especie]={camas:[],inicio:c.fechaInicio,fin:null};
-    porEspCiclo[c.especie].camas.push(c);
-    if(c.fechaInicio < porEspCiclo[c.especie].inicio) porEspCiclo[c.especie].inicio=c.fechaInicio;
-    if(!c.fechaBaja) porEspCiclo[c.especie].fin=null;
-    else if(porEspCiclo[c.especie].fin && c.fechaBaja > porEspCiclo[c.especie].fin) porEspCiclo[c.especie].fin=c.fechaBaja;
-    else if(!porEspCiclo[c.especie].fin) porEspCiclo[c.especie].fin=null;
-  });
-  var cicloHtml=Object.entries(porEspCiclo).map(function(entry){
-    var esp=entry[0],data=entry[1];
-    var ini=new Date(data.inicio);
-    var fin=data.fin?new Date(data.fin):new Date();
-    var meses=Math.round((fin-ini)/(1000*60*60*24*30));
-    var nAct=data.camas.filter(function(c){return !c.fechaBaja;}).length;
-    var nBaja=data.camas.filter(function(c){return c.fechaBaja;}).length;
-    var estado=nAct>0?'<span style="color:var(--verde);font-weight:600">'+nAct+' activas</span>':'<span style="color:var(--tx3)">Finalizada</span>';
-    return '<div class="prod-row" style="flex-direction:column;align-items:flex-start;gap:4px">'+
-      '<div style="display:flex;justify-content:space-between;width:100%;align-items:center">'+
-        '<span class="prod-nom">'+esp+'</span>'+
-        '<span style="font-size:12px;font-weight:700;color:var(--bordo)">'+meses+' meses</span>'+
-      '</div>'+
-      '<div style="font-size:11px;color:var(--tx2)">'+
-        'Desde '+data.inicio+(data.fin?' → '+data.fin:' → hoy')+
-        ' · '+data.camas.length+' camas totales · '+estado+
-        (nBaja>0?' · '+nBaja+' dadas de baja':'')+'</div>'+
-      '<div style="width:100%;height:5px;background:var(--rose);border-radius:3px;margin-top:4px;overflow:hidden">'+
-        '<div style="width:'+Math.min(100,Math.round(meses/8*100))+'%;height:100%;background:linear-gradient(90deg,var(--bordo2),var(--bordo3));border-radius:3px"></div>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-  var cicloEl=document.getElementById('an-ciclo');
-  if(cicloEl) cicloEl.innerHTML='<div class="an-title">Duración por especie</div>'+cicloHtml;
-
-  var recomEl=document.getElementById('an-recom');
-  if(recomEl) recomEl.innerHTML='<div class="an-title">Recomendaciones próxima temporada</div>'+
-    recom.map(function(r){
-      var icon=r.mg>=50?'✓ Escalar':r.mg>=20?'Mantener':'⚠ Revisar';
-      var cls=r.mg>=50?'rpos':r.mg>=20?'':'rneg';
-      var consejo=r.mg>=50?'Alta rentabilidad. Considera aumentar camas.':r.mg>=20?'Rentabilidad moderada. Optimizar costos.':'Margen bajo. Revisar precios o reducir camas.';
-      return '<div class="prod-row" style="flex-direction:column;align-items:flex-start;gap:5px">'+
-        '<div style="display:flex;justify-content:space-between;width:100%;align-items:center">'+
-          '<div class="prod-nom">'+r.e+'</div>'+
-          '<span class="rbadge '+cls+'" style="font-size:10px">'+icon+'</span>'+
-        '</div>'+
-        '<div style="font-size:11px;color:var(--tx2)">Margen '+r.mg+'% · Ingresos '+fmt(r.i)+' · '+r.nCamas+' camas</div>'+
-        '<div style="font-size:11px;color:var(--tx3);font-style:italic">'+consejo+'</div>'+
-      '</div>';
-    }).join('')+
-    '<div style="margin-top:12px;padding:10px 12px;background:var(--rose2);border-radius:8px;font-size:12px;color:var(--bordo)">'+
-      '💡 Tip: Las especies con mayor margen merecen más camas la próxima temporada. '+
-      'Considera negociar mejores precios en productos de alto costo como Goldazim y Captan.'+
-    '</div>';
-}
 
 // ── INIT ────────────────────────────────────────────────────────
 // Esperar que el DOM esté listo
