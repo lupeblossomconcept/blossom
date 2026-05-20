@@ -447,6 +447,8 @@ let camasVida=[
   {especie:"Aleli",num:3,fechaInicio:'2026-03-28',fechaBaja:null,costoPlantin:22803,nota:""},
   {especie:"Aleli",num:4,fechaInicio:'2026-03-28',fechaBaja:null,costoPlantin:22803,nota:""},
   {especie:"Aleli",num:5,fechaInicio:'2026-03-28',fechaBaja:null,costoPlantin:22803,nota:""},
+  {especie:"Aleli",num:6,fechaInicio:'2026-03-28',fechaBaja:null,costoPlantin:22803,nota:""},
+  {especie:"Aleli",num:7,fechaInicio:'2026-03-28',fechaBaja:null,costoPlantin:22803,nota:""},
   {especie:"Ran\u00fanculo",num:1,fechaInicio:'2026-03-13',fechaBaja:null,costoPlantin:106680,nota:""},
   {especie:"Ran\u00fanculo",num:2,fechaInicio:'2026-03-13',fechaBaja:null,costoPlantin:106680,nota:""},
   {especie:"Ran\u00fanculo",num:3,fechaInicio:'2026-03-13',fechaBaja:null,costoPlantin:106680,nota:""},
@@ -1633,10 +1635,35 @@ function renderDash(){
     // Plantines/semillas por cama
     var cpEsp=camasVida.filter(function(c){return c.especie===e;}).reduce(function(s,c){return s+(c.costoPlantin||0);},0);
     var nCamasEspT=camasVida.filter(function(c){return c.especie===e;}).length;
+    // Desglose individual por cama
+    var cbBase=mes?0:(COSTOS_BASE[e]||0);
+    var cbBasePorCama=Math.round(cbBase/(nCamas||1));
+    var aplicEspNivel=aplics.filter(function(g){return g.cama===e;}).reduce(function(s,g){return s+g.monto;},0);
+    var aplicShPorCama=Math.round(aplicEspNivel/(nCamas||1));
+    var fijoShPorCama=Math.round(cFijo/(nCamasEsp||1));
+    var detPorCamaHtml=camasVida.filter(function(c){return c.especie===e;}).map(function(c){
+      var ck1=e+' C.'+c.num,ck2=e+' Cama '+c.num;
+      var cAB=gf.filter(function(g){return g.tipo==='aplic'&&(g.cama===ck1||g.cama===ck2);}).reduce(function(s,g){return s+g.monto;},0);
+      var cIB=gf.filter(function(g){return g.tipo==='insumo'&&(g.cama===ck1||g.cama===ck2);}).reduce(function(s,g){return s+g.monto;},0);
+      var totC=(c.costoPlantin||0)+cAB+aplicShPorCama+cIB+fijoShPorCama+cbBasePorCama;
+      var activa=!c.fechaBaja;
+      return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--br)">'+
+        '<div>'+
+          '<span style="font-size:12px;font-weight:600;color:var(--tx)'+(activa?'':';opacity:.55')+'">Cama '+c.num+'</span>'+
+          (activa?
+            '<span style="font-size:9px;background:var(--verde);color:white;padding:1px 5px;border-radius:6px;margin-left:5px">activa</span>':
+            '<span style="font-size:9px;background:var(--br2);color:var(--tx3);padding:1px 5px;border-radius:6px;margin-left:5px">baja</span>')+
+          '<div style="font-size:10px;color:var(--tx3);margin-top:3px">'+
+            'Plantin '+fmt(c.costoPlantin||0)+' · Aplic '+fmt(cAB+aplicShPorCama)+' · Ins '+fmt(cIB)+' · Fijo '+fmt(fijoShPorCama)+
+          '</div>'+
+        '</div>'+
+        '<span style="font-size:13px;font-weight:700;color:var(--bordo);flex-shrink:0;margin-left:8px">'+fmt(totC)+'</span>'+
+      '</div>';
+    }).join('');
     return '<div class="acordeon-item">'+
       '<div class="acordeon-hdr" onclick="toggleAcordeon(this)">'+
         '<div><span class="acordeon-titulo">'+e+'</span>'+
-        '<span class="acordeon-sub">Total: '+fmt(ct)+' · Por cama: '+fmt(costoPorCama)+'</span></div>'+
+        '<span class="acordeon-sub">Total especie: '+fmt(ct)+' · Prom/cama: '+fmt(costoPorCama)+'</span></div>'+
         '<span class="acordeon-chevron">▾</span>'+
       '</div>'+
       '<div class="acordeon-body" style="padding:10px 12px">'+
@@ -1654,6 +1681,17 @@ function renderDash(){
         (detIns?'<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;margin-top:6px">Insumos</div>'+detIns+'<div style="margin-bottom:8px"></div>':'')+
         '<div style="padding:8px;background:var(--rose2);border-radius:8px;display:flex;justify-content:space-between;margin-top:6px">'+
           '<span style="font-size:11px;color:var(--tx2)">Fijos asignados ('+nCamasEsp+'/'+nCamasTotal+' camas)</span><span style="font-size:12px;font-weight:600;color:var(--bordo)">'+fmt(cFijo)+'</span>'+
+        '</div>'+
+        '<div style="margin-top:14px;border-top:2px dashed var(--br2);padding-top:10px">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+            '<span style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em">Costo por cama</span>'+
+            '<span style="font-size:10px;color:var(--tx3)">'+nCamasEspT+' cama'+(nCamasEspT!==1?'s':'')+'</span>'+
+          '</div>'+
+          detPorCamaHtml+
+          '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--rose2);border-radius:8px;margin-top:8px">'+
+            '<span style="font-size:11px;font-weight:600;color:var(--tx2)">Costo total especie</span>'+
+            '<span style="font-size:14px;font-weight:700;color:var(--bordo)">'+fmt(ct)+'</span>'+
+          '</div>'+
         '</div>'+
       '</div>'+
     '</div>';
