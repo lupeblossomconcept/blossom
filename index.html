@@ -1227,7 +1227,7 @@ async function loadAllData(){
     // Cargar gastos
     const fbGastos=await fbGet('gastos');
     if(fbGastos){
-      const gArr=Object.values(fbGastos).filter(g=>g&&g.monto>0);
+      const gArr=Object.entries(fbGastos).map(([k,g])=>g&&g.monto>0?{...g,_fbKey:k}:null).filter(Boolean);
       if(gArr.length>0){
         gastos=gArr.sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
       } else {
@@ -1450,7 +1450,8 @@ async function regAplic(){
   for(const cam of camas){
     const g={tipo:'aplic',fecha:f,mes:f.slice(0,7),cama:cam,des:prod,qty,uni,monto:montoPorCama,nom:'',cat,tarea:''};
     gastos.unshift(g);
-    await fbPush('gastos',g);
+    const key=await fbPush('gastos',g);
+    if(key) g._fbKey=key;
   }
   renderGList();
   document.getElementById('ga-qty').value='';
@@ -1468,10 +1469,12 @@ async function regInsumo(){
   if(!f||!des||!m){toast('Completa todos los campos','err');return;}
   const camStr=camas.length?camas.join(', '):'Sin especificar';
   const g={tipo:'insumo',fecha:f,mes:f.slice(0,7),cama:camStr,des:`${tipo}: ${des}`,qty:'',uni:'',monto:m,nom:'',cat:'Insumo',tarea:''};
-  gastos.unshift(g);renderGList();
+  gastos.unshift(g);
   ['gi-des','gi-mon'].forEach(id=>document.getElementById(id).value='');
   toast('✓ Insumo registrado','ok');
-  await fbPush('gastos',g);
+  const keyI=await fbPush('gastos',g);
+  if(keyI) g._fbKey=keyI;
+  renderGList();
 }
 
 async function regFijo(){
@@ -1480,10 +1483,12 @@ async function regFijo(){
   const m=parseInt(document.getElementById('gf-mon').value);
   if(!mes||!m){toast('Completa todos los campos','err');return;}
   const g={tipo:'fijo',fecha:'',mes,cama:'',des:tipo,qty:'',uni:'',monto:m,nom:'',cat:'Fijo',tarea:''};
-  gastos.unshift(g);renderGList();
+  gastos.unshift(g);
   document.getElementById('gf-mon').value='';
   toast('✓ Gasto fijo registrado','ok');
-  await fbPush('gastos',g);
+  const keyF=await fbPush('gastos',g);
+  if(keyF) g._fbKey=keyF;
+  renderGList();
 }
 
 async function regTrab(){
@@ -1499,11 +1504,13 @@ async function regTrab(){
   const camStr=camas.length?camas.join(', '):'General';
   if(!f||!nom||!tot){toast('Completa fecha, nombre y monto','err');return;}
   const g={tipo:'trab',fecha:f,mes:f.slice(0,7),cama:camStr,des:`RRHH: ${nom}`,qty:hrs,uni,monto:tot,nom,cat:'RRHH',tarea};
-  gastos.unshift(g);renderGList();
+  gastos.unshift(g);
   ['gt-nom','gt-hrs','gt-tar','gt-tot','gt-tarea'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('gt-calc').textContent='$0';
   toast('✓ RRHH registrado','ok');
-  await fbPush('gastos',g);
+  const keyT=await fbPush('gastos',g);
+  if(keyT) g._fbKey=keyT;
+  renderGList();
 }
 
 async function regCama(){
@@ -1746,16 +1753,32 @@ function renderVList(){
   }).join(''):'<div class="empty">Sin ventas</div>';
 }
 
+async function eliminarGasto(idx){
+  if(!confirm('¿Eliminar este gasto?')) return;
+  const g=gastos[idx];
+  gastos.splice(idx,1);
+  renderGList();renderDash();
+  if(g._fbKey) await fbDelete('gastos/'+g._fbKey);
+  toast('✓ Gasto eliminado','ok');
+}
+
 function renderGList(){
   const el=document.getElementById('g-lst');if(!el)return;
   if(!gastos.length){el.innerHTML='<div class="empty">Sin gastos registrados aún</div>';return;}
   el.innerHTML=gastos.slice(0,25).map(g=>{
+    const idx=gastos.indexOf(g);
     let pills='';
     if(g.tipo==='aplic')pills=`<span class="pill pg">${g.cat}</span><span class="pill pg">${g.cama}</span>${g.qty?`<span class="pill px">${g.qty}${g.uni}</span>`:''}`;
     if(g.tipo==='insumo')pills=`<span class="pill pb">Insumo</span><span class="pill pb">${g.cama}</span>`;
     if(g.tipo==='fijo')pills=`<span class="pill px">Fijo</span><span class="pill px">${g.mes}</span>`;
     if(g.tipo==='trab')pills=`<span class="pill pp">RRHH</span><span class="pill pp">${g.nom}</span>`;
-    return`<div class="vi"><div class="vt"><span class="vn">${g.des}</span><span class="va">${fmt(g.monto)}</span></div><div class="vb">${pills}<span class="pd">${g.fecha||g.mes||''}</span></div></div>`;
+    return`<div class="vi" style="display:flex;align-items:flex-start;gap:6px">
+      <div style="flex:1;min-width:0">
+        <div class="vt"><span class="vn">${g.des}</span><span class="va">${fmt(g.monto)}</span></div>
+        <div class="vb">${pills}<span class="pd">${g.fecha||g.mes||''}</span></div>
+      </div>
+      <button class="btn-sm del" onclick="eliminarGasto(${idx})" style="padding:5px 10px;font-size:15px;margin-top:2px;flex-shrink:0">✕</button>
+    </div>`;
   }).join('');
 }
 
@@ -1838,7 +1861,7 @@ setInterval(async()=>{
     }
     const fbGastos=await fbGet('gastos');
     if(fbGastos){
-      const gArr=Object.values(fbGastos).filter(g=>g&&g.monto>0);
+      const gArr=Object.entries(fbGastos).map(([k,g])=>g&&g.monto>0?{...g,_fbKey:k}:null).filter(Boolean);
       if(gArr.length>gastos.length){
         gastos=gArr.sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
         renderGList();renderDash();
