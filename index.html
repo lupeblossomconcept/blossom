@@ -134,6 +134,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .camas-grid{display:flex;flex-wrap:wrap;gap:7px;}
 .cama-chip{padding:6px 12px;background:var(--gris);border:1.5px solid var(--br);border-radius:20px;font-size:12px;font-weight:500;color:var(--tx2);cursor:pointer;transition:all .15s;user-select:none;}
 .cama-chip.selected{background:var(--bordo);color:white;border-color:var(--bordo);}
+.esp-chip{font-weight:600;font-size:12px;border-color:var(--br2);color:var(--tx);}
 /* Análisis */
 .an-card{background:var(--sf);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
 .an-title{font-family:Playfair Display,serif;font-size:16px;font-weight:600;color:var(--tx);margin-bottom:10px;}
@@ -239,7 +240,6 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
       <div class="field"><label>Tipo cliente</label>
         <select id="f-b2b"><option value="">Sin definir</option><option value="B2C">B2C — Particular</option><option value="B2B">B2B — Negocio</option></select>
       </div>
-      <div class="field"><label>Especie</label><select id="f-esp" onchange="updateCamasV()"></select></div>
     </div>
     <div id="f-cama-sel"></div>
     <div class="r2">
@@ -284,7 +284,6 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
       <span id="ga-calc-lbl">Selecciona producto y cantidad</span>
       <strong id="ga-calc-val">$0</strong>
     </div>
-    <div class="field"><label>Especie</label><select id="ga-esp" onchange="renderCamaSel()"></select></div>
     <div id="ga-cama-sel"></div>
     <div class="field" id="ga-monto-manual-wrap" style="display:none">
       <label>Monto total ($) — para productos sin precio configurado</label>
@@ -296,7 +295,6 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
   <!-- INSUMOS -->
   <div id="sub-insumo" class="sub">
     <div class="field"><label>Fecha</label><input type="date" id="gi-fec"></div>
-    <div class="field"><label>Especie / área</label><select id="gi-esp" onchange="renderInsumoSel()"></select></div>
     <div id="gi-cama-sel"></div>
     <div class="field"><label>Tipo de insumo</label>
       <select id="gi-tipo">
@@ -325,7 +323,6 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
   <div id="sub-trab" class="sub">
     <div class="field"><label>Fecha</label><input type="date" id="gt-fec"></div>
     <div class="field"><label>Nombre trabajador</label><input type="text" id="gt-nom" placeholder="Nombre" autocomplete="off"></div>
-    <div class="field"><label>Especie / cama</label><select id="gt-esp" onchange="renderTrabajoSel()"></select></div>
     <div id="gt-cama-sel"></div>
     <div class="field"><label>Tarea</label><input type="text" id="gt-tarea" placeholder="Ej: Deshierbe, cosecha, trasplante..." autocomplete="off"></div>
     <div class="r2">
@@ -1296,65 +1293,62 @@ function subV(s){['nueva','lista'].forEach(x=>{document.getElementById('vi-'+x).
 function subG(s){['aplic','insumo','fijo','trab'].forEach(x=>{document.getElementById('gi-'+x).classList.remove('on');document.getElementById('sub-'+x).classList.remove('on');});document.getElementById('gi-'+s).classList.add('on');document.getElementById('sub-'+s).classList.add('on');}
 function subC(s){['activas','nueva','hist'].forEach(x=>{document.getElementById('ci-'+x).classList.remove('on');document.getElementById('sub-c'+x).classList.remove('on');});document.getElementById('ci-'+s).classList.add('on');document.getElementById('sub-c'+s).classList.add('on');if(s==='activas')renderCamasActivas();if(s==='hist')renderCamasHist();}
 
-// ── SELECTOR DE CAMAS HÍBRIDO ────────────────────────────────────
+// ── SELECTOR MULTI-ESPECIE + CAMAS ───────────────────────────────
 function getCamasDeEspecie(esp){
   const act=camasVida.filter(c=>!c.fechaBaja&&c.especie===esp);
   return act.length?act.map(c=>c.num):[1];
 }
 
-function renderSelectorCamas(containerId, esp, selectedNums=[]){
-  const nums=getCamasDeEspecie(esp);
-  const allSel=selectedNums.length===nums.length;
-  document.getElementById(containerId).innerHTML=`
-    <div class="cama-selector">
-      <div class="cama-sel-header">
-        <span class="cama-sel-esp">Camas de ${esp}</span>
-        <button class="btn-todas ${allSel?'active':''}" onclick="toggleTodas('${containerId}','${esp}')">${allSel?'✓ Todas':'Todas'}</button>
-      </div>
-      <div class="camas-grid" id="${containerId}-grid">
-        ${nums.map(n=>`<div class="cama-chip ${selectedNums.includes(n)?'selected':''}" onclick="toggleCamaChip(this,'${containerId}','${esp}')">${esp} C.${n}</div>`).join('')}
-      </div>
-    </div>`;
+function _blkId(cid,esp){return `${cid}-blk-${esp.replace(/\s+/g,'_')}`;}
+
+function renderMultiEspCamaSel(containerId){
+  const esps=[...new Set(camasVida.filter(c=>!c.fechaBaja).map(c=>c.especie))];
+  const chipsHtml=esps.map(e=>`<div class="cama-chip esp-chip" onclick="toggleEspBlk(this,'${containerId}','${e}')">${e}</div>`).join('');
+  const blksHtml=esps.map(e=>{
+    const bid=_blkId(containerId,e);
+    const nums=getCamasDeEspecie(e);
+    return `<div id="${bid}" style="display:none;margin-top:6px"><div class="cama-selector"><div class="cama-sel-header"><span class="cama-sel-esp">Camas de ${e}</span><button class="btn-todas" onclick="toggleTodasBlk('${bid}',${nums.length})">Todas</button></div><div class="camas-grid" id="${bid}-grid">${nums.map(n=>`<div class="cama-chip" onclick="toggleCamaChipBlk(this,'${bid}',${nums.length})">${e} C.${n}</div>`).join('')}</div></div></div>`;
+  }).join('');
+  document.getElementById(containerId).innerHTML=`<div style="margin-bottom:4px"><label style="display:block;font-size:10px;font-weight:600;color:var(--tx2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Especie</label><div style="display:flex;flex-wrap:wrap;gap:6px">${chipsHtml}</div></div>${blksHtml}`;
 }
 
-function toggleTodas(cid, esp){
-  const nums=getCamasDeEspecie(esp);
-  const chips=document.querySelectorAll(`#${cid}-grid .cama-chip`);
+function toggleEspBlk(el,cid,esp){
+  el.classList.toggle('selected');
+  const blk=document.getElementById(_blkId(cid,esp));
+  if(el.classList.contains('selected')){blk.style.display='block';}
+  else{blk.style.display='none';blk.querySelectorAll('.cama-chip.selected').forEach(c=>c.classList.remove('selected'));}
+}
+
+function toggleTodasBlk(bid,total){
+  const chips=document.querySelectorAll(`#${bid}-grid .cama-chip`);
   const allSel=Array.from(chips).every(c=>c.classList.contains('selected'));
   chips.forEach(c=>c.classList.toggle('selected',!allSel));
-  const btn=document.querySelector(`#${cid} .btn-todas`);
-  btn.classList.toggle('active',!allSel);
-  btn.textContent=!allSel?'✓ Todas':'Todas';
+  const btn=document.querySelector(`#${bid} .btn-todas`);
+  if(btn){btn.classList.toggle('active',!allSel);btn.textContent=!allSel?'✓ Todas':'Todas';}
 }
-function toggleCamaChip(el, cid, esp){
+
+function toggleCamaChipBlk(el,bid,total){
   el.classList.toggle('selected');
-  const chips=document.querySelectorAll(`#${cid}-grid .cama-chip`);
-  const nums=getCamasDeEspecie(esp);
-  const allSel=Array.from(chips).filter(c=>c.classList.contains('selected')).length===nums.length;
-  const btn=document.querySelector(`#${cid} .btn-todas`);
-  btn.classList.toggle('active',allSel);
-  btn.textContent=allSel?'✓ Todas':'Todas';
+  const sel=document.querySelectorAll(`#${bid}-grid .cama-chip.selected`).length;
+  const btn=document.querySelector(`#${bid} .btn-todas`);
+  if(btn){btn.classList.toggle('active',sel===total);btn.textContent=sel===total?'✓ Todas':'Todas';}
 }
+
 function getSelectedCamas(cid){
-  return Array.from(document.querySelectorAll(`#${cid}-grid .cama-chip.selected`)).map(c=>c.textContent.trim());
+  return Array.from(document.querySelectorAll(`#${cid} .cama-chip.selected:not(.esp-chip)`)).map(c=>c.textContent.trim());
 }
 
 // ── SELECTS ─────────────────────────────────────────────────────
 function renderVSels(){
-  document.getElementById('f-esp').innerHTML=especies.map(e=>`<option>${e}</option>`).join('');
-  updateCamasV();
+  renderMultiEspCamaSel('f-cama-sel');
   document.getElementById('fv-esp').innerHTML='<option value="">Todas las especies</option>'+especies.map(e=>`<option>${e}</option>`).join('');
 }
 
-function updateCamasV(){
-  const esp=document.getElementById('f-esp').value;
-  renderSelectorCamas('f-cama-sel',esp,[]);
-}
 function renderGSels(){
-  document.getElementById('ga-esp').innerHTML=especies.map(e=>`<option>${e}</option>`).join('');
-  document.getElementById('gi-esp').innerHTML=especies.map(e=>`<option>${e}</option>`).join('');
-  document.getElementById('gt-esp').innerHTML=especies.map(e=>`<option>${e}</option>`).join('');
-  renderProdSel();renderCamaSel();renderInsumoSel();renderTrabajoSel();
+  renderProdSel();
+  renderMultiEspCamaSel('ga-cama-sel');
+  renderMultiEspCamaSel('gi-cama-sel');
+  renderMultiEspCamaSel('gt-cama-sel');
 }
 function renderCamasSels(){
   document.getElementById('nc-esp').innerHTML=especies.map(e=>`<option>${e}</option>`).join('');
@@ -1363,18 +1357,6 @@ function renderProdSel(){
   const cat=document.getElementById('ga-cat').value;
   document.getElementById('ga-prod').innerHTML=productos.filter(p=>p.cat===cat).map(p=>`<option value="${p.nom}">${p.nom}${p.nota?' ('+p.nota+')':''}</option>`).join('');
   calcAplic();
-}
-function renderCamaSel(){
-  const esp=document.getElementById('ga-esp').value;
-  renderSelectorCamas('ga-cama-sel',esp,[]);
-}
-function renderInsumoSel(){
-  const esp=document.getElementById('gi-esp').value;
-  renderSelectorCamas('gi-cama-sel',esp,[]);
-}
-function renderTrabajoSel(){
-  const esp=document.getElementById('gt-esp').value;
-  renderSelectorCamas('gt-cama-sel',esp,[]);
 }
 
 // ── CÁLCULOS ────────────────────────────────────────────────────
@@ -1418,7 +1400,7 @@ function calcTrab(){
 // ── REGISTROS ───────────────────────────────────────────────────
 async function regVenta(){
   const f=document.getElementById('f-fec').value,c=document.getElementById('f-cli').value.trim();
-  const b2b=document.getElementById('f-b2b').value,esp=document.getElementById('f-esp').value;
+  const b2b=document.getElementById('f-b2b').value;
   const camas=getSelectedCamas('f-cama-sel');
   const p=parseInt(document.getElementById('f-paq').value),pr=parseInt(document.getElementById('f-pre').value);
   const nota=document.getElementById('f-nota').value.trim();
@@ -1426,6 +1408,7 @@ async function regVenta(){
   if(!camas.length){toast('Selecciona al menos una cama','err');return;}
   const total=p*pr;
   for(const cam of camas){
+    const esp=cam.includes(' C.')?cam.split(' C.')[0]:cam;
     const v={fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota};
     ventas.unshift(v);
     const key=await fbPush('ventas',v);
