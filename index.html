@@ -155,7 +155,7 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
 .acordeon-titulo{font-size:14px;font-weight:600;color:var(--tx);display:block;}
 .acordeon-sub{font-size:11px;color:var(--tx2);margin-top:2px;display:block;}
 .acordeon-chevron{font-size:18px;color:var(--bordo);flex-shrink:0;}
-.acordeon-body{padding:0 10px 10px;}
+.acordeon-body{padding:0 10px 10px;display:none;}
 .loading{text-align:center;padding:24px;color:var(--tx3);font-size:13px;}
 .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--rose);border-top-color:var(--bordo);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -209,7 +209,7 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
       <div><span style="font-size:12px;color:var(--tx2)">Camas activas hoy</span></div>
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-weight:700;color:var(--bordo);font-size:16px" id="d-cam-act2">—</span>
-        <span class="acordeon-chevron" style="font-size:16px">▾</span>
+        <span class="acordeon-chevron" style="font-size:16px">▸</span>
       </div>
     </div>
     <div class="acordeon-body" style="padding:8px 12px;display:none" id="d-cam-detalle"></div>
@@ -1689,7 +1689,7 @@ function renderDash(){
       '<div class="acordeon-hdr" onclick="toggleAcordeon(this)">'+
         '<div><span class="acordeon-titulo">'+e+'</span>'+
         '<span class="acordeon-sub">Total especie: '+fmt(ct)+' · Prom/cama: '+fmt(costoPorCama)+'</span></div>'+
-        '<span class="acordeon-chevron">▾</span>'+
+        '<span class="acordeon-chevron">▸</span>'+
       '</div>'+
       '<div class="acordeon-body" style="padding:10px 12px">'+
         '<div class="cnums" style="margin-bottom:10px">'+
@@ -1812,7 +1812,7 @@ function renderCamasActivas(){
     return '<div class="acordeon-item">'+
       '<div class="acordeon-hdr" onclick="toggleAcordeon(this)">'+
         '<div><span class="acordeon-titulo">'+esp+'</span><span class="acordeon-sub">'+cams.length+' camas activas · '+fmt(totalGvEsp)+' en gastos</span></div>'+
-        '<span class="acordeon-chevron">▾</span>'+
+        '<span class="acordeon-chevron">▸</span>'+
       '</div>'+
       '<div class="acordeon-body">'+camasHTML+'</div>'+
     '</div>';
@@ -1821,7 +1821,7 @@ function renderCamasActivas(){
 function toggleAcordeon(hdr){
   const body=hdr.nextElementSibling;
   const chevron=hdr.querySelector('.acordeon-chevron');
-  const isOpen=body.style.display!=='none';
+  const isOpen=window.getComputedStyle(body).display!=='none';
   body.style.display=isOpen?'none':'block';
   chevron.textContent=isOpen?'▸':'▾';
 }
