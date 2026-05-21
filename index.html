@@ -1252,6 +1252,12 @@ function sw(t){
 }
 function subV(s){['nueva','lista'].forEach(x=>{document.getElementById('vi-'+x).classList.remove('on');document.getElementById('sub-v'+x).classList.remove('on');});document.getElementById('vi-'+s).classList.add('on');document.getElementById('sub-v'+s).classList.add('on');if(s==='lista')renderVList();}
 function subG(s){['aplic','insumo','fijo','trab'].forEach(x=>{document.getElementById('gi-'+x).classList.remove('on');document.getElementById('sub-'+x).classList.remove('on');});document.getElementById('gi-'+s).classList.add('on');document.getElementById('sub-'+s).classList.add('on');}
+let gListaTipo='todos';
+function subGLista(t){
+  gListaTipo=t;
+  ['todos','aplic','insumo','fijo'].forEach(x=>{const b=document.getElementById('gl-'+x);if(b)b.classList.toggle('on',x===t);});
+  renderGList();
+}
 function subC(s){['activas','nueva','hist'].forEach(x=>{document.getElementById('ci-'+x).classList.remove('on');document.getElementById('sub-c'+x).classList.remove('on');});document.getElementById('ci-'+s).classList.add('on');document.getElementById('sub-c'+s).classList.add('on');if(s==='activas')renderCamasActivas();if(s==='hist')renderCamasHist();}
 
 // ── SELECTOR MULTI-ESPECIE + CAMAS ───────────────────────────────
@@ -1621,6 +1627,10 @@ function renderDash(){
     var cbBasePorCama=Math.round(cbBase/(nCamas||1));
     var aplicEspNivel=aplics.filter(function(g){return g.cama===e;}).reduce(function(s,g){return s+g.monto;},0);
     var aplicShPorCama=Math.round(aplicEspNivel/(nCamas||1));
+    var cpEsp=cpTotal;
+    var nCamasEspT=nCamas;
+    var nCamasEsp=camasVida.filter(function(c){return c.especie===e&&!c.fechaBaja;}).length;
+    var nCamasTotal=camasVida.filter(function(c){return !c.fechaBaja;}).length;
     var detPorCamaHtml=camasVida.filter(function(c){return c.especie===e;}).map(function(c){
       var ck1=e+' C.'+c.num,ck2=e+' Cama '+c.num;
       var cAB=gf.filter(function(g){return g.tipo==='aplic'&&(g.cama===ck1||g.cama===ck2);}).reduce(function(s,g){return s+g.monto;},0);
@@ -1728,8 +1738,9 @@ async function eliminarGasto(idx){
 
 function renderGList(){
   const el=document.getElementById('g-lst');if(!el)return;
-  if(!gastos.length){el.innerHTML='<div class="empty">Sin gastos registrados aún</div>';return;}
-  el.innerHTML=gastos.slice(0,25).map(g=>{
+  const gf2=gListaTipo&&gListaTipo!=='todos'?gastos.filter(g=>g.tipo===gListaTipo):gastos;
+  if(!gf2.length){el.innerHTML='<div class="empty">Sin gastos registrados aún</div>';return;}
+  el.innerHTML=gf2.slice(0,25).map(g=>{
     const idx=gastos.indexOf(g);
     let pills='';
     if(g.tipo==='aplic')pills=`<span class="pill pg">${g.cat}</span><span class="pill pg">${g.cama}</span>${g.qty?`<span class="pill px">${g.qty}${g.uni}</span>`:''}`;
