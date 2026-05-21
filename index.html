@@ -402,16 +402,16 @@ let camasVida=[
   {especie:"Lisianthus",num:8,fechaInicio:'2025-12-23',fechaBaja:null,costoPlantin:83002,nota:""},
   {especie:"Lisianthus",num:9,fechaInicio:'2025-12-23',fechaBaja:null,costoPlantin:83002,nota:""},
   {especie:"Lisianthus",num:10,fechaInicio:'2025-12-23',fechaBaja:null,costoPlantin:83002,nota:""},
-  {especie:"Cosmos",num:1,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
-  {especie:"Cosmos",num:2,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
-  {especie:"Cosmos",num:3,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
-  {especie:"Cosmos",num:4,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
-  {especie:"Cosmos",num:5,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
-  {especie:"Cosmos",num:6,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
-  {especie:"Cosmos",num:7,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
-  {especie:"Cosmos",num:8,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
-  {especie:"Cosmos",num:9,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
-  {especie:"Cosmos",num:10,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
+  {especie:"Cosmos",num:1,fechaInicio:'2025-12-01',fechaBaja:'2026-05-19',costoPlantin:0,nota:""},
+  {especie:"Cosmos",num:2,fechaInicio:'2025-12-01',fechaBaja:'2026-05-19',costoPlantin:0,nota:""},
+  {especie:"Cosmos",num:3,fechaInicio:'2025-12-01',fechaBaja:'2026-05-19',costoPlantin:0,nota:""},
+  {especie:"Cosmos",num:4,fechaInicio:'2025-12-01',fechaBaja:'2026-05-19',costoPlantin:0,nota:""},
+  {especie:"Cosmos",num:5,fechaInicio:'2025-12-01',fechaBaja:'2026-05-19',costoPlantin:0,nota:""},
+  {especie:"Cosmos",num:6,fechaInicio:'2025-12-01',fechaBaja:'2026-05-19',costoPlantin:0,nota:""},
+  {especie:"Cosmos",num:7,fechaInicio:'2025-12-01',fechaBaja:'2026-05-19',costoPlantin:0,nota:""},
+  {especie:"Cosmos",num:8,fechaInicio:'2025-12-01',fechaBaja:'2026-05-19',costoPlantin:0,nota:""},
+  {especie:"Cosmos",num:9,fechaInicio:'2025-12-01',fechaBaja:'2026-05-19',costoPlantin:0,nota:""},
+  {especie:"Cosmos",num:10,fechaInicio:'2025-12-01',fechaBaja:'2026-05-19',costoPlantin:0,nota:""},
   {especie:"Zinnia",num:1,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
   {especie:"Zinnia",num:2,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
   {especie:"Zinnia",num:3,fechaInicio:'2025-12-01',fechaBaja:null,costoPlantin:0,nota:""},
@@ -1579,9 +1579,9 @@ function renderDash(){
   if(el('d-esp')) el('d-esp').innerHTML=espHtml;
 
   // Costos por especie con desglose expandible
-  var todasEsps=Object.keys(ing).concat(camasVida.filter(function(c){return !c.fechaBaja;}).map(function(c){return c.especie;}));
+  var todasEsps=Object.keys(ing).concat(camasVida.map(function(c){return c.especie;}));
   var espsUnicas=[...new Set(todasEsps)];
-  var nCamasTotal=camasVida.filter(function(c){return !c.fechaBaja;}).length||1;
+  var nCamasTotal=camasVida.length||1;
   var gfFijos=gf.filter(function(g){return g.tipo==='fijo';}).reduce(function(s,g){return s+g.monto;},0);
 
   var costoEspHtml=espsUnicas.map(function(e,eidx){
@@ -1593,7 +1593,7 @@ function renderDash(){
     var cAplic=aplics.reduce(function(s,g){return s+g.monto;},0);
     var insumos=gf.filter(function(g){return g.tipo==='insumo'&&(g.cama||'').includes(e)&&g.cama!==e;});
     var cInsumo=insumos.reduce(function(s,g){return s+g.monto;},0);
-    var nCamasEsp=camasVida.filter(function(c){return !c.fechaBaja&&c.especie===e;}).length||1;
+    var nCamasEsp=camasVida.filter(function(c){return c.especie===e;}).length||1;
     var cFijo=Math.round(gfFijos*(nCamasEsp/nCamasTotal));
     var ct=cb+cAplic+cInsumo+cFijo;
     var ingE=ing[e]||0;
@@ -1614,7 +1614,7 @@ function renderDash(){
     var cbBasePorCama=Math.round(cbBase/(nCamas||1));
     var aplicEspNivel=aplics.filter(function(g){return g.cama===e;}).reduce(function(s,g){return s+g.monto;},0);
     var aplicShPorCama=Math.round(aplicEspNivel/(nCamas||1));
-    var fijoShPorCama=Math.round(cFijo/(nCamasEsp||1));
+    var fijoShPorCama=Math.round(cFijo/(nCamas||1));
     var detPorCamaHtml=camasVida.filter(function(c){return c.especie===e;}).map(function(c){
       var ck1=e+' C.'+c.num,ck2=e+' Cama '+c.num;
       var cAB=gf.filter(function(g){return g.tipo==='aplic'&&(g.cama===ck1||g.cama===ck2);}).reduce(function(s,g){return s+g.monto;},0);
