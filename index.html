@@ -1211,7 +1211,7 @@ async function loadAllData(){
         nuevas.forEach(c=>{
           const existe=camasVida.find(x=>x.especie===c.especie&&x.num===c.num);
           if(!existe) camasVida.push(c);
-          else if(c.fechaBaja) existe.fechaBaja=c.fechaBaja;
+          else existe.fechaBaja=c.fechaBaja??existe.fechaBaja;
         });
         renderCamasActivas();
       }
@@ -1474,12 +1474,14 @@ async function regCama(){
   await fbPush('camas_nuevas',{especie:esp,num,fechaInicio:fec,fechaBaja:null,costoPlantin:cost,nota});
 }
 
+function camaFbKey(c){return c.especie.replace(/[^a-zA-Z0-9]/g,'_')+'_'+c.num;}
+
 async function darBaja(idx){
   const hoy=new Date().toISOString().split('T')[0];
   const c=camasVida[idx];
   if(confirm(`¿Dar de baja ${c.especie} Cama ${c.num}?`)){
     camasVida[idx].fechaBaja=hoy;renderCamasActivas();renderCamasHist();renderDash();toast('Cama dada de baja');
-    await fbPush('camas_nuevas',{...c,fechaBaja:hoy});
+    await fbSet('camas/'+camaFbKey(c),{...c,fechaBaja:hoy});
   }
 }
 
@@ -1487,7 +1489,7 @@ async function reactivarCama(idx){
   const c=camasVida[idx];
   if(confirm(`¿Reactivar ${c.especie} Cama ${c.num}?`)){
     camasVida[idx].fechaBaja=null;renderCamasActivas();renderCamasHist();renderDash();toast(`✓ ${c.especie} Cama ${c.num} reactivada`,'ok');
-    await fbPush('camas_nuevas',{...c,fechaBaja:null});
+    await fbDelete('camas/'+camaFbKey(c));
   }
 }
 
