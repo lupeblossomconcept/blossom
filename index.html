@@ -1174,27 +1174,24 @@ async function loadAllData(){
     // Cargar ventas de Firebase
     const fbVentas=await fbGet('ventas');
     if(fbVentas){
-      const vArr=Object.entries(fbVentas).map(([k,v])=>v&&v.fecha?{...v,_fbKey:k}:null).filter(Boolean).filter(v=>v.total>0);
+      const vArr=Object.entries(fbVentas).map(([k,v])=>v&&v.fecha?{...v,_fbKey:k}:null).filter(Boolean);
       if(vArr.length>0){
-        ventas=vArr.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+        ventas=vArr.filter(v=>v.total>0).sort((a,b)=>b.fecha.localeCompare(a.fecha));
         renderDash();renderVList();
-      } else {
-        uploadHistorico();
       }
+      // Si Firebase tiene datos pero están vacíos/filtrados, NO sobrescribir
     } else {
-      uploadHistorico();
+      uploadHistorico(); // Solo si no existe el path en Firebase todavía
     }
 
     // Cargar gastos
     const fbGastos=await fbGet('gastos');
     if(fbGastos){
-      const gArr=Object.entries(fbGastos).map(([k,g])=>g&&g.monto>0?{...g,_fbKey:k}:null).filter(Boolean);
+      const gArr=Object.entries(fbGastos).map(([k,g])=>g&&g.monto!=null?{...g,_fbKey:k}:null).filter(Boolean);
       if(gArr.length>0){
         gastos=gArr.sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
-      } else {
-        gastos=[...HIST_GASTOS];
-        uploadGastosHistoricos();
       }
+      // Si Firebase tiene datos, NO sobrescribir aunque parezca vacío
       renderGList();renderDash();
     } else {
       gastos=[...HIST_GASTOS];
