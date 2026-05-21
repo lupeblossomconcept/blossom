@@ -1581,45 +1581,57 @@ function renderDash(){
   // Costos por especie con desglose expandible
   var todasEsps=Object.keys(ing).concat(camasVida.map(function(c){return c.especie;}));
   var espsUnicas=[...new Set(todasEsps)];
-  var nCamasTotal=camasVida.length||1;
-  var gfFijos=gf.filter(function(g){return g.tipo==='fijo';}).reduce(function(s,g){return s+g.monto;},0);
+  var fijoRecs=gf.filter(function(g){return g.tipo==='fijo';});
+  // Verifica si una cama estuvo activa en un mes dado (formato 'YYYY-MM')
+  function camaActivaEnMes(c,m){
+    if(!m)return true;
+    var p=m.split('-'),yr=+p[0],mo=+p[1];
+    var mI=new Date(yr,mo-1,1),mF=new Date(yr,mo,0);
+    return new Date(c.fechaInicio)<=mF&&(!c.fechaBaja||new Date(c.fechaBaja)>mI);
+  }
+  // Costo fijo de una especie = suma de su cuota en cada mes que estuvo activa
+  function cFijoEsp(esp){
+    return Math.round(fijoRecs.reduce(function(s,g){
+      var n=camasVida.filter(function(c){return c.especie===esp&&camaActivaEnMes(c,g.mes);}).length;
+      return s+g.monto*n/(g.ncm||1);
+    },0));
+  }
+  // Costo fijo de una cama individual = suma de su cuota (1/ncm) en cada mes activo
+  function cFijoCama(c){
+    return Math.round(fijoRecs.reduce(function(s,g){
+      return s+(camaActivaEnMes(c,g.mes)?g.monto/(g.ncm||1):0);
+    },0));
+  }
 
   var costoEspHtml=espsUnicas.map(function(e,eidx){
     var cb=mes?0:(COSTOS_BASE[e]||0);
-    // Sumar costo plantines de todas las camas de esta especie
     var cpTotal=camasVida.filter(function(c){return c.especie===e;}).reduce(function(s,c){return s+(c.costoPlantin||0);},0);
     cb=cb+cpTotal;
     var aplics=gf.filter(function(g){return g.tipo==='aplic'&&(g.cama===e||(g.cama||'').includes(e));});
     var cAplic=aplics.reduce(function(s,g){return s+g.monto;},0);
     var insumos=gf.filter(function(g){return g.tipo==='insumo'&&(g.cama||'').includes(e)&&g.cama!==e;});
     var cInsumo=insumos.reduce(function(s,g){return s+g.monto;},0);
-    var nCamasEsp=camasVida.filter(function(c){return c.especie===e;}).length||1;
-    var cFijo=Math.round(gfFijos*(nCamasEsp/nCamasTotal));
+    var cFijo=mes?0:cFijoEsp(e);
     var ct=cb+cAplic+cInsumo+cFijo;
     var ingE=ing[e]||0;
     var nCamas=camasVida.filter(function(c){return c.especie===e;}).length||1;
     var costoPorCama=Math.round(ct/nCamas);
-    // Desglose fertilizantes
     var fertMap={};aplics.filter(function(g){return g.cat==='Fertilizacion';}).forEach(function(g){fertMap[g.des]=(fertMap[g.des]||0)+g.monto;});
     var fitoMap={};aplics.filter(function(g){return g.cat==='Fitosanitario';}).forEach(function(g){fitoMap[g.des]=(fitoMap[g.des]||0)+g.monto;});
     var insumoMap={};insumos.forEach(function(g){insumoMap[g.des]=(insumoMap[g.des]||0)+g.monto;});
     var detFert=Object.entries(fertMap).map(function(x){return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>'+x[0]+'</span><span>'+fmt(x[1])+'</span></div>';}).join('');
     var detFito=Object.entries(fitoMap).map(function(x){return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>'+x[0]+'</span><span>'+fmt(x[1])+'</span></div>';}).join('');
     var detIns=Object.entries(insumoMap).map(function(x){return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>'+x[0]+'</span><span>'+fmt(x[1])+'</span></div>';}).join('');
-    // Plantines/semillas por cama
-    var cpEsp=camasVida.filter(function(c){return c.especie===e;}).reduce(function(s,c){return s+(c.costoPlantin||0);},0);
-    var nCamasEspT=camasVida.filter(function(c){return c.especie===e;}).length;
-    // Desglose individual por cama
     var cbBase=mes?0:(COSTOS_BASE[e]||0);
     var cbBasePorCama=Math.round(cbBase/(nCamas||1));
     var aplicEspNivel=aplics.filter(function(g){return g.cama===e;}).reduce(function(s,g){return s+g.monto;},0);
     var aplicShPorCama=Math.round(aplicEspNivel/(nCamas||1));
-    var fijoShPorCama=Math.round(cFijo/(nCamas||1));
     var detPorCamaHtml=camasVida.filter(function(c){return c.especie===e;}).map(function(c){
       var ck1=e+' C.'+c.num,ck2=e+' Cama '+c.num;
       var cAB=gf.filter(function(g){return g.tipo==='aplic'&&(g.cama===ck1||g.cama===ck2);}).reduce(function(s,g){return s+g.monto;},0);
       var cIB=gf.filter(function(g){return g.tipo==='insumo'&&(g.cama===ck1||g.cama===ck2);}).reduce(function(s,g){return s+g.monto;},0);
-      var totC=(c.costoPlantin||0)+cAB+aplicShPorCama+cIB+fijoShPorCama+cbBasePorCama;
+      var fijoC=mes?0:cFijoCama(c);
+      var totC=(c.costoPlantin||0)+cAB+aplicShPorCama+cIB+fijoC+cbBasePorCama;
       var activa=!c.fechaBaja;
       return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--br)">'+
         '<div>'+
@@ -1628,7 +1640,7 @@ function renderDash(){
             '<span style="font-size:9px;background:var(--verde);color:white;padding:1px 5px;border-radius:6px;margin-left:5px">activa</span>':
             '<span style="font-size:9px;background:var(--br2);color:var(--tx3);padding:1px 5px;border-radius:6px;margin-left:5px">baja</span>')+
           '<div style="font-size:10px;color:var(--tx3);margin-top:3px">'+
-            'Plantin '+fmt(c.costoPlantin||0)+' · Aplic '+fmt(cAB+aplicShPorCama)+' · Ins '+fmt(cIB)+' · Fijo '+fmt(fijoShPorCama)+
+            'Plantin '+fmt(c.costoPlantin||0)+' · Aplic '+fmt(cAB+aplicShPorCama)+' · Ins '+fmt(cIB)+' · Fijo '+fmt(fijoC)+
           '</div>'+
         '</div>'+
         '<span style="font-size:13px;font-weight:700;color:var(--bordo);flex-shrink:0;margin-left:8px">'+fmt(totC)+'</span>'+
