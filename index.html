@@ -1663,6 +1663,7 @@ function renderDash(){
 
 
   // Barras por especie
+  var fijoRecs=gf.filter(function(g){return g.tipo==='fijo';});
   var ing={};
   vf.forEach(function(v){ing[v.especie]=(ing[v.especie]||0)+v.total;});
   var srt=Object.entries(ing).sort(function(a,b){return b[1]-a[1];});
@@ -1671,8 +1672,10 @@ function renderDash(){
   var espHtml=srt.length?srt.map(function(entry){
     var e=entry[0],i=entry[1];
     var cb=mes?0:(COSTOS_BASE[e]||0);
+    var cpT=camasVida.filter(function(c){return c.especie===e;}).reduce(function(s,c){return s+(c.costoPlantin||0);},0);
     var cg=gf.filter(function(g){return g.cat!=='Fijo'&&(g.cama===e||(g.cama||'').includes(e));}).reduce(function(s,g){return s+g.monto;},0);
-    var ct=cb+cg;var r=i-ct;var mg=i>0?Math.round(r/i*100):null;
+    var cFij=mes?0:cFijoEsp(e,fijoRecs);
+    var ct=cb+cpT+cg+cFij;var r=i-ct;var mg=i>0?Math.round(r/i*100):null;
     var mgStr=mg!==null?(mg>=0?'+':'')+mg+'%':'—';
     var mgCol=r>=0?'var(--verde)':'var(--rojo)';
     var nCamas=camasVida.filter(function(c){return c.especie===e;}).length;
@@ -1694,7 +1697,6 @@ function renderDash(){
   // Costos por especie con desglose expandible
   var todasEsps=Object.keys(ing).concat(camasVida.map(function(c){return c.especie;}));
   var espsUnicas=[...new Set(todasEsps)];
-  var fijoRecs=gf.filter(function(g){return g.tipo==='fijo';});
 
   var costoEspHtml=espsUnicas.map(function(e,eidx){
     var cb=mes?0:(COSTOS_BASE[e]||0);
@@ -1743,10 +1745,13 @@ function renderDash(){
         '<span style="font-size:13px;font-weight:700;color:var(--bordo);flex-shrink:0;margin-left:8px">'+fmt(totC)+'</span>'+
       '</div>';
     }).join('');
+    var mgE=ingE>0?Math.round((ingE-ct)/ingE*100):null;
+    var mgEStr=mgE!==null?(mgE>=0?'+':'')+mgE+'%':'—';
+    var mgECol=mgE!==null&&mgE>=0?'var(--verde)':'var(--rojo)';
     return '<div class="acordeon-item">'+
       '<div class="acordeon-hdr" onclick="toggleAcordeon(this)">'+
         '<div><span class="acordeon-titulo">'+e+'</span>'+
-        '<span class="acordeon-sub">Total especie: '+fmt(ct)+' · Prom/cama: '+fmt(costoPorCama)+'</span></div>'+
+        '<span class="acordeon-sub">Costos: '+fmt(ct)+(ingE>0?' · <span style="color:'+mgECol+';font-weight:600">Margen s/venta: '+mgEStr+'</span>':'')+'</span></div>'+
         '<span class="acordeon-chevron">▸</span>'+
       '</div>'+
       '<div class="acordeon-body" style="padding:10px 12px">'+
