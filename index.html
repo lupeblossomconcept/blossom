@@ -251,9 +251,9 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
   </div>
   <div id="sub-vlista" class="sub">
     <div class="frow"><select id="fv-esp" onchange="renderVList()"><option value="">Todas las especies</option></select></div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <input type="month" id="exp-v-mes" style="flex:1;padding:8px;border:1px solid var(--br);border-radius:var(--r);font-size:13px;background:var(--sf);color:var(--tx)">
-      <button class="btn" style="flex:none;padding:8px 14px;font-size:13px" onclick="exportarCSV('ventas')">↓ Exportar</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;box-sizing:border-box;width:100%">
+      <input type="month" id="exp-v-mes" style="flex:1;min-width:0;padding:8px;border:1px solid var(--br);border-radius:var(--r);font-size:13px;background:var(--sf);color:var(--tx)">
+      <button class="btn" style="flex:none;white-space:nowrap;padding:8px 14px;font-size:13px" onclick="exportarCSV('ventas')">↓ CSV</button>
     </div>
     <div id="v-lst" class="vlist"></div>
   </div>
@@ -346,9 +346,9 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
     <button class="ti" onclick="subGLista('insumo')" id="gl-insumo">Insumos</button>
     <button class="ti" onclick="subGLista('fijo')" id="gl-fijo">Fijos</button>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-    <input type="month" id="exp-g-mes" style="flex:1;padding:8px;border:1px solid var(--br);border-radius:var(--r);font-size:13px;background:var(--sf);color:var(--tx)">
-    <button class="btn" style="flex:none;padding:8px 14px;font-size:13px" onclick="exportarCSV('gastos')">↓ Exportar</button>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;box-sizing:border-box;width:100%">
+    <input type="month" id="exp-g-mes" style="flex:1;min-width:0;padding:8px;border:1px solid var(--br);border-radius:var(--r);font-size:13px;background:var(--sf);color:var(--tx)">
+    <button class="btn" style="flex:none;white-space:nowrap;padding:8px 14px;font-size:13px" onclick="exportarCSV('gastos')">↓ CSV</button>
   </div>
   <div id="g-lst" class="vlist"></div>
 </div>
@@ -473,16 +473,16 @@ let camasVida=[
   {especie:"Escabiosa",num:10,fechaInicio:'2026-05-27',fechaBaja:null,costoPlantin:0,nota:""},
   {especie:"Escabiosa",num:11,fechaInicio:'2026-05-27',fechaBaja:null,costoPlantin:0,nota:""},
   {especie:"Escabiosa",num:12,fechaInicio:'2026-05-27',fechaBaja:null,costoPlantin:0,nota:""},
-  {especie:"Girasol",num:1,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:52969,nota:"Temporada 1"},
-  {especie:"Girasol",num:2,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:52969,nota:"Temporada 1"},
-  {especie:"Girasol",num:3,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:52969,nota:"Temporada 1"},
-  {especie:"Girasol",num:4,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:52969,nota:"Temporada 1"},
-  {especie:"Girasol",num:5,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:52969,nota:"Temporada 1"},
-  {especie:"Girasol",num:6,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:52969,nota:"Temporada 1"},
-  {especie:"Girasol",num:7,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:52969,nota:"Temporada 1"},
-  {especie:"Girasol",num:8,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:52969,nota:"Temporada 1"},
-  {especie:"Girasol",num:9,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:52969,nota:"Temporada 1"},
-  {especie:"Girasol",num:10,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:52969,nota:"Temporada 1"}
+  {especie:"Girasol",num:1,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:9899,nota:"Temporada 1"},
+  {especie:"Girasol",num:2,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:9899,nota:"Temporada 1"},
+  {especie:"Girasol",num:3,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:9899,nota:"Temporada 1"},
+  {especie:"Girasol",num:4,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:9899,nota:"Temporada 1"},
+  {especie:"Girasol",num:5,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:9899,nota:"Temporada 1"},
+  {especie:"Girasol",num:6,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:9899,nota:"Temporada 1"},
+  {especie:"Girasol",num:7,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:9899,nota:"Temporada 1"},
+  {especie:"Girasol",num:8,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:9899,nota:"Temporada 1"},
+  {especie:"Girasol",num:9,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:9899,nota:"Temporada 1"},
+  {especie:"Girasol",num:10,fechaInicio:'2026-01-15',fechaBaja:'2026-04-30',costoPlantin:9897,nota:"Temporada 1"}
 ];
 
 let ventas=[];
