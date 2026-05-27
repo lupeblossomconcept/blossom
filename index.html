@@ -1273,27 +1273,25 @@ function exportarCSV(tipo){
   const mes=document.getElementById('exp-'+tipo[0]+'-mes').value;
   let filas,nombre,cabecera;
   if(tipo==='ventas'){
-    cabecera='Tipo,,Subcategoria,Descripcion,Monto';
     filas=ventas.filter(v=>!mes||v.fecha.startsWith(mes)).map(v=>[
       'Ingresos',
       v.b2b==='B2B'?'Flores de corte':'Ventas puntuales',
       v.cliente+': '+v.paquetes+' '+v.especie,
       '',
-      '$ '+Math.round(v.total).toLocaleString('es-CL')
+      Math.round(v.total)
     ]);
     nombre='ventas'+(mes?'_'+mes:'')+'.csv';
   } else {
-    cabecera='Fecha,Tipo,Descripcion,Categoria,Cama,Monto';
     filas=gastos.filter(g=>!mes||(g.fecha||g.mes||'').startsWith(mes)).map(g=>[
       g.fecha||g.mes||'',g.tipo,g.des,g.cat||'',g.cama||'',g.monto
     ]);
     nombre='gastos'+(mes?'_'+mes:'')+'.csv';
   }
   if(!filas.length){toast('Sin datos para ese mes','err');return;}
-  const csv=filas.map(r=>r.map(c=>'"'+(c+'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const csv=filas.map(r=>r.join('\t')).join('\n');
   const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
-  a.download=nombre;
+  a.href='data:text/tab-separated-values;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=nombre.replace('.csv','.tsv');
   a.click();
   toast('✓ '+nombre,'ok');
 }
