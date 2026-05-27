@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Riego Blossom">
+<title>Blossom · Plan de Riego</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bordo:#8b1a4a;--bordo2:#6d1339;--bordo3:#a8225a;
+  --rose:#f5e0ea;--rose2:#fdf5f9;--rose3:#fbecf3;
+  --verde:#1a5c2e;--verde-l:#e8f5ed;
+  --rojo:#9e2020;--rojo-l:#fceaea;
+  --am:#6b4200;--am-l:#fff5e0;
+  --gris:#f8f6f7;
+  --tx:#1a0f14;--tx2:#6b4a57;--tx3:#b09aa8;
+  --sf:#ffffff;--sf2:#faf6f8;
+  --br:#e8dde4;--br2:#d4c4cc;
+  --r:14px;--rs:10px;
+  --shadow:0 2px 12px rgba(139,26,74,0.08);
+  --shadow2:0 4px 24px rgba(139,26,74,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);min-height:100vh;overscroll-behavior:none;}
+.app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--gris);}
+
+/* Header */
+.hdr{background:linear-gradient(135deg,var(--bordo2) 0%,var(--bordo3) 100%);color:white;padding:18px 18px 14px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(139,26,74,0.25);}
+.hdr h1{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;}
+.hdr-sub{font-size:11px;opacity:.8;margin-top:2px;}
+
+/* Nav */
+.nav{display:flex;background:var(--sf);border-bottom:1px solid var(--br);position:sticky;top:65px;z-index:90;}
+.ntab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;border:none;background:none;color:var(--tx3);font-size:9px;font-weight:600;cursor:pointer;border-bottom:2.5px solid transparent;font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.04em;}
+.ntab.on{color:var(--bordo);border-bottom-color:var(--bordo);}
+.ntab-icon{font-size:16px;}
+
+/* Section */
+.sec{display:none;padding:14px 0 60px;}
+.sec.on{display:block;}
+
+/* Card genérico */
+.card{background:var(--sf);border-radius:var(--r);padding:14px 16px;margin:0 14px 12px;box-shadow:var(--shadow);}
+.card-tit{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+
+/* Semana header */
+.sem-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:4px;}
+.sem-week{font-size:13px;font-weight:600;color:var(--tx);}
+.sem-nav{display:flex;gap:2px;}
+.sem-nav button{background:none;border:1px solid var(--br);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;color:var(--tx2);font-family:'Montserrat',sans-serif;}
+.sem-nav button.act{background:var(--bordo);color:white;border-color:var(--bordo);}
+
+/* Total progress */
+.total-prog{background:var(--sf);border-radius:var(--r);margin:0 14px 12px;padding:14px 16px;box-shadow:var(--shadow);}
+.prog-bar-bg{height:8px;background:var(--rose);border-radius:4px;overflow:hidden;margin:8px 0 4px;}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--bordo2),var(--bordo3));border-radius:4px;transition:width .5s ease;}
+.prog-stats{display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);}
+
+/* Especie card */
+.esp-card{background:var(--sf);border-radius:var(--r);margin:0 14px 10px;box-shadow:var(--shadow);overflow:hidden;}
+.esp-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;}
+.esp-info{flex:1;}
+.esp-nom{font-size:14px;font-weight:700;color:var(--tx);}
+.esp-cfg{font-size:10px;color:var(--tx3);margin-top:2px;}
+.esp-grp{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;margin-left:8px;}
+.grp-A{background:var(--verde-l);color:var(--verde);}
+.grp-B{background:#e8f0ff;color:#1a3c8b;}
+.grp-C{background:var(--am-l);color:var(--am);}
+.esp-prog-area{padding:0 14px 12px;}
+.esp-prog-bg{height:6px;background:var(--rose);border-radius:3px;overflow:hidden;margin-bottom:6px;}
+.esp-prog-fill{height:100%;border-radius:3px;transition:width .5s ease;}
+.esp-stats{display:flex;justify-content:space-between;font-size:11px;}
+.esp-mm{font-weight:600;color:var(--tx);}
+.esp-evts{color:var(--tx3);}
+.esp-actions{border-top:1px solid var(--br);display:flex;}
+.esp-btn{flex:1;padding:10px;background:none;border:none;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:var(--bordo);}
+.esp-btn+.esp-btn{border-left:1px solid var(--br);}
+.esp-btn.fert{color:var(--verde);}
+
+/* Modal overlay */
+.overlay{display:none;position:fixed;inset:0;background:rgba(26,15,20,.45);z-index:200;align-items:flex-end;}
+.overlay.on{display:flex;}
+.modal{background:var(--sf);border-radius:20px 20px 0 0;padding:20px 18px 32px;width:100%;max-width:430px;margin:0 auto;box-shadow:0 -4px 32px rgba(139,26,74,.15);animation:slideUp .22s ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-tit{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:4px;}
+.modal-sub{font-size:11px;color:var(--tx3);margin-bottom:18px;}
+.modal-field label{display:block;font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.modal-field{margin-bottom:16px;}
+.big-input{font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--tx);border:none;background:none;width:100%;outline:none;-webkit-appearance:none;line-height:1;}
+.big-row{display:flex;align-items:flex-end;gap:8px;border-bottom:2px solid var(--bordo);padding-bottom:6px;margin-bottom:8px;}
+.big-unit{font-size:15px;font-weight:600;color:var(--tx3);padding-bottom:10px;}
+.calc-result{background:var(--rose2);border-radius:var(--rs);padding:10px 14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+.calc-lbl{font-size:11px;color:var(--tx3);}
+.calc-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--bordo);}
+.tipo-toggle{display:flex;gap:8px;margin-bottom:16px;}
+.tipo-btn{flex:1;padding:10px;border-radius:var(--rs);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--br);background:none;color:var(--tx3);transition:all .15s;}
+.tipo-btn.on{border-color:var(--bordo);background:var(--rose);color:var(--bordo);}
+.tipo-btn.on.fert{border-color:var(--verde);background:var(--verde-l);color:var(--verde);}
+.modal-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.mpbtn{padding:6px 12px;background:var(--rose2);border:1px solid var(--br);border-radius:16px;font-size:11px;font-weight:600;color:var(--tx2);cursor:pointer;font-family:'Montserrat',sans-serif;}
+.mpbtn.on{background:var(--bordo);color:white;border-color:var(--bordo);}
+.btn-pri{width:100%;padding:14px;background:var(--bordo);color:white;border:none;border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(139,26,74,.3);}
+.btn-sec{width:100%;padding:12px;background:none;border:none;font-family:'Montserrat',sans-serif;font-size:13px;color:var(--tx3);cursor:pointer;margin-top:8px;}
+
+/* Historial */
+.hist-item{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--br);}
+.hist-item:last-child{border-bottom:none;}
+.hist-info{flex:1;}
+.hist-esp{font-size:12px;font-weight:600;color:var(--tx);}
+.hist-det{font-size:10px;color:var(--tx3);margin-top:1px;}
+.hist-val{font-size:13px;font-weight:700;color:var(--bordo);flex-shrink:0;margin-left:8px;}
+.hist-del{background:none;border:none;color:var(--tx3);font-size:16px;cursor:pointer;padding:0 0 0 10px;}
+.tag{font-size:9px;font-weight:600;padding:2px 6px;border-radius:8px;margin-left:6px;}
+.tag-fert{background:var(--verde-l);color:var(--verde);}
+.tag-riego{background:var(--rose);color:var(--bordo);}
+
+/* Plan section */
+.mes-tabs{display:flex;margin:0 14px 12px;background:var(--sf);border-radius:var(--r);padding:3px;box-shadow:var(--shadow);}
+.mes-tab{flex:1;padding:9px;text-align:center;border:none;background:none;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--tx3);border-radius:10px;cursor:pointer;}
+.mes-tab.on{background:var(--bordo);color:white;}
+.plan-card{background:var(--sf);border-radius:var(--r);margin:0 14px 10px;box-shadow:var(--shadow);overflow:hidden;}
+.plan-hdr{padding:13px 14px 10px;border-bottom:1px solid var(--br);}
+.plan-nom{font-size:14px;font-weight:700;color:var(--tx);}
+.plan-cfg{font-size:10px;color:var(--tx3);margin-top:2px;}
+.plan-nums{display:grid;grid-template-columns:repeat(4,1fr);padding:10px 14px;}
+.pn{text-align:center;}
+.pn-lbl{font-size:9px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
+.pn-val{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--tx);}
+.pn-unit{font-size:9px;color:var(--tx3);}
+.plan-nota{padding:0 14px 12px;font-size:10px;color:var(--tx2);font-style:italic;line-height:1.5;}
+.plan-nota.warn{color:var(--rojo);}
+
+.regla-card{background:var(--sf);border-radius:var(--r);margin:0 14px 8px;box-shadow:var(--shadow);overflow:hidden;}
+.regla-hdr{padding:11px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;}
+.regla-icon{font-size:16px;}
+.regla-cond{font-size:12px;font-weight:600;color:var(--tx);flex:1;}
+.regla-chev{font-size:11px;color:var(--tx3);transition:transform .2s;}
+.regla-chev.open{transform:rotate(90deg);}
+.regla-body{display:none;padding:0 14px 12px;font-size:11px;color:var(--tx2);line-height:1.6;border-top:1px solid var(--br);}
+.regla-body.open{display:block;}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--tx);color:white;padding:10px 20px;border-radius:24px;font-size:13px;z-index:400;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow2);}
+.toast.on{opacity:1;}
+.toast.ok{background:var(--verde);}
+.toast.err{background:var(--rojo);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="hdr">
+  <h1>Plan de Riego</h1>
+  <div class="hdr-sub" id="hdr-sub">Blossom Concept · María Pinto</div>
+</div>
+
+<div class="nav">
+  <button class="ntab on" id="nt-sem" onclick="showSec('sem')">
+    <span class="ntab-icon">📅</span>Semana
+  </button>
+  <button class="ntab" id="nt-plan" onclick="showSec('plan')">
+    <span class="ntab-icon">📋</span>Plan
+  </button>
+</div>
+
+<!-- SEMANA -->
+<div class="sec on" id="sec-sem">
+  <div class="sem-hdr">
+    <div class="sem-week" id="sem-week-lbl">—</div>
+    <div class="sem-nav">
+      <button onclick="navWeek(-1)">‹</button>
+      <button class="act" onclick="navWeek(0)">Hoy</button>
+      <button onclick="navWeek(1)">›</button>
+    </div>
+  </div>
+
+  <div class="total-prog">
+    <div class="card-tit">Progreso total de la semana</div>
+    <div class="prog-bar-bg"><div class="prog-bar" id="total-bar" style="width:0%"></div></div>
+    <div class="prog-stats">
+      <span id="total-stat-l">0 mm aplicados</span>
+      <span id="total-stat-r">de 0 mm planificados</span>
+    </div>
+  </div>
+
+  <div id="esp-cards"></div>
+
+  <div class="card" id="hist-card" style="display:none">
+    <div class="card-tit">Eventos esta semana</div>
+    <div id="hist-list"></div>
+  </div>
+</div>
+
+<!-- PLAN -->
+<div class="sec" id="sec-plan">
+  <div class="mes-tabs">
+    <button class="mes-tab on" id="tab-jun" onclick="setPlanMes('jun')">Junio 2026</button>
+    <button class="mes-tab" id="tab-jul" onclick="setPlanMes('jul')">Julio 2026</button>
+  </div>
+  <div id="plan-cards"></div>
+  <div class="card-tit" style="margin:8px 14px 8px;">⚠ Reglas operacionales de invierno</div>
+  <div id="reglas-list"></div>
+  <div style="height:20px"></div>
+</div>
+
+</div><!-- /app -->
+
+<!-- Modal registro -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+<div class="modal" id="modal">
+  <div class="modal-tit" id="modal-tit">Registrar riego</div>
+  <div class="modal-sub" id="modal-sub">—</div>
+
+  <div class="tipo-toggle">
+    <button class="tipo-btn on" id="btn-riego" onclick="setTipo('riego')">💧 Riego</button>
+    <button class="tipo-btn fert" id="btn-fert" onclick="setTipo('fertilizacion')">🌱 + Fertilizante</button>
+  </div>
+
+  <div class="modal-field">
+    <label>Minutos regados</label>
+    <div class="big-row">
+      <input class="big-input" type="number" id="modal-min" value="" min="0" inputmode="decimal" placeholder="0" oninput="onModalInput()">
+      <span class="big-unit">min</span>
+    </div>
+  </div>
+
+  <div class="modal-presets" id="modal-presets"></div>
+
+  <div class="calc-result">
+    <span class="calc-lbl">Agua aplicada</span>
+    <div style="display:flex;align-items:flex-end;gap:4px">
+      <span class="calc-val" id="modal-mm">—</span>
+      <span style="font-size:12px;color:var(--tx3);padding-bottom:5px">mm</span>
+    </div>
+  </div>
+
+  <button class="btn-pri" onclick="saveEvent()">Guardar</button>
+  <button class="btn-sec" onclick="closeModal()">Cancelar</button>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATOS DEL PLAN ─────────────────────────────────────────────────────────
+const ESPECIES = [
+  {nom:'Lisianthus',      grp:'A',   tasaH:15, config:'3 cintas · goteros c/20cm (15 mm/h)',
+   jun:{min:12,evts:3,mmEvt:3.0,mmSem:9.0},   jul:{min:10,evts:3,mmEvt:2.5,mmSem:7.5},
+   nota:'Sensible a encharcamiento. No superar 12 min/evento.'},
+  {nom:'Estatice',        grp:'A',   tasaH:20, config:'2 cintas · goteros c/10cm (20 mm/h)',
+   jun:{min:6, evts:3,mmEvt:2.0,mmSem:6.0},   jul:{min:5, evts:3,mmEvt:1.7,mmSem:5.0},
+   nota:'En floración avanzada puede bajar a 2 eventos/sem.'},
+  {nom:'Snapdragon (1a)', grp:'B',   tasaH:30, config:'3 cintas · goteros c/10cm (30 mm/h)',
+   jun:{min:8, evts:3,mmEvt:4.0,mmSem:12.0},  jul:{min:7, evts:3,mmEvt:3.5,mmSem:10.5},
+   nota:'⚠ Alta tasa. Nunca superar 10 min/evento en invierno.'},
+  {nom:'Ranúnculo',       grp:'B',   tasaH:15, config:'3 cintas · goteros c/20cm (15 mm/h)',
+   jun:{min:9, evts:3,mmEvt:2.2,mmSem:6.8},   jul:{min:8, evts:3,mmEvt:2.0,mmSem:6.0},
+   nota:'⚠ MUY sensible a exceso de humedad. Regar en mañana. NO regar tarde si hay helada.'},
+  {nom:'Escabiosa',       grp:'C',   tasaH:30, config:'3 cintas · goteros c/10cm (30 mm/h)',
+   jun:{min:5, evts:4,mmEvt:2.5,mmSem:10.0},  jul:{min:6, evts:3,mmEvt:3.0,mmSem:9.0},
+   nota:'Julio: ya establecida, baja frecuencia a 3 eventos/sem.'},
+  {nom:'Snapdragon (2a)', grp:'C',   tasaH:30, config:'3 cintas · goteros c/10cm (30 mm/h)',
+   jun:{min:4, evts:4,mmEvt:2.0,mmSem:8.0},   jul:{min:7, evts:3,mmEvt:3.5,mmSem:10.5},
+   nota:'Julio: unificar con primera tanda, mismas dosis.'},
+  {nom:'Aleli',           grp:'C',   tasaH:30, config:'3 cintas · goteros c/10cm (30 mm/h)',
+   jun:{min:3, evts:4,mmEvt:1.5,mmSem:6.0},   jul:{min:4, evts:3,mmEvt:2.0,mmSem:6.0},
+   nota:'Raíz delicada. En helada regar solo en mañana (>11h).'},
+  {nom:'Pensamientos',    grp:'C',   tasaH:30, config:'3 cintas · goteros c/10cm (30 mm/h)',
+   jun:{min:3, evts:5,mmEvt:1.5,mmSem:7.5},   jul:{min:4, evts:3,mmEvt:2.0,mmSem:6.0},
+   nota:'Raíz superficial: regar si se ve marchito aunque no corresponda.'},
+];
+
+const REGLAS = [
+  {icon:'🧊',cond:'Helada pronosticada esa noche (<3°C)',accion:'NO regar tarde ni de noche. Regar suavemente al amanecer siguiente. Suelo húmedo pierde calor más rápido.'},
+  {icon:'🧊',cond:'Post-helada fuerte (< −1.5°C)',accion:'Riego ligero al amanecer antes que el sol caliente. Protege del deshielo brusco que daña tejidos.'},
+  {icon:'🌧',cond:'Lluvia >10 mm en la semana',accion:'Suspender 1 evento ese día. Verificar humedad antes del siguiente. Suelo areno-francoso drena bien pero saturar es riesgo.'},
+  {icon:'🌧',cond:'Lluvia >25 mm en la semana',accion:'Reducir a 2 eventos/sem esa semana. Verificar drenaje especialmente Ranúnculo y Lisianthus.'},
+  {icon:'💧',cond:'HR interior >85% en la mañana',accion:'Ventilar 11h–15h. No regar ese día o postergar. Riesgo Botrytis en Lisianthus, Estatice y Ranúnculo.'},
+  {icon:'☁️',cond:'Días nublados consecutivos >4 días',accion:'Reducir 1 evento/semana en todos los grupos. Menor radiación = menor ETo.'},
+  {icon:'🌱',cond:'Suelo seco al tacto (muestra a 5 cm)',accion:'Adelantar 1 evento aunque no corresponda. El plan es guía, no regla absoluta.'},
+  {icon:'⚠️',cond:'Agua libre visible post-riego',accion:'Suspender riego ese grupo 48h. Revisar drenaje. Especialmente crítico con Snapdragon (30 mm/h).'},
+  {icon:'⚠️',cond:'Snapdragon / Aleli / Pensamientos (30 mm/h)',accion:'Nunca superar 10 min/evento. Con esta tasa, 10 min = 5 mm, excesivo para ETo invernal. Preferir 4–8 min según etapa.'},
+];
+
+// ── ESTADO ─────────────────────────────────────────────────────────────────
+let eventos = JSON.parse(localStorage.getItem('plan_riego_v1') || '[]');
+let weekOffset = 0; // 0 = semana actual, -1 = semana pasada, etc.
+let modalEsp = null;
+let modalTipo = 'riego';
+let planMes = 'jun';
+
+function save(){ localStorage.setItem('plan_riego_v1', JSON.stringify(eventos)); }
+
+// ── SEMANA ──────────────────────────────────────────────────────────────────
+function weekMon(offset=0){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  const dow = d.getDay();
+  const diff = dow===0 ? -6 : 1-dow;
+  d.setDate(d.getDate() + diff + offset*7);
+  return d;
+}
+function dateStr(d){ return d.toISOString().split('T')[0]; }
+function fmtDate(d){
+  return d.toLocaleDateString('es-CL',{day:'numeric',month:'short'});
+}
+
+function navWeek(n){
+  if(n===0) weekOffset=0;
+  else weekOffset+=n;
+  renderSem();
+}
+
+function eventsForWeek(offset){
+  const mon = weekMon(offset);
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  const m0 = dateStr(mon), m1 = dateStr(sun);
+  return eventos.filter(e=>e.fecha>=m0 && e.fecha<=m1);
+}
+
+function getMesKey(monDate){
+  const m = monDate.getMonth()+1;
+  if(m===6) return 'jun';
+  if(m===7) return 'jul';
+  return m<6 ? 'jun' : 'jul';
+}
+
+function renderSem(){
+  const mon = weekMon(weekOffset);
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  const mesKey = getMesKey(mon);
+
+  document.getElementById('sem-week-lbl').textContent =
+    fmtDate(mon) + ' – ' + fmtDate(sun);
+  document.getElementById('hdr-sub').textContent =
+    'Blossom Concept · ' + (mesKey==='jun'?'Junio':'Julio') + ' 2026';
+
+  const wEvts = eventsForWeek(weekOffset);
+
+  // Totales
+  const totalPlan = ESPECIES.reduce((s,e)=>s+e[mesKey].mmSem, 0);
+  const totalAplic = ESPECIES.reduce((s,e)=>{
+    const mm = wEvts.filter(ev=>ev.especie===e.nom).reduce((a,ev)=>a+ev.mm,0);
+    return s+mm;
+  }, 0);
+  const pct = totalPlan>0 ? Math.min(100,Math.round(totalAplic/totalPlan*100)) : 0;
+
+  document.getElementById('total-bar').style.width = pct+'%';
+  document.getElementById('total-stat-l').textContent = totalAplic.toFixed(1)+' mm aplicados';
+  document.getElementById('total-stat-r').textContent = 'de '+totalPlan.toFixed(0)+' mm planificados';
+
+  // Cards por especie
+  const container = document.getElementById('esp-cards');
+  container.innerHTML = ESPECIES.map(e=>{
+    const plan = e[mesKey];
+    const evtsEsp = wEvts.filter(ev=>ev.especie===e.nom);
+    const mmAplic = evtsEsp.reduce((s,ev)=>s+ev.mm, 0);
+    const pctE = plan.mmSem>0 ? Math.min(100,mmAplic/plan.mmSem*100) : 0;
+    const remaining = Math.max(0, plan.mmSem - mmAplic);
+    let fillColor = 'linear-gradient(90deg,var(--bordo2),var(--bordo3))';
+    if(pctE>=100) fillColor='var(--verde)';
+    else if(pctE<30 && mmAplic>0) fillColor='var(--am)';
+    const grpClass = e.grp==='A'?'grp-A':e.grp==='B'?'grp-B':'grp-C';
+    return `<div class="esp-card">
+      <div class="esp-hdr">
+        <div class="esp-info">
+          <div class="esp-nom">${e.nom}</div>
+          <div class="esp-cfg">${e.tasaH} mm/h · ${plan.evts} eventos/sem · ${plan.mmEvt} mm/evt</div>
+        </div>
+        <span class="esp-grp ${grpClass}">Grp ${e.grp}</span>
+      </div>
+      <div class="esp-prog-area">
+        <div class="esp-prog-bg">
+          <div class="esp-prog-fill" style="width:${pctE}%;background:${fillColor}"></div>
+        </div>
+        <div class="esp-stats">
+          <span class="esp-mm">${mmAplic.toFixed(1)} / ${plan.mmSem} mm</span>
+          <span class="esp-evts">${evtsEsp.length} evento${evtsEsp.length!==1?'s':''} · faltan ${remaining.toFixed(1)} mm</span>
+        </div>
+      </div>
+      <div class="esp-actions">
+        <button class="esp-btn" onclick="openModal('${e.nom}','riego')">💧 Registrar riego</button>
+        <button class="esp-btn fert" onclick="openModal('${e.nom}','fertilizacion')">🌱 + Fertilizante</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Historial
+  const sorted = [...wEvts].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const histCard = document.getElementById('hist-card');
+  if(sorted.length){
+    histCard.style.display='';
+    document.getElementById('hist-list').innerHTML = sorted.map(ev=>`
+      <div class="hist-item">
+        <div class="hist-info">
+          <span class="hist-esp">${ev.especie}</span>
+          <span class="tag ${ev.tipo==='fertilizacion'?'tag-fert':'tag-riego'}">${ev.tipo==='fertilizacion'?'fertilizante':'riego'}</span>
+          <div class="hist-det">${ev.fecha} · ${ev.min} min · ${ev.mm.toFixed(2)} mm</div>
+        </div>
+        <button class="hist-del" onclick="deleteEvt('${ev.id}')">×</button>
+      </div>`).join('');
+  } else {
+    histCard.style.display='none';
+  }
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────
+function openModal(espNom, tipo){
+  modalEsp = ESPECIES.find(e=>e.nom===espNom);
+  if(!modalEsp) return;
+  const mon = weekMon(weekOffset);
+  const mesKey = getMesKey(mon);
+  const plan = modalEsp[mesKey];
+
+  setTipo(tipo);
+  document.getElementById('modal-tit').textContent = modalEsp.nom;
+  document.getElementById('modal-sub').textContent =
+    modalEsp.config + ' · Plan: '+plan.min+' min/evt = '+plan.mmEvt+' mm';
+  document.getElementById('modal-min').value = '';
+  document.getElementById('modal-mm').textContent = '—';
+
+  // Presets con los minutos del plan
+  const presets = [...new Set([plan.min, Math.max(1,plan.min-2), plan.min+2, 5, 10].filter(x=>x>0))].sort((a,b)=>a-b);
+  document.getElementById('modal-presets').innerHTML = presets.map(n=>
+    `<button class="mpbtn" onclick="setModalMin(${n})">${n} min</button>`
+  ).join('');
+
+  document.getElementById('overlay').classList.add('on');
+  document.getElementById('modal-min').focus();
+}
+
+function closeModal(e){
+  if(e && e.target!==document.getElementById('overlay')) return;
+  document.getElementById('overlay').classList.remove('on');
+  modalEsp = null;
+}
+
+function setTipo(t){
+  modalTipo = t;
+  document.getElementById('btn-riego').classList.toggle('on', t==='riego');
+  document.getElementById('btn-fert').classList.toggle('on', t==='fertilizacion');
+  onModalInput();
+}
+
+function setModalMin(n){
+  document.getElementById('modal-min').value = n;
+  document.querySelectorAll('.mpbtn').forEach(b=>b.classList.toggle('on', +b.textContent.replace(' min','')=== n));
+  onModalInput();
+}
+
+function onModalInput(){
+  const min = +document.getElementById('modal-min').value;
+  if(!modalEsp || !min || min<=0){
+    document.getElementById('modal-mm').textContent = '—';
+    return;
+  }
+  const mm = modalEsp.tasaH * min / 60;
+  document.getElementById('modal-mm').textContent = mm>=10 ? mm.toFixed(1) : mm.toFixed(2);
+}
+
+function saveEvent(){
+  const min = +document.getElementById('modal-min').value;
+  if(!modalEsp || !min || min<=0){ toast('Ingresa los minutos','err'); return; }
+  const mm = modalEsp.tasaH * min / 60;
+  const mon = weekMon(weekOffset);
+  const today = dateStr(new Date());
+  const wStart = dateStr(mon);
+  const wEnd = dateStr(new Date(mon.getTime()+6*864e5));
+  const fecha = today>=wStart && today<=wEnd ? today : wStart;
+
+  const ev = {
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    fecha, especie: modalEsp.nom,
+    min, mm: +mm.toFixed(3),
+    tipo: modalTipo
+  };
+  eventos.push(ev);
+  save();
+  document.getElementById('overlay').classList.remove('on');
+  modalEsp = null;
+  renderSem();
+  toast('✓ '+ev.especie+' · '+min+'min · '+mm.toFixed(2)+'mm guardado','ok');
+}
+
+function deleteEvt(id){
+  eventos = eventos.filter(e=>e.id!==id);
+  save();
+  renderSem();
+}
+
+// ── PLAN ──────────────────────────────────────────────────────────────────
+function setPlanMes(m){
+  planMes = m;
+  document.getElementById('tab-jun').classList.toggle('on', m==='jun');
+  document.getElementById('tab-jul').classList.toggle('on', m==='jul');
+  renderPlan();
+}
+
+function renderPlan(){
+  const m = planMes;
+  document.getElementById('plan-cards').innerHTML = ESPECIES.map(e=>{
+    const p = e[m];
+    const grpClass = e.grp==='A'?'grp-A':e.grp==='B'?'grp-B':'grp-C';
+    const warn = e.nota.startsWith('⚠');
+    return `<div class="plan-card">
+      <div class="plan-hdr">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="plan-nom">${e.nom}</div>
+          <span class="esp-grp ${grpClass}">Grp ${e.grp}</span>
+        </div>
+        <div class="plan-cfg">${e.config}</div>
+      </div>
+      <div class="plan-nums">
+        <div class="pn"><div class="pn-lbl">Min/evt</div><div class="pn-val">${p.min}</div><div class="pn-unit">min</div></div>
+        <div class="pn"><div class="pn-lbl">Evts/sem</div><div class="pn-val">${p.evts}</div><div class="pn-unit">veces</div></div>
+        <div class="pn"><div class="pn-lbl">mm/evt</div><div class="pn-val">${p.mmEvt}</div><div class="pn-unit">mm</div></div>
+        <div class="pn"><div class="pn-lbl">mm/sem</div><div class="pn-val" style="color:var(--bordo)">${p.mmSem}</div><div class="pn-unit">mm</div></div>
+      </div>
+      <div class="plan-nota ${warn?'warn':''}">${e.nota}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('reglas-list').innerHTML = REGLAS.map((r,i)=>`
+    <div class="regla-card">
+      <div class="regla-hdr" onclick="toggleRegla(${i})">
+        <span class="regla-icon">${r.icon}</span>
+        <span class="regla-cond">${r.cond}</span>
+        <span class="regla-chev" id="rchev-${i}">▸</span>
+      </div>
+      <div class="regla-body" id="rbody-${i}">${r.accion}</div>
+    </div>`).join('');
+}
+
+function toggleRegla(i){
+  const body = document.getElementById('rbody-'+i);
+  const chev = document.getElementById('rchev-'+i);
+  const open = body.classList.toggle('open');
+  chev.classList.toggle('open', open);
+}
+
+// ── NAV ──────────────────────────────────────────────────────────────────
+function showSec(id){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('sec-'+id).classList.add('on');
+  document.getElementById('nt-'+id).classList.add('on');
+  if(id==='plan') renderPlan();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function toast(m,t=''){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast on '+(t||'');
+  setTimeout(()=>el.className='toast',2800);
+}
+
+// Init
+renderSem();
+renderPlan();
+</script>
+</body>
+</html>
