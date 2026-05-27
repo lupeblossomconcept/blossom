@@ -1290,7 +1290,18 @@ function exportarCSV(tipo){
     nombre='gastos'+(mes?'_'+mes:'')+'.csv';
   }
   if(!filas.length){toast('Sin datos para ese mes','err');return;}
-  const csv=[cabecera,...filas.map(r=>r.map(c=>'"'+(c+'').replace(/"/g,'""')+'"').join(','))].join('\n');
+  const tsv=[...filas.map(r=>r.map(c=>(c+'').replace(/\t/g,' ')).join('\t'))].join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(tsv).then(()=>{
+      window.open('https://sheets.new','_blank');
+      toast('✓ Datos copiados — pegá con Ctrl+V','ok');
+    }).catch(()=>descargarCSV(filas,nombre));
+  } else {
+    descargarCSV(filas,nombre);
+  }
+}
+function descargarCSV(filas,nombre){
+  const csv=filas.map(r=>r.map(c=>'"'+(c+'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
   a.download=nombre;
