@@ -1246,14 +1246,10 @@ async function loadAllData(){
     const fbGastos=await fbGet('gastos');
     if(fbGastos){
       const gArr=Object.entries(fbGastos).map(([k,g])=>g&&g.monto!=null?{...g,_fbKey:k}:null).filter(Boolean);
-      if(gArr.length>0){
-        gastos=gArr.sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
-      }
-      // Si Firebase tiene datos, NO sobrescribir aunque parezca vacío
+      gastos=[...HIST_GASTOS,...gArr].sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
       renderGList();renderDash();
     } else {
       gastos=[...HIST_GASTOS];
-      uploadGastosHistoricos();
       renderGList();renderDash();
     }
 
@@ -1316,10 +1312,10 @@ function exportarCSV(tipo){
     nombre='gastos'+(mes?'_'+mes:'')+'.csv';
   }
   if(!filas.length){toast('Sin datos para ese mes','err');return;}
-  const csv=filas.map(r=>r.join('\t')).join('\n');
+  const csv=filas.map(r=>r.map(v=>{const s=String(v);return s.includes(',')||s.includes('"')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\n');
   const a=document.createElement('a');
-  a.href='data:text/tab-separated-values;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=nombre.replace('.csv','.tsv');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=nombre;
   a.click();
   toast('✓ '+nombre,'ok');
 }
@@ -1977,8 +1973,9 @@ setInterval(async()=>{
     const fbGastos=await fbGet('gastos');
     if(fbGastos){
       const gArr=Object.entries(fbGastos).map(([k,g])=>g&&g.monto>0?{...g,_fbKey:k}:null).filter(Boolean);
-      if(gArr.length>gastos.length){
-        gastos=gArr.sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
+      const merged=[...HIST_GASTOS,...gArr].sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
+      if(merged.length>gastos.length){
+        gastos=merged;
         renderGList();renderDash();
       }
     }
