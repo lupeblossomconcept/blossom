@@ -234,7 +234,7 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
     <button class="ti" onclick="subV('lista')" id="vi-lista">Historial</button>
   </div>
   <div id="sub-vnueva" class="sub on">
-    <div class="field"><label>Fecha</label><input type="date" id="f-fec"></div>
+    <div class="field"><label>Fecha</label><input type="date" id="f-fec" onchange="renderMultiEspCamaSel('f-cama-sel',this.value)"></div>
     <div class="field"><label>Cliente</label><input type="text" id="f-cli" placeholder="Nombre del cliente" autocomplete="off"></div>
     <div class="r2">
       <div class="field"><label>Tipo cliente</label>
@@ -1261,19 +1261,21 @@ function subGLista(t){
 function subC(s){['activas','nueva','hist'].forEach(x=>{document.getElementById('ci-'+x).classList.remove('on');document.getElementById('sub-c'+x).classList.remove('on');});document.getElementById('ci-'+s).classList.add('on');document.getElementById('sub-c'+s).classList.add('on');if(s==='activas')renderCamasActivas();if(s==='hist')renderCamasHist();}
 
 // ── SELECTOR MULTI-ESPECIE + CAMAS ───────────────────────────────
-function getCamasDeEspecie(esp){
-  const act=camasVida.filter(c=>!c.fechaBaja&&c.especie===esp);
+function getCamasDeEspecie(esp,fecha){
+  const ref=fecha||new Date().toISOString().split('T')[0];
+  const act=camasVida.filter(c=>c.especie===esp&&c.fechaInicio<=ref&&(!c.fechaBaja||c.fechaBaja>=ref));
   return act.length?act.map(c=>c.num):[1];
 }
 
 function _blkId(cid,esp){return `${cid}-blk-${esp.replace(/\s+/g,'_')}`;}
 
-function renderMultiEspCamaSel(containerId){
-  const esps=[...new Set(camasVida.filter(c=>!c.fechaBaja).map(c=>c.especie))];
+function renderMultiEspCamaSel(containerId,fecha){
+  const ref=fecha||new Date().toISOString().split('T')[0];
+  const esps=[...new Set(camasVida.filter(c=>c.fechaInicio<=ref&&(!c.fechaBaja||c.fechaBaja>=ref)).map(c=>c.especie))];
   const chipsHtml=esps.map(e=>`<div class="cama-chip esp-chip" onclick="toggleEspBlk(this,'${containerId}','${e}')">${e}</div>`).join('');
   const blksHtml=esps.map(e=>{
     const bid=_blkId(containerId,e);
-    const nums=getCamasDeEspecie(e);
+    const nums=getCamasDeEspecie(e,ref);
     return `<div id="${bid}" style="display:none;margin-top:6px"><div class="cama-selector"><div class="cama-sel-header"><span class="cama-sel-esp">Camas de ${e}</span><button class="btn-todas" onclick="toggleTodasBlk('${bid}',${nums.length})">Todas</button></div><div class="camas-grid" id="${bid}-grid">${nums.map(n=>`<div class="cama-chip" onclick="toggleCamaChipBlk(this,'${bid}',${nums.length})">${e} C.${n}</div>`).join('')}</div></div></div>`;
   }).join('');
   document.getElementById(containerId).innerHTML=`<div style="margin-bottom:4px"><label style="display:block;font-size:10px;font-weight:600;color:var(--tx2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Especie</label><div style="display:flex;flex-wrap:wrap;gap:6px">${chipsHtml}</div></div>${blksHtml}`;
@@ -1307,7 +1309,8 @@ function getSelectedCamas(cid){
 
 // ── SELECTS ─────────────────────────────────────────────────────
 function renderVSels(){
-  renderMultiEspCamaSel('f-cama-sel');
+  const fecha=document.getElementById('f-fec').value||new Date().toISOString().split('T')[0];
+  renderMultiEspCamaSel('f-cama-sel',fecha);
   document.getElementById('fv-esp').innerHTML='<option value="">Todas las especies</option>'+especies.map(e=>`<option>${e}</option>`).join('');
 }
 
