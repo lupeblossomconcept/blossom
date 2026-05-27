@@ -142,6 +142,38 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .regla-body{display:none;padding:0 14px 12px;font-size:11px;color:var(--tx2);line-height:1.6;border-top:1px solid var(--br);}
 .regla-body.open{display:block;}
 
+/* Estanque section */
+.est-intro{background:var(--verde-l);border-radius:var(--r);margin:0 14px 12px;padding:12px 14px;border:1px solid rgba(26,92,46,.15);}
+.est-intro-txt{font-size:12px;color:var(--verde);line-height:1.5;}
+
+.litros-row{display:flex;align-items:flex-end;gap:10px;border-bottom:2px solid var(--bordo);padding-bottom:6px;margin-bottom:14px;}
+.litros-input{font-family:'Playfair Display',serif;font-size:52px;font-weight:700;color:var(--tx);border:none;background:none;width:0;flex:1;outline:none;-webkit-appearance:none;line-height:1;}
+.litros-unit{font-size:16px;font-weight:600;color:var(--tx3);padding-bottom:10px;}
+
+.area-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.area-lbl{font-size:11px;color:var(--tx3);flex:1;}
+.area-input{width:70px;padding:7px 10px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;color:var(--tx);background:var(--sf);-webkit-appearance:none;outline:none;text-align:center;}
+.area-input:focus{border-color:var(--bordo);}
+.area-unit{font-size:11px;color:var(--tx3);}
+
+.esp-chips{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.esp-chip{display:flex;align-items:center;padding:11px 14px;border-radius:var(--r);border:2px solid var(--br);background:var(--sf);cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.esp-chip.on{border-color:var(--verde);background:var(--verde-l);}
+.esp-chip-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--br2);margin-right:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s;}
+.esp-chip.on .esp-chip-check{border-color:var(--verde);background:var(--verde);color:white;}
+.esp-chip-nom{font-size:13px;font-weight:600;color:var(--tx);flex:1;}
+.esp-chip.on .esp-chip-nom{color:var(--verde);}
+.esp-chip-beds{font-size:11px;color:var(--tx3);}
+.esp-chip.on .esp-chip-beds{color:var(--verde);}
+
+.est-result{background:var(--sf);border-radius:var(--r);margin:0 0 16px;box-shadow:var(--shadow);overflow:hidden;}
+.est-result-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--br);}
+.est-result-row:last-child{border-bottom:none;}
+.est-r-lbl{font-size:11px;color:var(--tx3);}
+.est-r-val{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--bordo);}
+.est-r-unit{font-size:11px;color:var(--tx3);margin-left:4px;}
+.est-r-mm{color:var(--verde);}
+
 /* Toast */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--tx);color:white;padding:10px 20px;border-radius:24px;font-size:13px;z-index:400;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow2);}
 .toast.on{opacity:1;}
@@ -160,6 +192,9 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 <div class="nav">
   <button class="ntab on" id="nt-sem" onclick="showSec('sem')">
     <span class="ntab-icon">📅</span>Semana
+  </button>
+  <button class="ntab" id="nt-est" onclick="showSec('est')">
+    <span class="ntab-icon">🧪</span>Estanque
   </button>
   <button class="ntab" id="nt-plan" onclick="showSec('plan')">
     <span class="ntab-icon">📋</span>Plan
@@ -192,6 +227,39 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     <div class="card-tit">Eventos esta semana</div>
     <div id="hist-list"></div>
   </div>
+</div>
+
+<!-- ESTANQUE -->
+<div class="sec" id="sec-est">
+  <div style="padding:14px 14px 0">
+    <div class="est-intro">
+      <div class="est-intro-txt">Ingresá cuántos litros tiene el estanque y seleccioná las especies que se fertilizaron. La app divide los litros entre el total de camas y descuenta ese riego del plan semanal.</div>
+    </div>
+
+    <div class="card-tit" style="margin:0 0 8px">Litros en el estanque</div>
+    <div class="litros-row">
+      <input class="litros-input" type="number" id="est-litros" value="500" min="1" inputmode="numeric" oninput="calcEst()">
+      <span class="litros-unit">L</span>
+    </div>
+
+    <div class="area-row">
+      <span class="area-lbl">Área por cama (para convertir a mm)</span>
+      <input class="area-input" type="number" id="est-area" value="36" min="1" inputmode="numeric" oninput="calcEst()">
+      <span class="area-unit">m²</span>
+    </div>
+
+    <div class="card-tit" style="margin:0 0 8px">¿Qué especies se fertilizaron?</div>
+    <div class="esp-chips" id="est-chips"></div>
+
+    <div class="card-tit" style="margin:0 0 8px">Resultado por cama</div>
+    <div class="est-result" id="est-result">
+      <div class="est-result-row" style="color:var(--tx3);font-size:12px;padding:16px 14px;">Seleccioná al menos una especie</div>
+    </div>
+
+    <button class="btn-pri" style="margin-bottom:10px" onclick="saveEstanque()">🌱 Registrar fertilización</button>
+    <button class="btn-sec" onclick="clearEstChips()">Limpiar selección</button>
+  </div>
+  <div style="height:30px"></div>
 </div>
 
 <!-- PLAN -->
@@ -541,6 +609,118 @@ function toggleRegla(i){
   chev.classList.toggle('open', open);
 }
 
+// ── ESTANQUE ───────────────────────────────────────────────────────────────
+// Número de camas hardcodeado por especie (lo que está activo actualmente)
+const N_CAMAS = {
+  'Lisianthus':10, 'Estatice':7, 'Snapdragon (1a)':4, 'Ranúnculo':6,
+  'Escabiosa':12, 'Snapdragon (2a)':4, 'Aleli':7, 'Pensamientos':8
+};
+
+let estSeleccion = new Set();
+
+function renderEstChips(){
+  const cont = document.getElementById('est-chips');
+  if(!cont) return;
+  cont.innerHTML = ESPECIES.map(e=>{
+    const n = N_CAMAS[e.nom] || '?';
+    const on = estSeleccion.has(e.nom);
+    return `<div class="esp-chip ${on?'on':''}" onclick="toggleEstChip('${e.nom}')">
+      <div class="esp-chip-check">${on?'✓':''}</div>
+      <span class="esp-chip-nom">${e.nom}</span>
+      <span class="esp-chip-beds">${n} camas</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleEstChip(nom){
+  if(estSeleccion.has(nom)) estSeleccion.delete(nom);
+  else estSeleccion.add(nom);
+  renderEstChips();
+  calcEst();
+}
+
+function clearEstChips(){
+  estSeleccion.clear();
+  renderEstChips();
+  calcEst();
+}
+
+function calcEst(){
+  const litros = +document.getElementById('est-litros').value || 0;
+  const area   = +document.getElementById('est-area').value  || 36;
+  const espSel = [...estSeleccion];
+  const totalCamas = espSel.reduce((s,n)=>s+(N_CAMAS[n]||0), 0);
+  const res = document.getElementById('est-result');
+
+  if(!espSel.length || !litros){
+    res.innerHTML = `<div class="est-result-row" style="color:var(--tx3);font-size:12px;padding:16px 14px;">${!litros?'Ingresá los litros del estanque':'Seleccioná al menos una especie'}</div>`;
+    return;
+  }
+
+  const lPorCama = litros / totalCamas;
+  const mmPorCama = lPorCama / area;
+
+  let rows = `
+    <div class="est-result-row">
+      <span class="est-r-lbl">Total camas fertilizadas</span>
+      <div><span class="est-r-val" style="color:var(--tx)">${totalCamas}</span> <span class="est-r-unit">camas</span></div>
+    </div>
+    <div class="est-result-row">
+      <span class="est-r-lbl">Litros por cama</span>
+      <div><span class="est-r-val">${lPorCama.toFixed(1)}</span> <span class="est-r-unit">L/cama</span></div>
+    </div>
+    <div class="est-result-row" style="background:var(--verde-l)">
+      <span class="est-r-lbl" style="color:var(--verde);font-weight:600">mm aplicados por cama</span>
+      <div><span class="est-r-val est-r-mm">${mmPorCama.toFixed(2)}</span> <span class="est-r-unit">mm</span></div>
+    </div>`;
+
+  // Desglose por especie
+  rows += espSel.map(nom=>{
+    const n = N_CAMAS[nom]||0;
+    const lEsp = lPorCama * n;
+    return `<div class="est-result-row">
+      <span class="est-r-lbl">${nom} (${n} camas)</span>
+      <span class="est-r-unit" style="font-size:12px;color:var(--tx2)">${lEsp.toFixed(0)} L · ${(mmPorCama).toFixed(2)} mm</span>
+    </div>`;
+  }).join('');
+
+  res.innerHTML = rows;
+}
+
+function saveEstanque(){
+  const litros = +document.getElementById('est-litros').value || 0;
+  const area   = +document.getElementById('est-area').value  || 36;
+  const espSel = [...estSeleccion];
+  if(!espSel.length){ toast('Seleccioná al menos una especie','err'); return; }
+  if(!litros){ toast('Ingresá los litros del estanque','err'); return; }
+
+  const totalCamas = espSel.reduce((s,n)=>s+(N_CAMAS[n]||0), 0);
+  const lPorCama   = litros / totalCamas;
+  const mmPorCama  = lPorCama / area;
+  const fecha      = dateStr(new Date());
+  const mon        = weekMon(weekOffset);
+  const wStart     = dateStr(mon);
+  const wEnd       = dateStr(new Date(mon.getTime()+6*864e5));
+  const fechaEv    = fecha>=wStart && fecha<=wEnd ? fecha : wStart;
+
+  espSel.forEach(nom=>{
+    eventos.push({
+      id: Date.now().toString(36)+Math.random().toString(36).slice(2,5)+nom.slice(0,2),
+      fecha: fechaEv, especie: nom,
+      min: 0, mm: +mmPorCama.toFixed(3),
+      tipo: 'fertilizacion',
+      nota: `Estanque ${litros}L ÷ ${totalCamas} camas = ${lPorCama.toFixed(1)} L/cama`
+    });
+  });
+  save();
+  estSeleccion.clear();
+  renderEstChips();
+  calcEst();
+  renderSem();
+  toast(`✓ ${espSel.length} especie${espSel.length>1?'s':''} · ${mmPorCama.toFixed(2)} mm c/u registrado`,'ok');
+  showSec('sem');
+}
+
 // ── NAV ──────────────────────────────────────────────────────────────────
 function showSec(id){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
@@ -548,6 +728,7 @@ function showSec(id){
   document.getElementById('sec-'+id).classList.add('on');
   document.getElementById('nt-'+id).classList.add('on');
   if(id==='plan') renderPlan();
+  if(id==='est'){ renderEstChips(); calcEst(); }
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
