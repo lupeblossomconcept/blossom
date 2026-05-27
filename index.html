@@ -1420,7 +1420,9 @@ function calcTrab(){
 }
 
 // ── REGISTROS ───────────────────────────────────────────────────
+let _enviando=false;
 async function regVenta(){
+  if(_enviando)return;
   const f=document.getElementById('f-fec').value,c=document.getElementById('f-cli').value.trim();
   const b2b=document.getElementById('f-b2b').value;
   const camas=getSelectedCamas('f-cama-sel');
@@ -1428,17 +1430,20 @@ async function regVenta(){
   const nota=document.getElementById('f-nota').value.trim();
   if(!f||!c||!p||!pr){toast('Completa todos los campos','err');return;}
   if(!camas.length){toast('Selecciona al menos una cama','err');return;}
+  _enviando=true;
   const total=p*pr;
-  for(const cam of camas){
-    const esp=cam.includes(' C.')?cam.split(' C.')[0]:cam;
-    const v={fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota};
-    ventas.unshift(v);
-    const key=await fbPush('ventas',v);
-    if(key) v._fbKey=key;
-  }
-  renderVList();renderDash();
-  ['f-cli','f-paq','f-pre','f-nota'].forEach(id=>document.getElementById(id).value='');
-  toast(`✓ ${camas.length>1?camas.length+' ventas registradas':'Venta registrada'}`,'ok');
+  try{
+    for(const cam of camas){
+      const esp=cam.includes(' C.')?cam.split(' C.')[0]:cam;
+      const v={fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota};
+      ventas.unshift(v);
+      const key=await fbPush('ventas',v);
+      if(key) v._fbKey=key;
+    }
+    renderVList();renderDash();
+    ['f-cli','f-paq','f-pre','f-nota'].forEach(id=>document.getElementById(id).value='');
+    toast(`✓ ${camas.length>1?camas.length+' ventas registradas':'Venta registrada'}`,'ok');
+  }finally{_enviando=false;}
 }
 
 async function regAplic(){
@@ -1768,18 +1773,32 @@ async function eliminarVenta(idx){
 function renderVList(){
   const espEl=document.getElementById('fv-esp');
   const esp=espEl?espEl.value:'';
-  const vf=(esp?ventas.filter(v=>v.especie===esp):ventas).slice(0,40);
+  const vf=esp?ventas.filter(v=>v.especie===esp):ventas;
   const el=document.getElementById('v-lst');if(!el)return;
-  el.innerHTML=vf.length?vf.map(v=>{
-    const idx=ventas.indexOf(v);
-    return `<div class="vi" style="display:flex;align-items:flex-start;gap:6px">
-      <div style="flex:1;min-width:0">
-        <div class="vt"><span class="vn">${v.cliente}</span><span class="va">${fmt(v.total)}</span></div>
-        <div class="vb"><span class="pill pv">${v.especie}</span><span class="pill pv">${v.paquetes} paq.</span>${v.b2b?`<span class="pill ${v.b2b==='B2B'?'pb':'px'}">${v.b2b}</span>`:''}<span class="pd">${v.fecha}</span></div>
+  if(!vf.length){el.innerHTML='<div class="empty">Sin ventas</div>';return;}
+  const porDia={};
+  vf.forEach(v=>{const d=v.fecha||'';if(!porDia[d])porDia[d]=[];porDia[d].push(v);});
+  el.innerHTML=Object.keys(porDia).sort((a,b)=>b.localeCompare(a)).map(dia=>{
+    const items=porDia[dia];
+    const total=items.reduce((s,v)=>s+v.total,0);
+    const detalle=items.map(v=>{
+      const idx=ventas.indexOf(v);
+      return`<div class="vi" style="display:flex;align-items:flex-start;gap:6px">
+        <div style="flex:1;min-width:0">
+          <div class="vt"><span class="vn">${v.cliente}</span><span class="va">${fmt(v.total)}</span></div>
+          <div class="vb"><span class="pill pv">${v.especie}</span><span class="pill pv">${v.paquetes} paq.</span>${v.b2b?`<span class="pill ${v.b2b==='B2B'?'pb':'px'}">${v.b2b}</span>`:''}</div>
+        </div>
+        <button class="btn-sm del" onclick="eliminarVenta(${idx})" style="padding:5px 10px;font-size:15px;margin-top:2px;flex-shrink:0">✕</button>
+      </div>`;
+    }).join('');
+    return`<div class="acordeon-item">
+      <div class="acordeon-hdr" onclick="toggleAcordeon(this)">
+        <div><span class="acordeon-titulo">${dia}</span><span class="acordeon-sub">${items.length} venta${items.length>1?'s':''} · ${fmt(total)}</span></div>
+        <span class="acordeon-chevron">▸</span>
       </div>
-      <button class="btn-sm del" onclick="eliminarVenta(${idx})" style="padding:5px 10px;font-size:15px;margin-top:2px;flex-shrink:0">✕</button>
+      <div class="acordeon-body" style="display:none;padding:0 10px 10px">${detalle}</div>
     </div>`;
-  }).join(''):'<div class="empty">Sin ventas</div>';
+  }).join('');
 }
 
 async function eliminarGasto(idx){
