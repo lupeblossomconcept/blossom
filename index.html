@@ -267,7 +267,7 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
   <!-- APLICACIONES -->
   <div id="sub-aplic" class="sub on">
     <div class="r2">
-      <div class="field"><label>Fecha</label><input type="date" id="ga-fec"></div>
+      <div class="field"><label>Fecha</label><input type="date" id="ga-fec" onchange="renderMultiEspCamaSel('ga-cama-sel',this.value)"></div>
       <div class="field"><label>Categoría</label>
         <select id="ga-cat" onchange="renderProdSel()">
           <option value="Fertilizacion">Fertilización</option>
@@ -294,7 +294,7 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
 
   <!-- INSUMOS -->
   <div id="sub-insumo" class="sub">
-    <div class="field"><label>Fecha</label><input type="date" id="gi-fec"></div>
+    <div class="field"><label>Fecha</label><input type="date" id="gi-fec" onchange="renderMultiEspCamaSel('gi-cama-sel',this.value)"></div>
     <div id="gi-cama-sel"></div>
     <div class="field"><label>Tipo de insumo</label>
       <select id="gi-tipo">
@@ -321,7 +321,7 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
 
   <!-- RRHH -->
   <div id="sub-trab" class="sub">
-    <div class="field"><label>Fecha</label><input type="date" id="gt-fec"></div>
+    <div class="field"><label>Fecha</label><input type="date" id="gt-fec" onchange="renderMultiEspCamaSel('gt-cama-sel',this.value)"></div>
     <div class="field"><label>Nombre trabajador</label><input type="text" id="gt-nom" placeholder="Nombre" autocomplete="off"></div>
     <div id="gt-cama-sel"></div>
     <div class="field"><label>Tarea</label><input type="text" id="gt-tarea" placeholder="Ej: Deshierbe, cosecha, trasplante..." autocomplete="off"></div>
@@ -1316,9 +1316,12 @@ function renderVSels(){
 
 function renderGSels(){
   renderProdSel();
-  renderMultiEspCamaSel('ga-cama-sel');
-  renderMultiEspCamaSel('gi-cama-sel');
-  renderMultiEspCamaSel('gt-cama-sel');
+  const fa=document.getElementById('ga-fec').value||new Date().toISOString().split('T')[0];
+  const fi=document.getElementById('gi-fec').value||new Date().toISOString().split('T')[0];
+  const ft=document.getElementById('gt-fec').value||new Date().toISOString().split('T')[0];
+  renderMultiEspCamaSel('ga-cama-sel',fa);
+  renderMultiEspCamaSel('gi-cama-sel',fi);
+  renderMultiEspCamaSel('gt-cama-sel',ft);
 }
 function renderCamasSels(){
   document.getElementById('nc-esp').innerHTML=especies.map(e=>`<option>${e}</option>`).join('');
