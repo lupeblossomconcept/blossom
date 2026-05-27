@@ -1263,9 +1263,13 @@ function exportarCSV(tipo){
   const mes=document.getElementById('exp-'+tipo[0]+'-mes').value;
   let filas,nombre,cabecera;
   if(tipo==='ventas'){
-    cabecera='Fecha,Cliente,Tipo,Especie,Cama,Paquetes,Precio unitario,Total';
+    cabecera='Tipo,,Subcategoria,Descripcion,Monto';
     filas=ventas.filter(v=>!mes||v.fecha.startsWith(mes)).map(v=>[
-      v.fecha,v.cliente,v.b2b||'',v.especie,v.cama,v.paquetes,v.precio,v.total
+      'Ingresos',
+      '',
+      v.b2b==='B2B'?'Flores de corte':'Ventas puntuales',
+      v.cliente+': '+v.paquetes+' '+v.especie,
+      '$ '+Math.round(v.total).toLocaleString('es-CL')
     ]);
     nombre='ventas'+(mes?'_'+mes:'')+'.csv';
   } else {
