@@ -251,6 +251,10 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
   </div>
   <div id="sub-vlista" class="sub">
     <div class="frow"><select id="fv-esp" onchange="renderVList()"><option value="">Todas las especies</option></select></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <input type="month" id="exp-v-mes" style="flex:1;padding:8px;border:1px solid var(--br);border-radius:var(--r);font-size:13px;background:var(--sf);color:var(--tx)">
+      <button class="btn" style="flex:none;padding:8px 14px;font-size:13px" onclick="exportarCSV('ventas')">↓ Exportar</button>
+    </div>
     <div id="v-lst" class="vlist"></div>
   </div>
 </div>
@@ -341,6 +345,10 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
     <button class="ti" onclick="subGLista('aplic')" id="gl-aplic">Aplicaciones</button>
     <button class="ti" onclick="subGLista('insumo')" id="gl-insumo">Insumos</button>
     <button class="ti" onclick="subGLista('fijo')" id="gl-fijo">Fijos</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <input type="month" id="exp-g-mes" style="flex:1;padding:8px;border:1px solid var(--br);border-radius:var(--r);font-size:13px;background:var(--sf);color:var(--tx)">
+    <button class="btn" style="flex:none;padding:8px 14px;font-size:13px" onclick="exportarCSV('gastos')">↓ Exportar</button>
   </div>
   <div id="g-lst" class="vlist"></div>
 </div>
@@ -1251,6 +1259,31 @@ async function pushRow(sheet,row){}  // legacy, no usar
 function fmt(n){return'$'+Math.round(n).toLocaleString('es-CL');}
 function toast(m,t=''){const el=document.getElementById('toast');el.textContent=m;el.className='toast on '+(t||'');setTimeout(()=>el.className='toast',2500);}
 
+function exportarCSV(tipo){
+  const mes=document.getElementById('exp-'+tipo[0]+'-mes').value;
+  let filas,nombre,cabecera;
+  if(tipo==='ventas'){
+    cabecera='Fecha,Cliente,Tipo,Especie,Cama,Paquetes,Precio unitario,Total';
+    filas=ventas.filter(v=>!mes||v.fecha.startsWith(mes)).map(v=>[
+      v.fecha,v.cliente,v.b2b||'',v.especie,v.cama,v.paquetes,v.precio,v.total
+    ]);
+    nombre='ventas'+(mes?'_'+mes:'')+'.csv';
+  } else {
+    cabecera='Fecha,Tipo,Descripcion,Categoria,Cama,Monto';
+    filas=gastos.filter(g=>!mes||(g.fecha||g.mes||'').startsWith(mes)).map(g=>[
+      g.fecha||g.mes||'',g.tipo,g.des,g.cat||'',g.cama||'',g.monto
+    ]);
+    nombre='gastos'+(mes?'_'+mes:'')+'.csv';
+  }
+  if(!filas.length){toast('Sin datos para ese mes','err');return;}
+  const csv=[cabecera,...filas.map(r=>r.map(c=>'"'+(c+'').replace(/"/g,'""')+'"').join(','))].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
+  a.download=nombre;
+  a.click();
+  toast('✓ Descargando '+nombre,'ok');
+}
+
 // ── TABS ────────────────────────────────────────────────────────
 function sw(t){
   document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('on'));
@@ -1859,6 +1892,7 @@ function initApp(){
 const today=new Date().toISOString().split('T')[0];
 ['f-fec','ga-fec','gi-fec','gt-fec','nc-fec'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
 document.getElementById('gf-mes').value=today.slice(0,7);
+['exp-v-mes','exp-g-mes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today.slice(0,7);});
 
 // Cargar datos históricos INMEDIATAMENTE
 ventas=HIST_VENTAS.map(r=>({fecha:r[0],cliente:r[1],especie:r[2],cama:r[3],paquetes:r[4],precio:r[5],total:r[6],b2b:'',nota:''}));
