@@ -251,9 +251,9 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
   </div>
   <div id="sub-vlista" class="sub">
     <div class="frow"><select id="fv-esp" onchange="renderVList()"><option value="">Todas las especies</option></select></div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;box-sizing:border-box;width:100%">
-      <input type="month" id="exp-v-mes" style="flex:1;min-width:0;padding:8px;border:1px solid var(--br);border-radius:var(--r);font-size:13px;background:var(--sf);color:var(--tx)">
-      <button class="btn" style="flex:none;white-space:nowrap;padding:8px 14px;font-size:13px" onclick="exportarCSV('ventas')">↓ CSV</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <input type="month" id="exp-v-mes" style="flex:1;min-width:0;padding:5px 8px;border:1px solid var(--br);border-radius:var(--r);font-size:12px;background:transparent;color:var(--tx2)">
+      <button onclick="exportarCSV('ventas')" style="background:none;border:none;color:var(--bordo);font-size:12px;cursor:pointer;white-space:nowrap;padding:4px 0">↓ exportar</button>
     </div>
     <div id="v-lst" class="vlist"></div>
   </div>
@@ -346,9 +346,9 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
     <button class="ti" onclick="subGLista('insumo')" id="gl-insumo">Insumos</button>
     <button class="ti" onclick="subGLista('fijo')" id="gl-fijo">Fijos</button>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;box-sizing:border-box;width:100%">
-    <input type="month" id="exp-g-mes" style="flex:1;min-width:0;padding:8px;border:1px solid var(--br);border-radius:var(--r);font-size:13px;background:var(--sf);color:var(--tx)">
-    <button class="btn" style="flex:none;white-space:nowrap;padding:8px 14px;font-size:13px" onclick="exportarCSV('gastos')">↓ CSV</button>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <input type="month" id="exp-g-mes" style="flex:1;min-width:0;padding:5px 8px;border:1px solid var(--br);border-radius:var(--r);font-size:12px;background:transparent;color:var(--tx2)">
+    <button onclick="exportarCSV('gastos')" style="background:none;border:none;color:var(--bordo);font-size:12px;cursor:pointer;white-space:nowrap;padding:4px 0">↓ exportar</button>
   </div>
   <div id="g-lst" class="vlist"></div>
 </div>
@@ -1290,23 +1290,12 @@ function exportarCSV(tipo){
     nombre='gastos'+(mes?'_'+mes:'')+'.csv';
   }
   if(!filas.length){toast('Sin datos para ese mes','err');return;}
-  const tsv=[...filas.map(r=>r.map(c=>(c+'').replace(/\t/g,' ')).join('\t'))].join('\n');
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(tsv).then(()=>{
-      window.open('https://sheets.new','_blank');
-      toast('✓ Datos copiados — pegá con Ctrl+V','ok');
-    }).catch(()=>descargarCSV(filas,nombre));
-  } else {
-    descargarCSV(filas,nombre);
-  }
-}
-function descargarCSV(filas,nombre){
   const csv=filas.map(r=>r.map(c=>'"'+(c+'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
   a.download=nombre;
   a.click();
-  toast('✓ Descargando '+nombre,'ok');
+  toast('✓ '+nombre,'ok');
 }
 
 // ── TABS ────────────────────────────────────────────────────────
