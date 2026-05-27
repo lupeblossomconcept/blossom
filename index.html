@@ -1740,21 +1740,49 @@ function renderGList(){
   const el=document.getElementById('g-lst');if(!el)return;
   const gf2=gListaTipo&&gListaTipo!=='todos'?gastos.filter(g=>g.tipo===gListaTipo):gastos;
   if(!gf2.length){el.innerHTML='<div class="empty">Sin gastos registrados aún</div>';return;}
-  el.innerHTML=gf2.slice(0,25).map(g=>{
+  const aplics=gf2.filter(g=>g.tipo==='aplic');
+  const otros=gf2.filter(g=>g.tipo!=='aplic');
+  let html='';
+  if(aplics.length){
+    const porDia={};
+    aplics.forEach(g=>{const d=g.fecha||'';if(!porDia[d])porDia[d]=[];porDia[d].push(g);});
+    Object.keys(porDia).sort((a,b)=>b.localeCompare(a)).forEach(dia=>{
+      const items=porDia[dia];
+      const total=items.reduce((s,g)=>s+g.monto,0);
+      const detalle=items.map(g=>{
+        const idx=gastos.indexOf(g);
+        return`<div class="vi" style="display:flex;align-items:flex-start;gap:6px">
+          <div style="flex:1;min-width:0">
+            <div class="vt"><span class="vn">${g.des}</span><span class="va">${fmt(g.monto)}</span></div>
+            <div class="vb"><span class="pill pg">${g.cat}</span><span class="pill pg">${g.cama}</span>${g.qty?`<span class="pill px">${g.qty}${g.uni}</span>`:''}</div>
+          </div>
+          <button class="btn-sm del" onclick="eliminarGasto(${idx})" style="padding:5px 10px;font-size:15px;margin-top:2px;flex-shrink:0">✕</button>
+        </div>`;
+      }).join('');
+      html+=`<div class="acordeon-item">
+        <div class="acordeon-hdr" onclick="toggleAcordeon(this)">
+          <div><span class="acordeon-titulo">${dia}</span><span class="acordeon-sub">${items.length} aplicacion${items.length>1?'es':''} · ${fmt(total)}</span></div>
+          <span class="acordeon-chevron">▸</span>
+        </div>
+        <div class="acordeon-body" style="display:none;padding:0 10px 10px">${detalle}</div>
+      </div>`;
+    });
+  }
+  otros.slice(0,25).forEach(g=>{
     const idx=gastos.indexOf(g);
     let pills='';
-    if(g.tipo==='aplic')pills=`<span class="pill pg">${g.cat}</span><span class="pill pg">${g.cama}</span>${g.qty?`<span class="pill px">${g.qty}${g.uni}</span>`:''}`;
     if(g.tipo==='insumo')pills=`<span class="pill pb">Insumo</span><span class="pill pb">${g.cama}</span>`;
     if(g.tipo==='fijo')pills=`<span class="pill px">Fijo</span><span class="pill px">${g.mes}</span>`;
     if(g.tipo==='trab')pills=`<span class="pill pp">RRHH</span><span class="pill pp">${g.nom}</span>`;
-    return`<div class="vi" style="display:flex;align-items:flex-start;gap:6px">
+    html+=`<div class="vi" style="display:flex;align-items:flex-start;gap:6px">
       <div style="flex:1;min-width:0">
         <div class="vt"><span class="vn">${g.des}</span><span class="va">${fmt(g.monto)}</span></div>
         <div class="vb">${pills}<span class="pd">${g.fecha||g.mes||''}</span></div>
       </div>
       <button class="btn-sm del" onclick="eliminarGasto(${idx})" style="padding:5px 10px;font-size:15px;margin-top:2px;flex-shrink:0">✕</button>
     </div>`;
-  }).join('');
+  });
+  el.innerHTML=html;
 }
 
 function renderCamasActivas(){
