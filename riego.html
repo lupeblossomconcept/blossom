@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Blossom Riego">
+<title>Blossom · Riego</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bordo:#8b1a4a;--bordo2:#6d1339;--bordo3:#a8225a;
+  --rose:#f5e0ea;--rose2:#fdf5f9;--rose3:#fbecf3;
+  --verde:#1a5c2e;--verde-l:#e8f5ed;
+  --rojo:#9e2020;--rojo-l:#fceaea;
+  --gris:#f8f6f7;
+  --tx:#1a0f14;--tx2:#6b4a57;--tx3:#b09aa8;
+  --sf:#ffffff;--sf2:#faf6f8;
+  --br:#e8dde4;--br2:#d4c4cc;
+  --r:14px;--rs:10px;
+  --shadow:0 2px 12px rgba(139,26,74,0.08);
+  --shadow2:0 4px 24px rgba(139,26,74,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);min-height:100vh;}
+.app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--gris);}
+
+.hdr{background:linear-gradient(135deg,var(--bordo2) 0%,var(--bordo3) 100%);color:white;padding:20px 20px 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(139,26,74,0.25);}
+.hdr h1{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;letter-spacing:.3px;}
+.hdr p{font-size:11px;opacity:.75;margin-top:3px;letter-spacing:.05em;}
+
+.mode-tabs{display:flex;background:var(--sf);border-radius:var(--r);padding:4px;box-shadow:var(--shadow);margin:16px;gap:4px;}
+.mode-tab{flex:1;padding:10px 6px;text-align:center;border:none;background:none;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--tx3);border-radius:10px;cursor:pointer;transition:all .2s;}
+.mode-tab.on{background:var(--bordo);color:white;box-shadow:0 2px 8px rgba(139,26,74,0.3);}
+
+.card{background:var(--sf);border-radius:var(--r);padding:18px;margin:0 16px 14px;box-shadow:var(--shadow);}
+.card-lbl{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;}
+
+.big-row{display:flex;align-items:flex-end;gap:10px;margin-bottom:16px;}
+.big-input{font-family:'Playfair Display',serif;font-size:52px;font-weight:700;color:var(--tx);border:none;background:none;width:0;flex:1;outline:none;-webkit-appearance:none;line-height:1;}
+.big-unit{font-size:16px;font-weight:600;color:var(--tx3);padding-bottom:10px;flex-shrink:0;}
+
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:var(--rose);outline:none;margin-bottom:6px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--bordo);cursor:pointer;box-shadow:0 2px 8px rgba(139,26,74,0.35);}
+.slider-labs{display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);}
+
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.pbtn{padding:7px 16px;background:var(--rose);color:var(--bordo);border:1px solid var(--rose);border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif;transition:all .15s;}
+.pbtn.on{background:var(--bordo);color:white;border-color:var(--bordo);}
+
+.sec-tit{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin:4px 16px 10px;}
+
+.res-card{background:var(--sf);border-radius:var(--r);padding:14px 16px;margin:0 16px 10px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;}
+.res-left .res-nom{font-size:14px;font-weight:600;color:var(--tx);}
+.res-left .res-sub{font-size:10px;color:var(--tx3);margin-top:3px;}
+.res-right{display:flex;align-items:flex-end;gap:4px;flex-shrink:0;margin-left:12px;}
+.res-val{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:var(--bordo);}
+.res-unit{font-size:12px;color:var(--tx3);padding-bottom:6px;}
+
+.cfg-hdr{display:flex;align-items:center;justify-content:space-between;margin:16px 16px 8px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.cfg-hdr-txt{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;}
+.cfg-chev{font-size:12px;color:var(--tx3);transition:transform .2s;display:inline-block;}
+.cfg-chev.open{transform:rotate(90deg);}
+.cfg-body{padding:0 16px;display:none;}
+.cfg-body.open{display:block;}
+
+.cfg-row{background:var(--sf);border-radius:var(--rs);padding:13px 14px;margin-bottom:8px;box-shadow:var(--shadow);}
+.cfg-row-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.cfg-nom-input{font-size:13px;font-weight:600;color:var(--tx);border:none;background:none;font-family:'Montserrat',sans-serif;padding:0;flex:1;outline:none;}
+.cfg-del{background:none;border:none;color:var(--tx3);font-size:18px;cursor:pointer;padding:0 0 0 8px;line-height:1;}
+.cfg-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cfg-field label{display:block;font-size:9px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.cfg-field input{width:100%;padding:9px 10px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:15px;background:var(--gris);color:var(--tx);font-family:'Montserrat',sans-serif;-webkit-appearance:none;transition:border-color .2s;outline:none;}
+.cfg-field input:focus{border-color:var(--bordo);}
+.cfg-mmh{font-size:10px;color:var(--tx2);margin-top:8px;padding:5px 9px;background:var(--rose2);border-radius:6px;}
+
+.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--rose2);border:1.5px dashed var(--br2);border-radius:var(--r);color:var(--tx3);font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;cursor:pointer;width:100%;margin-bottom:16px;}
+
+.empty{text-align:center;padding:32px 16px;color:var(--tx3);font-size:13px;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--tx);color:white;padding:10px 20px;border-radius:24px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow2);}
+.toast.on{opacity:1;}
+.toast.ok{background:var(--verde);}
+
+.pad{height:40px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hdr">
+    <h1>Riego</h1>
+    <p>Blossom Concept · Calculadora</p>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab on" id="tab-tm" onclick="setMode('tm')">⏱ Tiempo → mm</button>
+    <button class="mode-tab" id="tab-mt" onclick="setMode('mt')">💧 mm → Tiempo</button>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl" id="card-lbl">¿Cuántos minutos vas a regar?</div>
+    <div class="big-row">
+      <input class="big-input" type="number" id="main-val" value="10" min="0" inputmode="decimal" oninput="onInput()">
+      <span class="big-unit" id="main-unit">min</span>
+    </div>
+    <div id="slider-area">
+      <input type="range" id="slider" min="1" max="60" value="10" oninput="onSlider()">
+      <div class="slider-labs"><span>1 min</span><span>30 min</span><span>60 min</span></div>
+      <div class="presets" id="presets">
+        <button class="pbtn" onclick="setPreset(5)">5 min</button>
+        <button class="pbtn on" onclick="setPreset(10)">10 min</button>
+        <button class="pbtn" onclick="setPreset(15)">15 min</button>
+        <button class="pbtn" onclick="setPreset(20)">20 min</button>
+        <button class="pbtn" onclick="setPreset(30)">30 min</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-tit" id="res-tit">Milímetros por sección</div>
+  <div id="res-list"></div>
+
+  <div class="cfg-hdr" onclick="toggleCfg()">
+    <span class="cfg-hdr-txt">⚙ Configuración de secciones</span>
+    <span class="cfg-chev" id="cfg-chev">▸</span>
+  </div>
+  <div class="cfg-body" id="cfg-body">
+    <div id="cfg-list"></div>
+    <button class="add-btn" onclick="addSec()">+ Agregar sección</button>
+  </div>
+
+  <div class="pad"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATOS ──────────────────────────────────────────────────────────────────
+// area: m² totales de la sección   caudal: litros/hora totales del sistema
+// mm/h = caudal / area   →   mm aplicados = (caudal/area) × (min/60)
+let secs = JSON.parse(localStorage.getItem('riego_secs') || 'null') || [
+  {nom:'Lisianthus', area:360, caudal:1200},
+  {nom:'Cosmos',     area:360, caudal:1200},
+  {nom:'Zinnia',     area:360, caudal:1200},
+  {nom:'Escabiosa',  area:432, caudal:1440},
+  {nom:'Estatice',   area:252, caudal:840},
+  {nom:'Antirrhinum',area:252, caudal:840},
+  {nom:'Aleli',      area:252, caudal:840},
+];
+
+function save(){ localStorage.setItem('riego_secs', JSON.stringify(secs)); }
+
+let mode = 'tm';
+
+function mmH(s){ return s.caudal / s.area; }
+function calcMm(s, min){ return mmH(s) * min / 60; }
+function calcMin(s, mm){ return mm * 60 / mmH(s); }
+
+// ── MODO ──────────────────────────────────────────────────────────────────
+function setMode(m){
+  mode = m;
+  document.getElementById('tab-tm').classList.toggle('on', m==='tm');
+  document.getElementById('tab-mt').classList.toggle('on', m==='mt');
+  document.getElementById('card-lbl').textContent = m==='tm'
+    ? '¿Cuántos minutos vas a regar?'
+    : '¿Cuántos mm querés aplicar?';
+  document.getElementById('main-unit').textContent = m==='tm' ? 'min' : 'mm';
+  document.getElementById('slider-area').style.display = m==='tm' ? '' : 'none';
+  document.getElementById('res-tit').textContent = m==='tm'
+    ? 'Milímetros por sección'
+    : 'Tiempo necesario por sección';
+  const mv = document.getElementById('main-val');
+  mv.value = m==='tm' ? '10' : '3';
+  render();
+}
+
+// ── INPUTS ─────────────────────────────────────────────────────────────────
+function onInput(){
+  const v = +document.getElementById('main-val').value;
+  if(mode==='tm'){
+    document.getElementById('slider').value = Math.min(60, Math.max(1, v));
+    syncPresets(v);
+  }
+  render();
+}
+function onSlider(){
+  const v = +document.getElementById('slider').value;
+  document.getElementById('main-val').value = v;
+  syncPresets(v);
+  render();
+}
+function setPreset(n){
+  document.getElementById('main-val').value = n;
+  document.getElementById('slider').value = n;
+  syncPresets(n);
+  render();
+}
+function syncPresets(val){
+  document.querySelectorAll('.pbtn').forEach(b=>{
+    b.classList.toggle('on', parseInt(b.textContent)===val);
+  });
+}
+
+// ── RESULTADOS ─────────────────────────────────────────────────────────────
+function fmtMin(m){
+  if(m < 60) return m.toFixed(1);
+  const h = Math.floor(m/60), min = Math.round(m%60);
+  return min>0 ? h+'h '+min+'m' : h+'h';
+}
+function fmtMm(mm){
+  return mm >= 10 ? mm.toFixed(1) : mm.toFixed(2);
+}
+
+function render(){
+  const v = +document.getElementById('main-val').value;
+  const el = document.getElementById('res-list');
+  if(!v || v<=0 || !secs.length){
+    el.innerHTML = '<div class="empty">Ingresá un valor para ver el resultado</div>';
+    return;
+  }
+  el.innerHTML = secs.map(s=>{
+    const raw = mode==='tm' ? calcMm(s, v) : calcMin(s, v);
+    const display = mode==='tm' ? fmtMm(raw) : fmtMin(raw);
+    const unit = mode==='tm' ? 'mm' : 'min';
+    const sub = `${s.caudal} L/h · ${s.area} m² · ${mmH(s).toFixed(1)} mm/h`;
+    return `<div class="res-card">
+      <div class="res-left">
+        <div class="res-nom">${s.nom}</div>
+        <div class="res-sub">${sub}</div>
+      </div>
+      <div class="res-right">
+        <div class="res-val">${display}</div>
+        <div class="res-unit">${unit}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── CONFIGURACIÓN ──────────────────────────────────────────────────────────
+function toggleCfg(){
+  const body = document.getElementById('cfg-body');
+  const chev = document.getElementById('cfg-chev');
+  const open = body.classList.toggle('open');
+  chev.classList.toggle('open', open);
+  if(open) renderCfg();
+}
+
+function renderCfg(){
+  document.getElementById('cfg-list').innerHTML = secs.map((s,i)=>`
+    <div class="cfg-row">
+      <div class="cfg-row-hdr">
+        <input class="cfg-nom-input" value="${s.nom}"
+          onchange="secs[${i}].nom=this.value;save();render()">
+        <button class="cfg-del" onclick="delSec(${i})">×</button>
+      </div>
+      <div class="cfg-fields">
+        <div class="cfg-field">
+          <label>Área total (m²)</label>
+          <input type="number" value="${s.area}" min="1" inputmode="numeric"
+            onchange="secs[${i}].area=+this.value||1;save();refreshMmh(${i});render()">
+        </div>
+        <div class="cfg-field">
+          <label>Caudal total (L/h)</label>
+          <input type="number" value="${s.caudal}" min="1" inputmode="numeric"
+            onchange="secs[${i}].caudal=+this.value||1;save();refreshMmh(${i});render()">
+        </div>
+      </div>
+      <div class="cfg-mmh" id="mmh-${i}">${mmH(s).toFixed(2)} mm/h — equivale a regar 1mm cada ${fmtMin(60/mmH(s))}</div>
+    </div>
+  `).join('');
+}
+
+function refreshMmh(i){
+  const el = document.getElementById('mmh-'+i);
+  if(el) el.textContent = mmH(secs[i]).toFixed(2)+' mm/h — equivale a regar 1mm cada '+fmtMin(60/mmH(secs[i]));
+}
+
+function addSec(){
+  secs.push({nom:'Nueva sección', area:300, caudal:900});
+  save();
+  renderCfg();
+  render();
+}
+function delSec(i){
+  secs.splice(i,1);
+  save();
+  renderCfg();
+  render();
+}
+
+// Init
+render();
+</script>
+</body>
+</html>
