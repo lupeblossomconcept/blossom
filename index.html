@@ -1465,16 +1465,15 @@ async function regVenta(){
   _enviando=true;
   const total=p*pr;
   try{
-    for(const cam of camas){
-      const esp=cam.includes(' C.')?cam.split(' C.')[0]:cam;
-      const v={fecha:f,cliente:c,especie:esp,cama:cam,paquetes:p,precio:pr,total,b2b,nota};
-      ventas.unshift(v);
-      const key=await fbPush('ventas',v);
-      if(key) v._fbKey=key;
-    }
+    const esp=camas[0].includes(' C.')?camas[0].split(' C.')[0]:camas[0];
+    const camaStr=camas.length>1?camas.map(x=>x.includes(' C.')?'C.'+x.split(' C.')[1]:x).join(', '):camas[0];
+    const v={fecha:f,cliente:c,especie:esp,cama:camaStr,paquetes:p,precio:pr,total,b2b,nota};
+    ventas.unshift(v);
+    const key=await fbPush('ventas',v);
+    if(key) v._fbKey=key;
     renderVList();renderDash();
     ['f-cli','f-paq','f-pre','f-nota'].forEach(id=>document.getElementById(id).value='');
-    toast(`✓ ${camas.length>1?camas.length+' ventas registradas':'Venta registrada'}`,'ok');
+    toast('✓ Venta registrada','ok');
   }finally{_enviando=false;}
 }
 
