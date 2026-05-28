@@ -221,6 +221,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     </div>
   </div>
 
+  <button onclick="showSec('est')" style="display:flex;align-items:center;justify-content:space-between;width:calc(100% - 28px);margin:0 14px 12px;padding:13px 16px;background:var(--verde-l);border:1.5px solid rgba(26,92,46,.2);border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:600;color:var(--verde);cursor:pointer;">
+    <span>🌱 Registrar fertilización (estanque)</span>
+    <span style="font-size:16px">›</span>
+  </button>
+
   <div id="esp-cards"></div>
 
   <div class="card" id="hist-card" style="display:none">
@@ -279,13 +284,8 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 <!-- Modal registro -->
 <div class="overlay" id="overlay" onclick="closeModal(event)">
 <div class="modal" id="modal">
-  <div class="modal-tit" id="modal-tit">Registrar riego</div>
+  <div class="modal-tit" id="modal-tit">💧 Registrar riego</div>
   <div class="modal-sub" id="modal-sub">—</div>
-
-  <div class="tipo-toggle">
-    <button class="tipo-btn on" id="btn-riego" onclick="setTipo('riego')">💧 Riego</button>
-    <button class="tipo-btn fert" id="btn-fert" onclick="setTipo('fertilizacion')">🌱 + Fertilizante</button>
-  </div>
 
   <div class="modal-field">
     <label>Minutos regados</label>
@@ -451,7 +451,6 @@ function renderSem(){
       </div>
       <div class="esp-actions">
         <button class="esp-btn" onclick="openModal('${e.nom}','riego')">💧 Registrar riego</button>
-        <button class="esp-btn fert" onclick="openModal('${e.nom}','fertilizacion')">🌱 + Fertilizante</button>
       </div>
     </div>`;
   }).join('');
