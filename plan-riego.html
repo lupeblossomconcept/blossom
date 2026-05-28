@@ -2,180 +2,176 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Riego Blossom">
-<title>Blossom · Plan de Riego</title>
+<title>Blossom · Riego</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bordo:#8b1a4a;--bordo2:#6d1339;--bordo3:#a8225a;
-  --rose:#f5e0ea;--rose2:#fdf5f9;--rose3:#fbecf3;
+  --rose:#f5e0ea;--rose2:#fdf5f9;
   --verde:#1a5c2e;--verde-l:#e8f5ed;
+  --azul:#1a3c8b;--azul-l:#e8f0ff;
+  --cielo:#0e6494;--cielo-l:#e0f3ff;
   --rojo:#9e2020;--rojo-l:#fceaea;
   --am:#6b4200;--am-l:#fff5e0;
-  --gris:#f8f6f7;
-  --tx:#1a0f14;--tx2:#6b4a57;--tx3:#b09aa8;
-  --sf:#ffffff;--sf2:#faf6f8;
-  --br:#e8dde4;--br2:#d4c4cc;
+  --gris:#f8f6f7;--tx:#1a0f14;--tx2:#6b4a57;--tx3:#b09aa8;
+  --sf:#fff;--br:#e8dde4;--br2:#d4c4cc;
   --r:14px;--rs:10px;
-  --shadow:0 2px 12px rgba(139,26,74,0.08);
-  --shadow2:0 4px 24px rgba(139,26,74,0.14);
+  --shadow:0 2px 12px rgba(139,26,74,.08);
+  --shadow2:0 4px 24px rgba(139,26,74,.14);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);min-height:100vh;overscroll-behavior:none;}
 .app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--gris);}
-
-/* Header */
-.hdr{background:linear-gradient(135deg,var(--bordo2) 0%,var(--bordo3) 100%);color:white;padding:18px 18px 14px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(139,26,74,0.25);}
-.hdr h1{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;}
-.hdr-sub{font-size:11px;opacity:.8;margin-top:2px;}
-
-/* Nav */
-.nav{display:flex;background:var(--sf);border-bottom:1px solid var(--br);position:sticky;top:65px;z-index:90;}
-.ntab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;border:none;background:none;color:var(--tx3);font-size:9px;font-weight:600;cursor:pointer;border-bottom:2.5px solid transparent;font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.04em;}
+.hdr{background:linear-gradient(135deg,var(--bordo2),var(--bordo3));color:#fff;padding:16px 16px 12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(139,26,74,.25);}
+.hdr h1{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;}
+.hdr-sub{font-size:10px;opacity:.8;margin-top:2px;}
+.nav{display:flex;background:var(--sf);border-bottom:1px solid var(--br);position:sticky;top:58px;z-index:90;}
+.ntab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 6px;border:none;background:none;color:var(--tx3);font-size:8.5px;font-weight:600;cursor:pointer;border-bottom:2.5px solid transparent;font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.04em;}
 .ntab.on{color:var(--bordo);border-bottom-color:var(--bordo);}
-.ntab-icon{font-size:16px;}
-
-/* Section */
-.sec{display:none;padding:14px 0 60px;}
+.ntab-icon{font-size:15px;}
+.sec{display:none;padding:12px 0 70px;}
 .sec.on{display:block;}
+.card{background:var(--sf);border-radius:var(--r);padding:13px 15px;margin:0 13px 11px;box-shadow:var(--shadow);}
+.ctit{font-size:9.5px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;}
 
-/* Card genérico */
-.card{background:var(--sf);border-radius:var(--r);padding:14px 16px;margin:0 14px 12px;box-shadow:var(--shadow);}
-.card-tit{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+/* SEMANA */
+.week-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 13px 6px;}
+.week-lbl{font-size:13px;font-weight:600;color:var(--tx);}
+.week-btns{display:flex;gap:2px;}
+.week-btns button{background:none;border:1px solid var(--br);border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--tx2);font-family:'Montserrat',sans-serif;}
+.week-btns button.act{background:var(--bordo);color:#fff;border-color:var(--bordo);}
 
-/* Semana header */
-.sem-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:4px;}
-.sem-week{font-size:13px;font-weight:600;color:var(--tx);}
-.sem-nav{display:flex;gap:2px;}
-.sem-nav button{background:none;border:1px solid var(--br);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;color:var(--tx2);font-family:'Montserrat',sans-serif;}
-.sem-nav button.act{background:var(--bordo);color:white;border-color:var(--bordo);}
+/* Dashboard grid */
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--sf);border-radius:var(--r);margin:0 13px 11px;box-shadow:var(--shadow);overflow:hidden;}
+.dash-cell{text-align:center;padding:11px 4px;border-right:1px solid var(--br);}
+.dash-cell:last-child{border-right:none;}
+.dash-icon{font-size:15px;margin-bottom:3px;}
+.dash-val{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;}
+.dash-lbl{font-size:9px;color:var(--tx3);margin-top:1px;}
+.c-riego{color:var(--azul);}
+.c-fert{color:var(--verde);}
+.c-lluvia{color:var(--cielo);}
+.c-plan{color:var(--bordo);}
 
-/* Total progress */
-.total-prog{background:var(--sf);border-radius:var(--r);margin:0 14px 12px;padding:14px 16px;box-shadow:var(--shadow);}
-.prog-bar-bg{height:8px;background:var(--rose);border-radius:4px;overflow:hidden;margin:8px 0 4px;}
-.prog-bar{height:100%;background:linear-gradient(90deg,var(--bordo2),var(--bordo3));border-radius:4px;transition:width .5s ease;}
-.prog-stats{display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);}
+/* Botón lluvia */
+.lluvia-btn{display:flex;align-items:center;justify-content:space-between;width:calc(100% - 26px);margin:0 13px 11px;padding:11px 15px;background:var(--cielo-l);border:1.5px solid rgba(14,100,148,.2);border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--cielo);cursor:pointer;}
 
-/* Especie card */
-.esp-card{background:var(--sf);border-radius:var(--r);margin:0 14px 10px;box-shadow:var(--shadow);overflow:hidden;}
-.esp-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;}
-.esp-info{flex:1;}
-.esp-nom{font-size:14px;font-weight:700;color:var(--tx);}
-.esp-cfg{font-size:10px;color:var(--tx3);margin-top:2px;}
-.esp-grp{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;margin-left:8px;}
-.grp-A{background:var(--verde-l);color:var(--verde);}
-.grp-B{background:#e8f0ff;color:#1a3c8b;}
-.grp-C{background:var(--am-l);color:var(--am);}
-.esp-prog-area{padding:0 14px 12px;}
-.esp-prog-bg{height:6px;background:var(--rose);border-radius:3px;overflow:hidden;margin-bottom:6px;}
-.esp-prog-fill{height:100%;border-radius:3px;transition:width .5s ease;}
-.esp-stats{display:flex;justify-content:space-between;font-size:11px;}
-.esp-mm{font-weight:600;color:var(--tx);}
-.esp-evts{color:var(--tx3);}
-.esp-actions{border-top:1px solid var(--br);display:flex;}
-.esp-btn{flex:1;padding:10px;background:none;border:none;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:var(--bordo);}
-.esp-btn+.esp-btn{border-left:1px solid var(--br);}
-.esp-btn.fert{color:var(--verde);}
-
-/* Modal overlay */
-.overlay{display:none;position:fixed;inset:0;background:rgba(26,15,20,.45);z-index:200;align-items:flex-end;}
-.overlay.on{display:flex;}
-.modal{background:var(--sf);border-radius:20px 20px 0 0;padding:20px 18px 32px;width:100%;max-width:430px;margin:0 auto;box-shadow:0 -4px 32px rgba(139,26,74,.15);animation:slideUp .22s ease;}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-tit{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:4px;}
-.modal-sub{font-size:11px;color:var(--tx3);margin-bottom:18px;}
-.modal-field label{display:block;font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
-.modal-field{margin-bottom:16px;}
-.big-input{font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--tx);border:none;background:none;width:100%;outline:none;-webkit-appearance:none;line-height:1;}
-.big-row{display:flex;align-items:flex-end;gap:8px;border-bottom:2px solid var(--bordo);padding-bottom:6px;margin-bottom:8px;}
-.big-unit{font-size:15px;font-weight:600;color:var(--tx3);padding-bottom:10px;}
-.calc-result{background:var(--rose2);border-radius:var(--rs);padding:10px 14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
-.calc-lbl{font-size:11px;color:var(--tx3);}
-.calc-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--bordo);}
-.tipo-toggle{display:flex;gap:8px;margin-bottom:16px;}
-.tipo-btn{flex:1;padding:10px;border-radius:var(--rs);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--br);background:none;color:var(--tx3);transition:all .15s;}
-.tipo-btn.on{border-color:var(--bordo);background:var(--rose);color:var(--bordo);}
-.tipo-btn.on.fert{border-color:var(--verde);background:var(--verde-l);color:var(--verde);}
-.modal-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
-.mpbtn{padding:6px 12px;background:var(--rose2);border:1px solid var(--br);border-radius:16px;font-size:11px;font-weight:600;color:var(--tx2);cursor:pointer;font-family:'Montserrat',sans-serif;}
-.mpbtn.on{background:var(--bordo);color:white;border-color:var(--bordo);}
-.btn-pri{width:100%;padding:14px;background:var(--bordo);color:white;border:none;border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(139,26,74,.3);}
-.btn-sec{width:100%;padding:12px;background:none;border:none;font-family:'Montserrat',sans-serif;font-size:13px;color:var(--tx3);cursor:pointer;margin-top:8px;}
+/* Species cards */
+.esp-card{background:var(--sf);border-radius:var(--r);margin:0 13px 9px;box-shadow:var(--shadow);overflow:hidden;}
+.esp-top{display:flex;align-items:center;justify-content:space-between;padding:11px 13px 8px;}
+.esp-nom{font-size:13px;font-weight:700;color:var(--tx);}
+.esp-cfg{font-size:9.5px;color:var(--tx3);margin-top:2px;}
+.grp-badge{font-size:8px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;margin-left:8px;}
+.gA{background:var(--verde-l);color:var(--verde);}
+.gB{background:var(--azul-l);color:var(--azul);}
+.gC{background:var(--am-l);color:var(--am);}
+.esp-prog{padding:0 13px 10px;}
+.prog-bg{height:6px;background:var(--rose);border-radius:3px;overflow:hidden;margin-bottom:5px;}
+.prog-fill{height:100%;border-radius:3px;transition:width .4s ease;}
+.esp-breakdown{display:flex;gap:10px;font-size:10px;margin-bottom:4px;}
+.b-riego{color:var(--azul);font-weight:600;}
+.b-fert{color:var(--verde);font-weight:600;}
+.b-lluvia{color:var(--cielo);font-weight:600;}
+.esp-stat{font-size:10px;color:var(--tx3);}
+.esp-reg-btn{width:100%;padding:9px;background:none;border:none;border-top:1px solid var(--br);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--bordo);cursor:pointer;}
 
 /* Historial */
-.hist-item{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--br);}
+.hist-item{display:flex;align-items:center;padding:8px 13px;border-bottom:1px solid var(--br);}
 .hist-item:last-child{border-bottom:none;}
-.hist-info{flex:1;}
-.hist-esp{font-size:12px;font-weight:600;color:var(--tx);}
-.hist-det{font-size:10px;color:var(--tx3);margin-top:1px;}
-.hist-val{font-size:13px;font-weight:700;color:var(--bordo);flex-shrink:0;margin-left:8px;}
-.hist-del{background:none;border:none;color:var(--tx3);font-size:16px;cursor:pointer;padding:0 0 0 10px;}
-.tag{font-size:9px;font-weight:600;padding:2px 6px;border-radius:8px;margin-left:6px;}
-.tag-fert{background:var(--verde-l);color:var(--verde);}
-.tag-riego{background:var(--rose);color:var(--bordo);}
+.hist-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-right:10px;}
+.dot-riego{background:var(--azul);}
+.dot-fert{background:var(--verde);}
+.dot-lluvia{background:var(--cielo);}
+.hist-body{flex:1;}
+.hist-nom{font-size:12px;font-weight:600;color:var(--tx);}
+.hist-det{font-size:9.5px;color:var(--tx3);margin-top:1px;}
+.hist-mm{font-size:12px;font-weight:700;flex-shrink:0;margin:0 8px;}
+.hist-del{background:none;border:none;color:var(--tx3);font-size:15px;cursor:pointer;padding:0;}
 
-/* Plan section */
-.mes-tabs{display:flex;margin:0 14px 12px;background:var(--sf);border-radius:var(--r);padding:3px;box-shadow:var(--shadow);}
-.mes-tab{flex:1;padding:9px;text-align:center;border:none;background:none;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--tx3);border-radius:10px;cursor:pointer;}
-.mes-tab.on{background:var(--bordo);color:white;}
-.plan-card{background:var(--sf);border-radius:var(--r);margin:0 14px 10px;box-shadow:var(--shadow);overflow:hidden;}
-.plan-hdr{padding:13px 14px 10px;border-bottom:1px solid var(--br);}
-.plan-nom{font-size:14px;font-weight:700;color:var(--tx);}
-.plan-cfg{font-size:10px;color:var(--tx3);margin-top:2px;}
-.plan-nums{display:grid;grid-template-columns:repeat(4,1fr);padding:10px 14px;}
+/* ESTANQUE */
+.est-chips{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+.chip{display:flex;align-items:center;padding:10px 13px;border-radius:var(--r);border:2px solid var(--br);background:var(--sf);cursor:pointer;transition:all .15s;}
+.chip.on{border-color:var(--verde);background:var(--verde-l);}
+.chip-chk{width:19px;height:19px;border-radius:5px;border:2px solid var(--br2);margin-right:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;}
+.chip.on .chip-chk{border-color:var(--verde);background:var(--verde);color:#fff;}
+.chip-nom{font-size:13px;font-weight:600;color:var(--tx);flex:1;}
+.chip.on .chip-nom{color:var(--verde);}
+.chip-n{font-size:10px;color:var(--tx3);}
+.chip.on .chip-n{color:var(--verde);}
+.est-res{background:var(--sf);border-radius:var(--r);margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden;}
+.est-row{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-bottom:1px solid var(--br);}
+.est-row:last-child{border-bottom:none;}
+.est-rlbl{font-size:11px;color:var(--tx3);}
+.est-rval{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;}
+
+/* PLAN */
+.mes-bar{display:flex;overflow-x:auto;gap:6px;padding:0 13px 10px;scrollbar-width:none;}
+.mes-bar::-webkit-scrollbar{display:none;}
+.mes-chip{flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid var(--br);background:var(--sf);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--tx3);cursor:pointer;}
+.mes-chip.on{background:var(--bordo);color:#fff;border-color:var(--bordo);}
+.mes-chip.add{border-style:dashed;color:var(--tx3);}
+.plan-card{background:var(--sf);border-radius:var(--r);margin:0 13px 9px;box-shadow:var(--shadow);overflow:hidden;}
+.plan-hdr{padding:11px 13px 8px;border-bottom:1px solid var(--br);display:flex;align-items:flex-start;justify-content:space-between;}
+.plan-nom{font-size:13px;font-weight:700;color:var(--tx);}
+.plan-cfg{font-size:9.5px;color:var(--tx3);margin-top:2px;}
+.plan-nums{display:grid;grid-template-columns:repeat(4,1fr);padding:9px 13px;}
 .pn{text-align:center;}
-.pn-lbl{font-size:9px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
-.pn-val{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--tx);}
-.pn-unit{font-size:9px;color:var(--tx3);}
-.plan-nota{padding:0 14px 12px;font-size:10px;color:var(--tx2);font-style:italic;line-height:1.5;}
+.pn-lbl{font-size:8.5px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;}
+.pn-val{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--tx);}
+.pn-unit{font-size:8.5px;color:var(--tx3);}
+.plan-nota{padding:0 13px 10px;font-size:10px;color:var(--tx2);line-height:1.5;}
 .plan-nota.warn{color:var(--rojo);}
+.plan-no{padding:12px 13px;font-size:12px;color:var(--tx3);}
+.icon-btn{background:none;border:none;font-size:15px;cursor:pointer;padding:2px 5px;color:var(--tx3);}
 
-.regla-card{background:var(--sf);border-radius:var(--r);margin:0 14px 8px;box-shadow:var(--shadow);overflow:hidden;}
-.regla-hdr{padding:11px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;}
-.regla-icon{font-size:16px;}
-.regla-cond{font-size:12px;font-weight:600;color:var(--tx);flex:1;}
-.regla-chev{font-size:11px;color:var(--tx3);transition:transform .2s;}
+/* Reglas */
+.regla-card{background:var(--sf);border-radius:var(--r);margin:0 13px 8px;box-shadow:var(--shadow);overflow:hidden;}
+.regla-hdr{display:flex;align-items:center;gap:8px;padding:10px 13px;cursor:pointer;}
+.regla-icon{font-size:15px;flex-shrink:0;}
+.regla-cond{font-size:12px;font-weight:600;color:var(--tx);flex:1;line-height:1.3;}
+.regla-acts{display:flex;gap:4px;flex-shrink:0;}
+.regla-chev{font-size:10px;color:var(--tx3);transition:transform .2s;display:inline-block;}
 .regla-chev.open{transform:rotate(90deg);}
-.regla-body{display:none;padding:0 14px 12px;font-size:11px;color:var(--tx2);line-height:1.6;border-top:1px solid var(--br);}
+.regla-body{display:none;padding:0 13px 11px;font-size:11px;color:var(--tx2);line-height:1.6;border-top:1px solid var(--br);}
 .regla-body.open{display:block;}
 
-/* Estanque section */
-.est-intro{background:var(--verde-l);border-radius:var(--r);margin:0 14px 12px;padding:12px 14px;border:1px solid rgba(26,92,46,.15);}
-.est-intro-txt{font-size:12px;color:var(--verde);line-height:1.5;}
+/* CONFIG */
+.cfg-esp-item{background:var(--sf);border-radius:var(--r);margin:0 13px 8px;box-shadow:var(--shadow);display:flex;align-items:center;padding:12px 13px;gap:10px;}
+.cfg-esp-info{flex:1;}
+.cfg-esp-nom{font-size:13px;font-weight:600;color:var(--tx);}
+.cfg-esp-sub{font-size:10px;color:var(--tx3);margin-top:2px;}
+.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 26px);margin:0 13px 11px;padding:12px;background:var(--rose2);border:1.5px dashed var(--br2);border-radius:var(--r);color:var(--tx3);font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;cursor:pointer;}
 
-.litros-row{display:flex;align-items:flex-end;gap:10px;border-bottom:2px solid var(--bordo);padding-bottom:6px;margin-bottom:14px;}
-.litros-input{font-family:'Playfair Display',serif;font-size:52px;font-weight:700;color:var(--tx);border:none;background:none;width:0;flex:1;outline:none;-webkit-appearance:none;line-height:1;}
-.litros-unit{font-size:16px;font-weight:600;color:var(--tx3);padding-bottom:10px;}
+/* MODALS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(26,15,20,.45);z-index:200;align-items:flex-end;justify-content:center;}
+.overlay.on{display:flex;}
+.modal{background:var(--sf);border-radius:20px 20px 0 0;padding:18px 16px 32px;width:100%;max-width:430px;box-shadow:0 -4px 32px rgba(139,26,74,.15);animation:up .2s ease;max-height:90vh;overflow-y:auto;}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-tit{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:3px;}
+.modal-sub{font-size:11px;color:var(--tx3);margin-bottom:16px;}
+.mfield{margin-bottom:13px;}
+.mfield label{display:block;font-size:9.5px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.mfield input,.mfield select,.mfield textarea{width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;background:var(--gris);color:var(--tx);font-family:'Montserrat',sans-serif;-webkit-appearance:none;outline:none;transition:border-color .2s;}
+.mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:var(--bordo);}
+.mfield textarea{resize:none;height:70px;font-size:13px;}
+.mgrid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.big-row{display:flex;align-items:flex-end;gap:8px;border-bottom:2px solid var(--bordo);padding-bottom:5px;margin-bottom:7px;}
+.big-inp{font-family:'Playfair Display',serif;font-size:50px;font-weight:700;color:var(--tx);border:none;background:none;width:0;flex:1;outline:none;-webkit-appearance:none;line-height:1;}
+.big-unit{font-size:15px;font-weight:600;color:var(--tx3);padding-bottom:9px;}
+.calc-box{background:var(--rose2);border-radius:var(--rs);padding:10px 13px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.calc-lbl{font-size:11px;color:var(--tx3);}
+.calc-val{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--bordo);}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.pbtn{padding:6px 12px;background:var(--rose2);border:1px solid var(--br);border-radius:16px;font-size:11px;font-weight:600;color:var(--tx2);cursor:pointer;font-family:'Montserrat',sans-serif;}
+.pbtn.on{background:var(--bordo);color:#fff;border-color:var(--bordo);}
+.btn-pri{width:100%;padding:13px;background:var(--bordo);color:#fff;border:none;border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(139,26,74,.3);}
+.btn-sec{width:100%;padding:11px;background:none;border:none;font-family:'Montserrat',sans-serif;font-size:12px;color:var(--tx3);cursor:pointer;margin-top:7px;}
+.btn-danger{background:var(--rojo);}
 
-.area-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
-.area-lbl{font-size:11px;color:var(--tx3);flex:1;}
-.area-input{width:70px;padding:7px 10px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;color:var(--tx);background:var(--sf);-webkit-appearance:none;outline:none;text-align:center;}
-.area-input:focus{border-color:var(--bordo);}
-.area-unit{font-size:11px;color:var(--tx3);}
-
-.esp-chips{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
-.esp-chip{display:flex;align-items:center;padding:11px 14px;border-radius:var(--r);border:2px solid var(--br);background:var(--sf);cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;}
-.esp-chip.on{border-color:var(--verde);background:var(--verde-l);}
-.esp-chip-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--br2);margin-right:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s;}
-.esp-chip.on .esp-chip-check{border-color:var(--verde);background:var(--verde);color:white;}
-.esp-chip-nom{font-size:13px;font-weight:600;color:var(--tx);flex:1;}
-.esp-chip.on .esp-chip-nom{color:var(--verde);}
-.esp-chip-beds{font-size:11px;color:var(--tx3);}
-.esp-chip.on .esp-chip-beds{color:var(--verde);}
-
-.est-result{background:var(--sf);border-radius:var(--r);margin:0 0 16px;box-shadow:var(--shadow);overflow:hidden;}
-.est-result-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--br);}
-.est-result-row:last-child{border-bottom:none;}
-.est-r-lbl{font-size:11px;color:var(--tx3);}
-.est-r-val{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--bordo);}
-.est-r-unit{font-size:11px;color:var(--tx3);margin-left:4px;}
-.est-r-mm{color:var(--verde);}
-
-/* Toast */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--tx);color:white;padding:10px 20px;border-radius:24px;font-size:13px;z-index:400;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow2);}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--tx);color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;z-index:400;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow2);}
 .toast.on{opacity:1;}
 .toast.ok{background:var(--verde);}
 .toast.err{background:var(--rojo);}
@@ -188,552 +184,633 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <h1>Plan de Riego</h1>
   <div class="hdr-sub" id="hdr-sub">Blossom Concept · María Pinto</div>
 </div>
-
 <div class="nav">
-  <button class="ntab on" id="nt-sem" onclick="showSec('sem')">
-    <span class="ntab-icon">📅</span>Semana
-  </button>
-  <button class="ntab" id="nt-est" onclick="showSec('est')">
-    <span class="ntab-icon">🧪</span>Estanque
-  </button>
-  <button class="ntab" id="nt-plan" onclick="showSec('plan')">
-    <span class="ntab-icon">📋</span>Plan
-  </button>
+  <button class="ntab on" id="nt-sem" onclick="showSec('sem')"><span class="ntab-icon">📅</span>Semana</button>
+  <button class="ntab" id="nt-est" onclick="showSec('est')"><span class="ntab-icon">🧪</span>Estanque</button>
+  <button class="ntab" id="nt-plan" onclick="showSec('plan')"><span class="ntab-icon">📋</span>Plan</button>
+  <button class="ntab" id="nt-cfg" onclick="showSec('cfg')"><span class="ntab-icon">⚙️</span>Config</button>
 </div>
 
 <!-- SEMANA -->
 <div class="sec on" id="sec-sem">
-  <div class="sem-hdr">
-    <div class="sem-week" id="sem-week-lbl">—</div>
-    <div class="sem-nav">
-      <button onclick="navWeek(-1)">‹</button>
-      <button class="act" onclick="navWeek(0)">Hoy</button>
-      <button onclick="navWeek(1)">›</button>
+  <div class="week-nav">
+    <div class="week-lbl" id="week-lbl">—</div>
+    <div class="week-btns">
+      <button onclick="navW(-1)">‹</button>
+      <button class="act" onclick="navW(0)">Hoy</button>
+      <button onclick="navW(1)">›</button>
     </div>
   </div>
-
-  <div class="total-prog">
-    <div class="card-tit">Progreso total de la semana</div>
-    <div class="prog-bar-bg"><div class="prog-bar" id="total-bar" style="width:0%"></div></div>
-    <div class="prog-stats">
-      <span id="total-stat-l">0 mm aplicados</span>
-      <span id="total-stat-r">de 0 mm planificados</span>
-    </div>
+  <div class="dash-grid" id="dash-grid">
+    <div class="dash-cell"><div class="dash-icon">💧</div><div class="dash-val c-riego" id="d-riego">0</div><div class="dash-lbl">Riego mm</div></div>
+    <div class="dash-cell"><div class="dash-icon">🌱</div><div class="dash-val c-fert" id="d-fert">0</div><div class="dash-lbl">Fert mm</div></div>
+    <div class="dash-cell"><div class="dash-icon">🌧</div><div class="dash-val c-lluvia" id="d-lluvia">0</div><div class="dash-lbl">Lluvia mm</div></div>
+    <div class="dash-cell"><div class="dash-icon">📊</div><div class="dash-val c-plan" id="d-plan">0</div><div class="dash-lbl">Plan mm</div></div>
   </div>
-
-  <button onclick="showSec('est')" style="display:flex;align-items:center;justify-content:space-between;width:calc(100% - 28px);margin:0 14px 12px;padding:13px 16px;background:var(--verde-l);border:1.5px solid rgba(26,92,46,.2);border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:600;color:var(--verde);cursor:pointer;">
-    <span>🌱 Registrar fertilización (estanque)</span>
-    <span style="font-size:16px">›</span>
+  <button class="lluvia-btn" onclick="openModal('lluvia')">
+    <span>🌧 Registrar lluvia</span><span style="font-size:16px">›</span>
   </button>
-
   <div id="esp-cards"></div>
-
   <div class="card" id="hist-card" style="display:none">
-    <div class="card-tit">Eventos esta semana</div>
+    <div class="ctit">Eventos esta semana</div>
     <div id="hist-list"></div>
   </div>
 </div>
 
 <!-- ESTANQUE -->
 <div class="sec" id="sec-est">
-  <div style="padding:14px 14px 0">
-    <div class="est-intro">
-      <div class="est-intro-txt">Ingresá cuántos litros tiene el estanque y seleccioná las especies que se fertilizaron. La app divide los litros entre el total de camas y descuenta ese riego del plan semanal.</div>
+  <div style="padding:0 13px">
+    <div style="background:var(--verde-l);border-radius:var(--r);padding:11px 13px;margin-bottom:12px;font-size:12px;color:var(--verde);line-height:1.5;border:1px solid rgba(26,92,46,.15)">
+      🌱 <strong>Fertilización por estanque.</strong> Los litros se dividen entre el total de camas seleccionadas y se registran como riego + fertilizante.
     </div>
-
-    <div class="card-tit" style="margin:0 0 8px">Litros en el estanque</div>
-    <div class="litros-row">
-      <input class="litros-input" type="number" id="est-litros" value="500" min="1" inputmode="numeric" oninput="calcEst()">
-      <span class="litros-unit">L</span>
+    <div class="ctit">Litros en el estanque</div>
+    <div class="big-row">
+      <input class="big-inp" type="number" id="est-l" value="500" min="1" inputmode="numeric" oninput="calcEst()">
+      <span class="big-unit">L</span>
     </div>
-
-    <div class="area-row">
-      <span class="area-lbl">Área por cama (para convertir a mm)</span>
-      <input class="area-input" type="number" id="est-area" value="36" min="1" inputmode="numeric" oninput="calcEst()">
-      <span class="area-unit">m²</span>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <span style="font-size:11px;color:var(--tx3);flex:1">Área por cama (para mm)</span>
+      <input id="est-area" type="number" value="36" min="1" inputmode="numeric" style="width:60px;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;background:var(--sf);color:var(--tx);-webkit-appearance:none;outline:none;text-align:center;" oninput="calcEst()">
+      <span style="font-size:11px;color:var(--tx3)">m²</span>
     </div>
-
-    <div class="card-tit" style="margin:0 0 8px">¿Qué especies se fertilizaron?</div>
-    <div class="esp-chips" id="est-chips"></div>
-
-    <div class="card-tit" style="margin:0 0 8px">Resultado por cama</div>
-    <div class="est-result" id="est-result">
-      <div class="est-result-row" style="color:var(--tx3);font-size:12px;padding:16px 14px;">Seleccioná al menos una especie</div>
+    <div class="ctit">Especies fertilizadas</div>
+    <div class="est-chips" id="est-chips"></div>
+    <div class="ctit">Resultado</div>
+    <div class="est-res" id="est-res">
+      <div class="est-row" style="color:var(--tx3);font-size:12px">Seleccioná al menos una especie</div>
     </div>
-
-    <button class="btn-pri" style="margin-bottom:10px" onclick="saveEstanque()">🌱 Registrar fertilización</button>
-    <button class="btn-sec" onclick="clearEstChips()">Limpiar selección</button>
+    <button class="btn-pri" style="margin-bottom:8px" onclick="saveEst()">🌱 Registrar fertilización</button>
+    <button class="btn-sec" onclick="clearEst()">Limpiar selección</button>
   </div>
-  <div style="height:30px"></div>
 </div>
 
 <!-- PLAN -->
 <div class="sec" id="sec-plan">
-  <div class="mes-tabs">
-    <button class="mes-tab on" id="tab-jun" onclick="setPlanMes('jun')">Junio 2026</button>
-    <button class="mes-tab" id="tab-jul" onclick="setPlanMes('jul')">Julio 2026</button>
-  </div>
+  <div class="mes-bar" id="mes-bar"></div>
   <div id="plan-cards"></div>
-  <div class="card-tit" style="margin:8px 14px 8px;">⚠ Reglas operacionales de invierno</div>
+  <div style="margin:4px 13px 8px;font-size:9.5px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;">⚠ Reglas operacionales</div>
   <div id="reglas-list"></div>
+  <div style="height:20px"></div>
+</div>
+
+<!-- CONFIG -->
+<div class="sec" id="sec-cfg">
+  <div style="padding:0 13px;margin-bottom:6px">
+    <div class="ctit" style="margin-bottom:6px">Especies</div>
+  </div>
+  <div id="cfg-spp"></div>
+  <button class="add-btn" onclick="openModal('add-esp')">+ Agregar especie</button>
+  <div style="padding:0 13px;margin-bottom:6px;margin-top:4px">
+    <div class="ctit" style="margin-bottom:6px">Reglas operacionales</div>
+  </div>
+  <div id="cfg-reglas"></div>
+  <button class="add-btn" onclick="openModal('add-regla')">+ Agregar regla</button>
   <div style="height:20px"></div>
 </div>
 
 </div><!-- /app -->
 
-<!-- Modal registro -->
-<div class="overlay" id="overlay" onclick="closeModal(event)">
-<div class="modal" id="modal">
-  <div class="modal-tit" id="modal-tit">💧 Registrar riego</div>
-  <div class="modal-sub" id="modal-sub">—</div>
-
-  <div class="modal-field">
-    <label>Minutos regados</label>
-    <div class="big-row">
-      <input class="big-input" type="number" id="modal-min" value="" min="0" inputmode="decimal" placeholder="0" oninput="onModalInput()">
-      <span class="big-unit">min</span>
-    </div>
-  </div>
-
-  <div class="modal-presets" id="modal-presets"></div>
-
-  <div class="calc-result">
-    <span class="calc-lbl">Agua aplicada</span>
-    <div style="display:flex;align-items:flex-end;gap:4px">
-      <span class="calc-val" id="modal-mm">—</span>
-      <span style="font-size:12px;color:var(--tx3);padding-bottom:5px">mm</span>
-    </div>
-  </div>
-
-  <button class="btn-pri" onclick="saveEvent()">Guardar</button>
-  <button class="btn-sec" onclick="closeModal()">Cancelar</button>
+<!-- MODALS -->
+<div class="overlay" id="ov" onclick="closeOv(event)">
+<div class="modal" id="modal-inner">
+  <!-- contenido dinámico -->
 </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── DATOS DEL PLAN ─────────────────────────────────────────────────────────
-const ESPECIES = [
-  {nom:'Lisianthus',      grp:'A',   tasaH:15, config:'3 cintas · goteros c/20cm (15 mm/h)',
-   jun:{min:12,evts:3,mmEvt:3.0,mmSem:9.0},   jul:{min:10,evts:3,mmEvt:2.5,mmSem:7.5},
-   nota:'Sensible a encharcamiento. No superar 12 min/evento.'},
-  {nom:'Estatice',        grp:'A',   tasaH:20, config:'2 cintas · goteros c/10cm (20 mm/h)',
-   jun:{min:6, evts:3,mmEvt:2.0,mmSem:6.0},   jul:{min:5, evts:3,mmEvt:1.7,mmSem:5.0},
-   nota:'En floración avanzada puede bajar a 2 eventos/sem.'},
-  {nom:'Snapdragon (1a)', grp:'B',   tasaH:30, config:'3 cintas · goteros c/10cm (30 mm/h)',
-   jun:{min:8, evts:3,mmEvt:4.0,mmSem:12.0},  jul:{min:7, evts:3,mmEvt:3.5,mmSem:10.5},
-   nota:'⚠ Alta tasa. Nunca superar 10 min/evento en invierno.'},
-  {nom:'Ranúnculo',       grp:'B',   tasaH:15, config:'3 cintas · goteros c/20cm (15 mm/h)',
-   jun:{min:9, evts:3,mmEvt:2.2,mmSem:6.8},   jul:{min:8, evts:3,mmEvt:2.0,mmSem:6.0},
-   nota:'⚠ MUY sensible a exceso de humedad. Regar en mañana. NO regar tarde si hay helada.'},
-  {nom:'Escabiosa',       grp:'C',   tasaH:30, config:'3 cintas · goteros c/10cm (30 mm/h)',
-   jun:{min:5, evts:4,mmEvt:2.5,mmSem:10.0},  jul:{min:6, evts:3,mmEvt:3.0,mmSem:9.0},
-   nota:'Julio: ya establecida, baja frecuencia a 3 eventos/sem.'},
-  {nom:'Snapdragon (2a)', grp:'C',   tasaH:30, config:'3 cintas · goteros c/10cm (30 mm/h)',
-   jun:{min:4, evts:4,mmEvt:2.0,mmSem:8.0},   jul:{min:7, evts:3,mmEvt:3.5,mmSem:10.5},
-   nota:'Julio: unificar con primera tanda, mismas dosis.'},
-  {nom:'Aleli',           grp:'C',   tasaH:30, config:'3 cintas · goteros c/10cm (30 mm/h)',
-   jun:{min:3, evts:4,mmEvt:1.5,mmSem:6.0},   jul:{min:4, evts:3,mmEvt:2.0,mmSem:6.0},
-   nota:'Raíz delicada. En helada regar solo en mañana (>11h).'},
-  {nom:'Pensamientos',    grp:'C',   tasaH:30, config:'3 cintas · goteros c/10cm (30 mm/h)',
-   jun:{min:3, evts:5,mmEvt:1.5,mmSem:7.5},   jul:{min:4, evts:3,mmEvt:2.0,mmSem:6.0},
-   nota:'Raíz superficial: regar si se ve marchito aunque no corresponda.'},
+// ── DEFAULTS ──────────────────────────────────────────────────────────────
+const DEF_SPP = [
+  {nom:'Lisianthus',  grp:'A', tasaH:15, config:'3 cintas · goteros c/20cm', ncamas:10,
+   planes:[{mes:'2026-06',min:12,evts:3,mmEvt:3.0,mmSem:9.0,nota:'Sensible a encharcamiento. No superar 12 min/evt.'},
+           {mes:'2026-07',min:10,evts:3,mmEvt:2.5,mmSem:7.5,nota:'Rebrotación+floración. Suelo 60-70% CC.'}]},
+  {nom:'Estatice',    grp:'A', tasaH:20, config:'2 cintas · goteros c/10cm', ncamas:7,
+   planes:[{mes:'2026-06',min:6,evts:3,mmEvt:2.0,mmSem:6.0,nota:'En floración avanzada puede bajar a 2 eventos.'},
+           {mes:'2026-07',min:5,evts:3,mmEvt:1.7,mmSem:5.0,nota:'Floración. Prefiere algo seca.'}]},
+  {nom:'Snapdragon (1a)',grp:'B',tasaH:30,config:'3 cintas · goteros c/10cm',ncamas:4,
+   planes:[{mes:'2026-06',min:8,evts:3,mmEvt:4.0,mmSem:12.0,nota:'⚠ Nunca superar 10 min/evt en invierno.'},
+           {mes:'2026-07',min:7,evts:3,mmEvt:3.5,mmSem:10.5,nota:'⚠ Tiempos cortos clave.'}]},
+  {nom:'Ranúnculo',   grp:'B', tasaH:15, config:'3 cintas · goteros c/20cm', ncamas:6,
+   planes:[{mes:'2026-06',min:9,evts:3,mmEvt:2.2,mmSem:6.8,nota:'⚠ MUY sensible a exceso humedad. Regar en mañana.'},
+           {mes:'2026-07',min:8,evts:3,mmEvt:2.0,mmSem:6.0,nota:'⚠ NO regar tarde si hay helada.'}]},
+  {nom:'Escabiosa',   grp:'C', tasaH:30, config:'3 cintas · goteros c/10cm', ncamas:12,
+   planes:[{mes:'2026-06',min:5,evts:4,mmEvt:2.5,mmSem:10.0,nota:'Raíz delicada en trasplante. Frecuencia alta.'},
+           {mes:'2026-07',min:6,evts:3,mmEvt:3.0,mmSem:9.0,nota:'Ya establecida, baja frecuencia a 3/sem.'}]},
+  {nom:'Snapdragon (2a)',grp:'C',tasaH:30,config:'3 cintas · goteros c/10cm',ncamas:4,
+   planes:[{mes:'2026-06',min:4,evts:4,mmEvt:2.0,mmSem:8.0,nota:'Frecuente y poco en trasplante.'},
+           {mes:'2026-07',min:7,evts:3,mmEvt:3.5,mmSem:10.5,nota:'Unificar con primera tanda.'}]},
+  {nom:'Aleli',       grp:'C', tasaH:30, config:'3 cintas · goteros c/10cm', ncamas:7,
+   planes:[{mes:'2026-06',min:3,evts:4,mmEvt:1.5,mmSem:6.0,nota:'En helada regar solo mañana (>11h).'},
+           {mes:'2026-07',min:4,evts:3,mmEvt:2.0,mmSem:6.0,nota:'Raíz más robusta, +1min.'}]},
+  {nom:'Pensamientos', grp:'C',tasaH:30, config:'3 cintas · goteros c/10cm', ncamas:8,
+   planes:[{mes:'2026-06',min:3,evts:5,mmEvt:1.5,mmSem:7.5,nota:'Raíz superficial: regar si se ve marchito.'},
+           {mes:'2026-07',min:4,evts:3,mmEvt:2.0,mmSem:6.0,nota:'Tolerante frío. Menos frecuencia en julio.'}]},
 ];
 
-const REGLAS = [
-  {icon:'🧊',cond:'Helada pronosticada esa noche (<3°C)',accion:'NO regar tarde ni de noche. Regar suavemente al amanecer siguiente. Suelo húmedo pierde calor más rápido.'},
-  {icon:'🧊',cond:'Post-helada fuerte (< −1.5°C)',accion:'Riego ligero al amanecer antes que el sol caliente. Protege del deshielo brusco que daña tejidos.'},
-  {icon:'🌧',cond:'Lluvia >10 mm en la semana',accion:'Suspender 1 evento ese día. Verificar humedad antes del siguiente. Suelo areno-francoso drena bien pero saturar es riesgo.'},
-  {icon:'🌧',cond:'Lluvia >25 mm en la semana',accion:'Reducir a 2 eventos/sem esa semana. Verificar drenaje especialmente Ranúnculo y Lisianthus.'},
-  {icon:'💧',cond:'HR interior >85% en la mañana',accion:'Ventilar 11h–15h. No regar ese día o postergar. Riesgo Botrytis en Lisianthus, Estatice y Ranúnculo.'},
-  {icon:'☁️',cond:'Días nublados consecutivos >4 días',accion:'Reducir 1 evento/semana en todos los grupos. Menor radiación = menor ETo.'},
-  {icon:'🌱',cond:'Suelo seco al tacto (muestra a 5 cm)',accion:'Adelantar 1 evento aunque no corresponda. El plan es guía, no regla absoluta.'},
-  {icon:'⚠️',cond:'Agua libre visible post-riego',accion:'Suspender riego ese grupo 48h. Revisar drenaje. Especialmente crítico con Snapdragon (30 mm/h).'},
-  {icon:'⚠️',cond:'Snapdragon / Aleli / Pensamientos (30 mm/h)',accion:'Nunca superar 10 min/evento. Con esta tasa, 10 min = 5 mm, excesivo para ETo invernal. Preferir 4–8 min según etapa.'},
+const DEF_REGLAS = [
+  {id:'r1',icon:'🧊',cond:'Helada pronosticada esa noche (<3°C)',
+   accion:'Asperjar suave EL DÍA DE ANTES, no el día posterior. Suelo húmedo pierde calor más rápido. Regar al amanecer ANTES de la helada.'},
+  {id:'r2',icon:'🧊',cond:'Post-helada: evaluar según condiciones',
+   accion:'No hay acción automática. Evaluar estado visual de plantas, temperatura del suelo y pronóstico. Solo regar si el suelo lo requiere y no hay nueva helada proyectada.'},
+  {id:'r3',icon:'🌧',cond:'Lluvia: registrar mm y descontar del plan',
+   accion:'Registrar los mm de lluvia en el apartado "Lluvia" (botón en Semana). El sistema los suma automáticamente al riego aplicado de todas las especies. Los mm de lluvia reemplazan eventos de riego equivalentes.'},
+  {id:'r4',icon:'🌧',cond:'Lluvia >10 mm en la semana',
+   accion:'Suspender 1 evento ese día. El suelo areno-francoso drena bien pero saturar es riesgo, especialmente Ranúnculo y Lisianthus.'},
+  {id:'r5',icon:'🌧',cond:'Lluvia >25 mm en la semana',
+   accion:'Reducir a 2 eventos/sem esa semana. Verificar drenaje activamente.'},
+  {id:'r6',icon:'💦',cond:'HR interior >85% con temperatura sobre 14°C',
+   accion:'Ventilar 11h–15h. No regar ese día o postergar. Por debajo de 14°C la HR alta no implica riesgo inmediato de Botrytis. Riesgo principal: Lisianthus, Estatice y Ranúnculo.'},
+  {id:'r7',icon:'☁️',cond:'Días nublados consecutivos >4 días',
+   accion:'Reducir 1 evento/semana en todos los grupos. Menor radiación = menor ETo.'},
+  {id:'r8',icon:'🌱',cond:'Suelo seco al tacto (muestra a 5 cm)',
+   accion:'Adelantar 1 evento aunque no corresponda. El plan es guía, no regla absoluta.'},
+  {id:'r9',icon:'⚠️',cond:'Agua libre visible en superficie post-riego',
+   accion:'Suspender ese grupo 48h. Revisar drenaje. Especialmente crítico con Snapdragon (30 mm/h).'},
+  {id:'r10',icon:'⚠️',cond:'Snapdragon / Aleli / Pensamientos (30 mm/h)',
+   accion:'Nunca superar 10 min/evento en invierno. 10min=5mm, excesivo para ETo invernal. Preferir 4–8min según etapa.'},
 ];
 
-// ── ESTADO ─────────────────────────────────────────────────────────────────
-let eventos = JSON.parse(localStorage.getItem('plan_riego_v1') || '[]');
-let weekOffset = 0; // 0 = semana actual, -1 = semana pasada, etc.
-let modalEsp = null;
-let modalTipo = 'riego';
-let planMes = 'jun';
+// ── ESTADO ────────────────────────────────────────────────────────────────
+let spp    = JSON.parse(localStorage.getItem('pr_spp')    || 'null') || DEF_SPP.map(e=>({...e,planes:[...e.planes]}));
+let reglas = JSON.parse(localStorage.getItem('pr_reglas') || 'null') || DEF_REGLAS.map(r=>({...r}));
+let eventos= JSON.parse(localStorage.getItem('pr_eventos')|| localStorage.getItem('plan_riego_v1') || '[]');
+let weekOff= 0;
+let planMes= '';
+let estSel = new Set();
+let editIdx= null; // para edición de especie/regla
 
-function save(){ localStorage.setItem('plan_riego_v1', JSON.stringify(eventos)); }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+function saveAll(){ save('pr_spp',spp); save('pr_reglas',reglas); save('pr_eventos',eventos); }
 
-// ── SEMANA ──────────────────────────────────────────────────────────────────
-function weekMon(offset=0){
-  const d = new Date();
-  d.setHours(0,0,0,0);
-  const dow = d.getDay();
-  const diff = dow===0 ? -6 : 1-dow;
-  d.setDate(d.getDate() + diff + offset*7);
+// ── SEMANA ────────────────────────────────────────────────────────────────
+function wMon(off=0){
+  const d=new Date(); d.setHours(0,0,0,0);
+  const dw=d.getDay(); d.setDate(d.getDate()+(dw===0?-6:1-dw)+off*7);
   return d;
 }
-function dateStr(d){ return d.toISOString().split('T')[0]; }
-function fmtDate(d){
-  return d.toLocaleDateString('es-CL',{day:'numeric',month:'short'});
+function ds(d){ return d.toISOString().split('T')[0]; }
+function fdDate(d){ return d.toLocaleDateString('es-CL',{day:'numeric',month:'short'}); }
+function mesKey(d){ return d.toISOString().slice(0,7); }
+function planForMes(esp, mk){
+  if(!esp.planes||!esp.planes.length) return null;
+  const exact = esp.planes.find(p=>p.mes===mk);
+  if(exact) return exact;
+  const sorted = [...esp.planes].sort((a,b)=>b.mes.localeCompare(a.mes));
+  return sorted[0];
 }
 
-function navWeek(n){
-  if(n===0) weekOffset=0;
-  else weekOffset+=n;
-  renderSem();
-}
+function navW(n){ weekOff = n===0?0:weekOff+n; renderSem(); }
 
-function eventsForWeek(offset){
-  const mon = weekMon(offset);
-  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-  const m0 = dateStr(mon), m1 = dateStr(sun);
-  return eventos.filter(e=>e.fecha>=m0 && e.fecha<=m1);
-}
-
-function getMesKey(monDate){
-  const m = monDate.getMonth()+1;
-  if(m===6) return 'jun';
-  if(m===7) return 'jul';
-  return m<6 ? 'jun' : 'jul';
+function eventsWeek(off){
+  const m=wMon(off), sun=new Date(m); sun.setDate(m.getDate()+6);
+  const a=ds(m), b=ds(sun);
+  return eventos.filter(e=>e.fecha>=a&&e.fecha<=b);
 }
 
 function renderSem(){
-  const mon = weekMon(weekOffset);
-  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-  const mesKey = getMesKey(mon);
+  const mon=wMon(weekOff), mk=mesKey(mon);
+  document.getElementById('week-lbl').textContent = fdDate(mon)+' – '+fdDate(new Date(mon.getTime()+6*864e5));
+  document.getElementById('hdr-sub').textContent = 'Blossom Concept · '+mon.toLocaleDateString('es-CL',{month:'long',year:'numeric'});
 
-  document.getElementById('sem-week-lbl').textContent =
-    fmtDate(mon) + ' – ' + fmtDate(sun);
-  document.getElementById('hdr-sub').textContent =
-    'Blossom Concept · ' + (mesKey==='jun'?'Junio':'Julio') + ' 2026';
+  const wEvts = eventsWeek(weekOff);
+  const lluvia = wEvts.filter(e=>e.tipo==='lluvia').reduce((s,e)=>s+e.mm,0);
 
-  const wEvts = eventsForWeek(weekOffset);
+  let tRiego=0,tFert=0,tPlan=0;
+  spp.forEach(e=>{ const p=planForMes(e,mk); if(p) tPlan+=p.mmSem; });
 
-  // Totales
-  const totalPlan = ESPECIES.reduce((s,e)=>s+e[mesKey].mmSem, 0);
-  const totalAplic = ESPECIES.reduce((s,e)=>{
-    const mm = wEvts.filter(ev=>ev.especie===e.nom).reduce((a,ev)=>a+ev.mm,0);
-    return s+mm;
-  }, 0);
-  const pct = totalPlan>0 ? Math.min(100,Math.round(totalAplic/totalPlan*100)) : 0;
+  // Dashboard
+  const allNonLluvia = wEvts.filter(e=>e.tipo!=='lluvia');
+  allNonLluvia.forEach(e=>{ if(e.tipo==='riego') tRiego+=e.mm; else if(e.tipo==='fertilizacion') tFert+=e.mm; });
 
-  document.getElementById('total-bar').style.width = pct+'%';
-  document.getElementById('total-stat-l').textContent = totalAplic.toFixed(1)+' mm aplicados';
-  document.getElementById('total-stat-r').textContent = 'de '+totalPlan.toFixed(0)+' mm planificados';
+  document.getElementById('d-riego').textContent  = tRiego.toFixed(1);
+  document.getElementById('d-fert').textContent   = tFert.toFixed(1);
+  document.getElementById('d-lluvia').textContent = lluvia.toFixed(1);
+  document.getElementById('d-plan').textContent   = tPlan.toFixed(0);
 
   // Cards por especie
-  const container = document.getElementById('esp-cards');
-  container.innerHTML = ESPECIES.map(e=>{
-    const plan = e[mesKey];
-    const evtsEsp = wEvts.filter(ev=>ev.especie===e.nom);
-    const mmAplic = evtsEsp.reduce((s,ev)=>s+ev.mm, 0);
-    const pctE = plan.mmSem>0 ? Math.min(100,mmAplic/plan.mmSem*100) : 0;
-    const remaining = Math.max(0, plan.mmSem - mmAplic);
-    let fillColor = 'linear-gradient(90deg,var(--bordo2),var(--bordo3))';
-    if(pctE>=100) fillColor='var(--verde)';
-    else if(pctE<30 && mmAplic>0) fillColor='var(--am)';
-    const grpClass = e.grp==='A'?'grp-A':e.grp==='B'?'grp-B':'grp-C';
+  const cont = document.getElementById('esp-cards');
+  cont.innerHTML = spp.map(e=>{
+    const plan = planForMes(e, mk);
+    if(!plan) return '';
+    const evE   = wEvts.filter(v=>v.especie===e.nom);
+    const mmR   = evE.filter(v=>v.tipo==='riego').reduce((s,v)=>s+v.mm,0);
+    const mmF   = evE.filter(v=>v.tipo==='fertilizacion').reduce((s,v)=>s+v.mm,0);
+    const mmL   = lluvia; // lluvia aplica a todas
+    const total = mmR+mmF+mmL;
+    const pct   = plan.mmSem>0?Math.min(100,total/plan.mmSem*100):0;
+    const rem   = Math.max(0,plan.mmSem-total);
+    let fill = 'linear-gradient(90deg,var(--bordo2),var(--bordo3))';
+    if(pct>=100) fill='var(--verde)';
+    const gc = e.grp==='A'?'gA':e.grp==='B'?'gB':'gC';
     return `<div class="esp-card">
-      <div class="esp-hdr">
-        <div class="esp-info">
-          <div class="esp-nom">${e.nom}</div>
-          <div class="esp-cfg">${e.tasaH} mm/h · ${plan.evts} eventos/sem · ${plan.mmEvt} mm/evt</div>
-        </div>
-        <span class="esp-grp ${grpClass}">Grp ${e.grp}</span>
+      <div class="esp-top">
+        <div><div class="esp-nom">${e.nom}</div><div class="esp-cfg">${e.tasaH} mm/h · ${plan.evts} evts/sem · ${plan.mmEvt} mm/evt</div></div>
+        <span class="grp-badge ${gc}">Grp ${e.grp}</span>
       </div>
-      <div class="esp-prog-area">
-        <div class="esp-prog-bg">
-          <div class="esp-prog-fill" style="width:${pctE}%;background:${fillColor}"></div>
+      <div class="esp-prog">
+        <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${fill}"></div></div>
+        <div class="esp-breakdown">
+          ${mmR>0?`<span class="b-riego">💧 ${mmR.toFixed(1)} mm</span>`:''}
+          ${mmF>0?`<span class="b-fert">🌱 ${mmF.toFixed(1)} mm</span>`:''}
+          ${mmL>0?`<span class="b-lluvia">🌧 ${mmL.toFixed(1)} mm</span>`:''}
+          ${total===0?'<span style="color:var(--tx3);font-size:10px">Sin registros esta semana</span>':''}
         </div>
-        <div class="esp-stats">
-          <span class="esp-mm">${mmAplic.toFixed(1)} / ${plan.mmSem} mm</span>
-          <span class="esp-evts">${evtsEsp.length} evento${evtsEsp.length!==1?'s':''} · faltan ${remaining.toFixed(1)} mm</span>
-        </div>
+        <div class="esp-stat">${total.toFixed(1)} / ${plan.mmSem} mm · faltan <strong>${rem.toFixed(1)} mm</strong></div>
       </div>
-      <div class="esp-actions">
-        <button class="esp-btn" onclick="openModal('${e.nom}','riego')">💧 Registrar riego</button>
-      </div>
+      <button class="esp-reg-btn" onclick="openModal('riego','${e.nom}')">💧 Registrar riego</button>
     </div>`;
   }).join('');
 
   // Historial
-  const sorted = [...wEvts].sort((a,b)=>b.fecha.localeCompare(a.fecha));
-  const histCard = document.getElementById('hist-card');
+  const sorted=[...wEvts].sort((a,b)=>b.fecha.localeCompare(a.fecha)||b.id.localeCompare(a.id));
+  const hc=document.getElementById('hist-card');
   if(sorted.length){
-    histCard.style.display='';
-    document.getElementById('hist-list').innerHTML = sorted.map(ev=>`
-      <div class="hist-item">
-        <div class="hist-info">
-          <span class="hist-esp">${ev.especie}</span>
-          <span class="tag ${ev.tipo==='fertilizacion'?'tag-fert':'tag-riego'}">${ev.tipo==='fertilizacion'?'fertilizante':'riego'}</span>
-          <div class="hist-det">${ev.fecha} · ${ev.min} min · ${ev.mm.toFixed(2)} mm</div>
+    hc.style.display='';
+    document.getElementById('hist-list').innerHTML = sorted.map(ev=>{
+      const dot = ev.tipo==='riego'?'dot-riego':ev.tipo==='fertilizacion'?'dot-fert':'dot-lluvia';
+      const color = ev.tipo==='riego'?'var(--azul)':ev.tipo==='fertilizacion'?'var(--verde)':'var(--cielo)';
+      const label = ev.tipo==='riego'?'💧 Riego':ev.tipo==='fertilizacion'?'🌱 Fertilización':'🌧 Lluvia';
+      const det = ev.tipo==='lluvia'
+        ? ev.fecha
+        : `${ev.fecha}${ev.min?` · ${ev.min} min`:''}${ev.nota?' · '+ev.nota:''}`;
+      return `<div class="hist-item">
+        <div class="hist-dot ${dot}"></div>
+        <div class="hist-body">
+          <div class="hist-nom">${ev.especie||'Todas las especies'} <span style="font-size:9px;color:${color};font-weight:600">${label}</span></div>
+          <div class="hist-det">${det}</div>
         </div>
-        <button class="hist-del" onclick="deleteEvt('${ev.id}')">×</button>
-      </div>`).join('');
-  } else {
-    histCard.style.display='none';
-  }
+        <span class="hist-mm" style="color:${color}">${ev.mm.toFixed(2)} mm</span>
+        <button class="hist-del" onclick="delEv('${ev.id}')">×</button>
+      </div>`;
+    }).join('');
+  } else { hc.style.display='none'; }
 }
 
-// ── MODAL ──────────────────────────────────────────────────────────────────
-function openModal(espNom, tipo){
-  modalEsp = ESPECIES.find(e=>e.nom===espNom);
-  if(!modalEsp) return;
-  const mon = weekMon(weekOffset);
-  const mesKey = getMesKey(mon);
-  const plan = modalEsp[mesKey];
-
-  setTipo(tipo);
-  document.getElementById('modal-tit').textContent = modalEsp.nom;
-  document.getElementById('modal-sub').textContent =
-    modalEsp.config + ' · Plan: '+plan.min+' min/evt = '+plan.mmEvt+' mm';
-  document.getElementById('modal-min').value = '';
-  document.getElementById('modal-mm').textContent = '—';
-
-  // Presets con los minutos del plan
-  const presets = [...new Set([plan.min, Math.max(1,plan.min-2), plan.min+2, 5, 10].filter(x=>x>0))].sort((a,b)=>a-b);
-  document.getElementById('modal-presets').innerHTML = presets.map(n=>
-    `<button class="mpbtn" onclick="setModalMin(${n})">${n} min</button>`
-  ).join('');
-
-  document.getElementById('overlay').classList.add('on');
-  document.getElementById('modal-min').focus();
-}
-
-function closeModal(e){
-  if(e && e.target!==document.getElementById('overlay')) return;
-  document.getElementById('overlay').classList.remove('on');
-  modalEsp = null;
-}
-
-function setTipo(t){
-  modalTipo = t;
-  document.getElementById('btn-riego').classList.toggle('on', t==='riego');
-  document.getElementById('btn-fert').classList.toggle('on', t==='fertilizacion');
-  onModalInput();
-}
-
-function setModalMin(n){
-  document.getElementById('modal-min').value = n;
-  document.querySelectorAll('.mpbtn').forEach(b=>b.classList.toggle('on', +b.textContent.replace(' min','')=== n));
-  onModalInput();
-}
-
-function onModalInput(){
-  const min = +document.getElementById('modal-min').value;
-  if(!modalEsp || !min || min<=0){
-    document.getElementById('modal-mm').textContent = '—';
-    return;
-  }
-  const mm = modalEsp.tasaH * min / 60;
-  document.getElementById('modal-mm').textContent = mm>=10 ? mm.toFixed(1) : mm.toFixed(2);
-}
-
-function saveEvent(){
-  const min = +document.getElementById('modal-min').value;
-  if(!modalEsp || !min || min<=0){ toast('Ingresa los minutos','err'); return; }
-  const mm = modalEsp.tasaH * min / 60;
-  const mon = weekMon(weekOffset);
-  const today = dateStr(new Date());
-  const wStart = dateStr(mon);
-  const wEnd = dateStr(new Date(mon.getTime()+6*864e5));
-  const fecha = today>=wStart && today<=wEnd ? today : wStart;
-
-  const ev = {
-    id: Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-    fecha, especie: modalEsp.nom,
-    min, mm: +mm.toFixed(3),
-    tipo: modalTipo
-  };
-  eventos.push(ev);
-  save();
-  document.getElementById('overlay').classList.remove('on');
-  modalEsp = null;
-  renderSem();
-  toast('✓ '+ev.especie+' · '+min+'min · '+mm.toFixed(2)+'mm guardado','ok');
-}
-
-function deleteEvt(id){
-  eventos = eventos.filter(e=>e.id!==id);
-  save();
-  renderSem();
-}
+function delEv(id){ eventos=eventos.filter(e=>e.id!==id); save('pr_eventos',eventos); renderSem(); }
 
 // ── PLAN ──────────────────────────────────────────────────────────────────
-function setPlanMes(m){
-  planMes = m;
-  document.getElementById('tab-jun').classList.toggle('on', m==='jun');
-  document.getElementById('tab-jul').classList.toggle('on', m==='jul');
-  renderPlan();
+function allMeses(){
+  const set=new Set();
+  spp.forEach(e=>e.planes&&e.planes.forEach(p=>set.add(p.mes)));
+  return [...set].sort();
 }
-
 function renderPlan(){
-  const m = planMes;
-  document.getElementById('plan-cards').innerHTML = ESPECIES.map(e=>{
-    const p = e[m];
-    const grpClass = e.grp==='A'?'grp-A':e.grp==='B'?'grp-B':'grp-C';
-    const warn = e.nota.startsWith('⚠');
+  const meses = allMeses();
+  if(!planMes||!meses.includes(planMes)) planMes=meses[0]||'';
+  document.getElementById('mes-bar').innerHTML =
+    meses.map(m=>`<button class="mes-chip${m===planMes?' on':''}" onclick="setPlanMes('${m}')">${m}</button>`).join('')+
+    `<button class="mes-chip add" onclick="openModal('add-mes')">+ Mes</button>`;
+  document.getElementById('plan-cards').innerHTML = spp.map(e=>{
+    const p=e.planes&&e.planes.find(pl=>pl.mes===planMes);
+    const gc=e.grp==='A'?'gA':e.grp==='B'?'gB':'gC';
     return `<div class="plan-card">
       <div class="plan-hdr">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div class="plan-nom">${e.nom}</div>
-          <span class="esp-grp ${grpClass}">Grp ${e.grp}</span>
+        <div><div class="plan-nom">${e.nom}</div><div class="plan-cfg">${e.config} · ${e.ncamas} camas</div></div>
+        <div style="display:flex;gap:2px;align-items:center">
+          <span class="grp-badge ${gc}">Grp ${e.grp}</span>
+          ${p?`<button class="icon-btn" onclick="openModal('edit-plan','${e.nom}')">✏️</button>`
+             :`<button class="icon-btn" onclick="openModal('add-plan','${e.nom}')">➕</button>`}
         </div>
-        <div class="plan-cfg">${e.config}</div>
       </div>
+      ${p?`
       <div class="plan-nums">
         <div class="pn"><div class="pn-lbl">Min/evt</div><div class="pn-val">${p.min}</div><div class="pn-unit">min</div></div>
         <div class="pn"><div class="pn-lbl">Evts/sem</div><div class="pn-val">${p.evts}</div><div class="pn-unit">veces</div></div>
         <div class="pn"><div class="pn-lbl">mm/evt</div><div class="pn-val">${p.mmEvt}</div><div class="pn-unit">mm</div></div>
         <div class="pn"><div class="pn-lbl">mm/sem</div><div class="pn-val" style="color:var(--bordo)">${p.mmSem}</div><div class="pn-unit">mm</div></div>
       </div>
-      <div class="plan-nota ${warn?'warn':''}">${e.nota}</div>
+      <div class="plan-nota${p.nota&&p.nota.startsWith('⚠')?' warn':''}">${p.nota||''}</div>`
+      :`<div class="plan-no">Sin plan para este mes — <span style="color:var(--bordo);cursor:pointer" onclick="openModal('add-plan','${e.nom}')">Agregar</span></div>`}
     </div>`;
   }).join('');
 
-  document.getElementById('reglas-list').innerHTML = REGLAS.map((r,i)=>`
+  // Reglas
+  document.getElementById('reglas-list').innerHTML = reglas.map((r,i)=>`
     <div class="regla-card">
       <div class="regla-hdr" onclick="toggleRegla(${i})">
         <span class="regla-icon">${r.icon}</span>
         <span class="regla-cond">${r.cond}</span>
-        <span class="regla-chev" id="rchev-${i}">▸</span>
+        <span class="regla-chev" id="rch-${i}">▸</span>
       </div>
-      <div class="regla-body" id="rbody-${i}">${r.accion}</div>
+      <div class="regla-body" id="rb-${i}">${r.accion}</div>
     </div>`).join('');
 }
 
+function setPlanMes(m){ planMes=m; renderPlan(); }
 function toggleRegla(i){
-  const body = document.getElementById('rbody-'+i);
-  const chev = document.getElementById('rchev-'+i);
-  const open = body.classList.toggle('open');
-  chev.classList.toggle('open', open);
+  const b=document.getElementById('rb-'+i),c=document.getElementById('rch-'+i);
+  b.classList.toggle('open'); c.classList.toggle('open',b.classList.contains('open'));
 }
 
-// ── ESTANQUE ───────────────────────────────────────────────────────────────
-// Número de camas hardcodeado por especie (lo que está activo actualmente)
-const N_CAMAS = {
-  'Lisianthus':10, 'Estatice':7, 'Snapdragon (1a)':4, 'Ranúnculo':6,
-  'Escabiosa':12, 'Snapdragon (2a)':4, 'Aleli':7, 'Pensamientos':8
-};
+// ── CONFIG ────────────────────────────────────────────────────────────────
+function renderCfg(){
+  document.getElementById('cfg-spp').innerHTML = spp.map((e,i)=>`
+    <div class="cfg-esp-item">
+      <div class="cfg-esp-info">
+        <div class="cfg-esp-nom">${e.nom} <span class="grp-badge ${e.grp==='A'?'gA':e.grp==='B'?'gB':'gC'}">Grp ${e.grp}</span></div>
+        <div class="cfg-esp-sub">${e.tasaH} mm/h · ${e.ncamas} camas · ${(e.planes||[]).length} plan(es)</div>
+      </div>
+      <button class="icon-btn" onclick="openModal('edit-esp',${i})">✏️</button>
+      <button class="icon-btn" onclick="delEsp(${i})">🗑️</button>
+    </div>`).join('');
 
-let estSeleccion = new Set();
+  document.getElementById('cfg-reglas').innerHTML = reglas.map((r,i)=>`
+    <div class="regla-card">
+      <div class="regla-hdr">
+        <span class="regla-icon">${r.icon}</span>
+        <span class="regla-cond" style="flex:1">${r.cond}</span>
+        <button class="icon-btn" onclick="openModal('edit-regla',${i})">✏️</button>
+        <button class="icon-btn" onclick="delRegla(${i})">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+function delEsp(i){ if(!confirm('¿Eliminar '+spp[i].nom+'?')) return; spp.splice(i,1); save('pr_spp',spp); renderCfg(); toast('Especie eliminada'); }
+function delRegla(i){ reglas.splice(i,1); save('pr_reglas',reglas); renderCfg(); renderPlan(); toast('Regla eliminada'); }
 
+// ── ESTANQUE ──────────────────────────────────────────────────────────────
 function renderEstChips(){
-  const cont = document.getElementById('est-chips');
-  if(!cont) return;
-  cont.innerHTML = ESPECIES.map(e=>{
-    const n = N_CAMAS[e.nom] || '?';
-    const on = estSeleccion.has(e.nom);
-    return `<div class="esp-chip ${on?'on':''}" onclick="toggleEstChip('${e.nom}')">
-      <div class="esp-chip-check">${on?'✓':''}</div>
-      <span class="esp-chip-nom">${e.nom}</span>
-      <span class="esp-chip-beds">${n} camas</span>
+  document.getElementById('est-chips').innerHTML = spp.map(e=>{
+    const on=estSel.has(e.nom);
+    return `<div class="chip${on?' on':''}" onclick="togEst('${e.nom}')">
+      <div class="chip-chk">${on?'✓':''}</div>
+      <span class="chip-nom">${e.nom}</span>
+      <span class="chip-n">${e.ncamas} camas</span>
     </div>`;
   }).join('');
 }
-
-function toggleEstChip(nom){
-  if(estSeleccion.has(nom)) estSeleccion.delete(nom);
-  else estSeleccion.add(nom);
-  renderEstChips();
-  calcEst();
-}
-
-function clearEstChips(){
-  estSeleccion.clear();
-  renderEstChips();
-  calcEst();
-}
-
+function togEst(nom){ estSel.has(nom)?estSel.delete(nom):estSel.add(nom); renderEstChips(); calcEst(); }
+function clearEst(){ estSel.clear(); renderEstChips(); calcEst(); }
 function calcEst(){
-  const litros = +document.getElementById('est-litros').value || 0;
-  const area   = +document.getElementById('est-area').value  || 36;
-  const espSel = [...estSeleccion];
-  const totalCamas = espSel.reduce((s,n)=>s+(N_CAMAS[n]||0), 0);
-  const res = document.getElementById('est-result');
-
-  if(!espSel.length || !litros){
-    res.innerHTML = `<div class="est-result-row" style="color:var(--tx3);font-size:12px;padding:16px 14px;">${!litros?'Ingresá los litros del estanque':'Seleccioná al menos una especie'}</div>`;
-    return;
-  }
-
-  const lPorCama = litros / totalCamas;
-  const mmPorCama = lPorCama / area;
-
-  let rows = `
-    <div class="est-result-row">
-      <span class="est-r-lbl">Total camas fertilizadas</span>
-      <div><span class="est-r-val" style="color:var(--tx)">${totalCamas}</span> <span class="est-r-unit">camas</span></div>
-    </div>
-    <div class="est-result-row">
-      <span class="est-r-lbl">Litros por cama</span>
-      <div><span class="est-r-val">${lPorCama.toFixed(1)}</span> <span class="est-r-unit">L/cama</span></div>
-    </div>
-    <div class="est-result-row" style="background:var(--verde-l)">
-      <span class="est-r-lbl" style="color:var(--verde);font-weight:600">mm aplicados por cama</span>
-      <div><span class="est-r-val est-r-mm">${mmPorCama.toFixed(2)}</span> <span class="est-r-unit">mm</span></div>
-    </div>`;
-
-  // Desglose por especie
-  rows += espSel.map(nom=>{
-    const n = N_CAMAS[nom]||0;
-    const lEsp = lPorCama * n;
-    return `<div class="est-result-row">
-      <span class="est-r-lbl">${nom} (${n} camas)</span>
-      <span class="est-r-unit" style="font-size:12px;color:var(--tx2)">${lEsp.toFixed(0)} L · ${(mmPorCama).toFixed(2)} mm</span>
-    </div>`;
-  }).join('');
-
-  res.innerHTML = rows;
+  const L=+document.getElementById('est-l').value||0;
+  const A=+document.getElementById('est-area').value||36;
+  const sel=[...estSel];
+  const tot=sel.reduce((s,n)=>{ const e=spp.find(x=>x.nom===n); return s+(e?e.ncamas:0); },0);
+  const res=document.getElementById('est-res');
+  if(!sel.length||!L){ res.innerHTML=`<div class="est-row" style="color:var(--tx3);font-size:12px">${!L?'Ingresá los litros':'Seleccioná al menos una especie'}</div>`; return; }
+  const lC=L/tot, mmC=lC/A;
+  res.innerHTML=`
+    <div class="est-row"><span class="est-rlbl">Total camas</span><div><span class="est-rval" style="color:var(--tx)">${tot}</span> <span style="font-size:10px;color:var(--tx3)">camas</span></div></div>
+    <div class="est-row"><span class="est-rlbl">Litros por cama</span><div><span class="est-rval">${lC.toFixed(1)}</span> <span style="font-size:10px;color:var(--tx3)">L/cama</span></div></div>
+    <div class="est-row" style="background:var(--verde-l)"><span class="est-rlbl" style="color:var(--verde);font-weight:600">mm aplicados por cama</span><div><span class="est-rval" style="color:var(--verde)">${mmC.toFixed(2)}</span> <span style="font-size:10px;color:var(--verde)">mm</span></div></div>
+    ${sel.map(n=>{ const e=spp.find(x=>x.nom===n); return `<div class="est-row"><span class="est-rlbl">${n} (${e?e.ncamas:0} camas)</span><span style="font-size:11px;color:var(--tx2)">${((e?e.ncamas:0)*lC).toFixed(0)} L · ${mmC.toFixed(2)} mm</span></div>`; }).join('')}`;
 }
-
-function saveEstanque(){
-  const litros = +document.getElementById('est-litros').value || 0;
-  const area   = +document.getElementById('est-area').value  || 36;
-  const espSel = [...estSeleccion];
-  if(!espSel.length){ toast('Seleccioná al menos una especie','err'); return; }
-  if(!litros){ toast('Ingresá los litros del estanque','err'); return; }
-
-  const totalCamas = espSel.reduce((s,n)=>s+(N_CAMAS[n]||0), 0);
-  const lPorCama   = litros / totalCamas;
-  const mmPorCama  = lPorCama / area;
-  const fecha      = dateStr(new Date());
-  const mon        = weekMon(weekOffset);
-  const wStart     = dateStr(mon);
-  const wEnd       = dateStr(new Date(mon.getTime()+6*864e5));
-  const fechaEv    = fecha>=wStart && fecha<=wEnd ? fecha : wStart;
-
-  espSel.forEach(nom=>{
-    eventos.push({
-      id: Date.now().toString(36)+Math.random().toString(36).slice(2,5)+nom.slice(0,2),
-      fecha: fechaEv, especie: nom,
-      min: 0, mm: +mmPorCama.toFixed(3),
-      tipo: 'fertilizacion',
-      nota: `Estanque ${litros}L ÷ ${totalCamas} camas = ${lPorCama.toFixed(1)} L/cama`
-    });
+function saveEst(){
+  const L=+document.getElementById('est-l').value||0;
+  const A=+document.getElementById('est-area').value||36;
+  const sel=[...estSel];
+  if(!sel.length){ toast('Seleccioná al menos una especie','err'); return; }
+  if(!L){ toast('Ingresá los litros','err'); return; }
+  const tot=sel.reduce((s,n)=>{ const e=spp.find(x=>x.nom===n); return s+(e?e.ncamas:0); },0);
+  const lC=L/tot, mmC=+(lC/A).toFixed(3);
+  const fecha=ds(new Date());
+  sel.forEach(nom=>{
+    eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+      fecha, especie:nom, min:0, mm:mmC, tipo:'fertilizacion',
+      nota:`Estanque ${L}L ÷ ${tot} camas = ${lC.toFixed(1)} L/cama` });
   });
-  save();
-  estSeleccion.clear();
-  renderEstChips();
-  calcEst();
+  save('pr_eventos',eventos);
+  clearEst();
   renderSem();
-  toast(`✓ ${espSel.length} especie${espSel.length>1?'s':''} · ${mmPorCama.toFixed(2)} mm c/u registrado`,'ok');
+  toast(`✓ ${sel.length} especie${sel.length>1?'s':''} · ${mmC.toFixed(2)} mm c/u`,'ok');
   showSec('sem');
 }
 
-// ── NAV ──────────────────────────────────────────────────────────────────
+// ── MODALS ────────────────────────────────────────────────────────────────
+let _modalCtx = {};
+function openModal(tipo, ctx){
+  _modalCtx = {tipo, ctx};
+  const mi = document.getElementById('modal-inner');
+  const ov = document.getElementById('ov');
+
+  if(tipo==='riego'){
+    const esp = spp.find(e=>e.nom===ctx);
+    if(!esp) return;
+    const mk  = mesKey(wMon(weekOff));
+    const p   = planForMes(esp, mk);
+    const pre = p ? [...new Set([p.min, Math.max(1,p.min-2), p.min+2, 5, 10].sort((a,b)=>a-b))] : [5,10,15];
+    mi.innerHTML=`
+      <div class="modal-tit">💧 Registrar riego</div>
+      <div class="modal-sub">${esp.nom} · ${esp.tasaH} mm/h${p?' · Plan: '+p.min+' min = '+p.mmEvt+' mm':''}</div>
+      <div class="mfield"><label>Minutos regados</label>
+        <div class="big-row"><input class="big-inp" type="number" id="m-min" value="" min="0" inputmode="decimal" placeholder="0" oninput="mCalc()"><span class="big-unit">min</span></div>
+      </div>
+      <div class="presets">${pre.map(n=>`<button class="pbtn" onclick="mSet(${n})">${n} min</button>`).join('')}</div>
+      <div class="calc-box"><span class="calc-lbl">Agua aplicada</span>
+        <div style="display:flex;align-items:flex-end;gap:4px"><span class="calc-val" id="m-mm">—</span><span style="font-size:11px;color:var(--tx3);padding-bottom:4px">mm</span></div></div>
+      <button class="btn-pri" onclick="saveRiego()">Guardar</button>
+      <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    document.getElementById('m-min').focus();
+    return;
+  }
+
+  if(tipo==='lluvia'){
+    mi.innerHTML=`
+      <div class="modal-tit">🌧 Registrar lluvia</div>
+      <div class="modal-sub">Los mm de lluvia se suman al riego de todas las especies esta semana</div>
+      <div class="mfield"><label>Milímetros de lluvia</label>
+        <div class="big-row"><input class="big-inp" type="number" id="m-lluvia" value="" min="0" inputmode="decimal" placeholder="0"><span class="big-unit">mm</span></div>
+      </div>
+      <div class="mfield"><label>Fecha</label><input type="date" id="m-fecha" value="${ds(new Date())}"></div>
+      <button class="btn-pri" onclick="saveLluvia()">Guardar</button>
+      <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    return;
+  }
+
+  if(tipo==='add-mes'){
+    mi.innerHTML=`
+      <div class="modal-tit">Agregar mes al plan</div>
+      <div class="modal-sub">El mes se creará para todas las especies. Podés editar cada plan individualmente después.</div>
+      <div class="mfield"><label>Mes</label><input type="month" id="m-mes" value="${new Date().toISOString().slice(0,7)}"></div>
+      <button class="btn-pri" onclick="addMes()">Agregar</button>
+      <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    return;
+  }
+
+  if(tipo==='add-plan'||tipo==='edit-plan'){
+    const esp=spp.find(e=>e.nom===ctx);
+    const p=tipo==='edit-plan'&&esp?esp.planes.find(pl=>pl.mes===planMes):null;
+    mi.innerHTML=`
+      <div class="modal-tit">${tipo==='edit-plan'?'Editar':'Agregar'} plan</div>
+      <div class="modal-sub">${ctx}${p?' · '+planMes:''}</div>
+      ${tipo==='add-plan'?`<div class="mfield"><label>Mes</label><input type="month" id="mp-mes" value="${planMes||new Date().toISOString().slice(0,7)}"></div>`:''}
+      <div class="mgrid2">
+        <div class="mfield"><label>Min/evento</label><input type="number" id="mp-min" value="${p?p.min:''}" min="1" inputmode="numeric"></div>
+        <div class="mfield"><label>Eventos/sem</label><input type="number" id="mp-evts" value="${p?p.evts:''}" min="1" inputmode="numeric"></div>
+        <div class="mfield"><label>mm/evento</label><input type="number" id="mp-mme" value="${p?p.mmEvt:''}" min="0.1" step="0.1" inputmode="decimal"></div>
+        <div class="mfield"><label>mm/semana</label><input type="number" id="mp-mms" value="${p?p.mmSem:''}" min="0" step="0.1" inputmode="decimal"></div>
+      </div>
+      <div class="mfield"><label>Nota / criterio</label><textarea id="mp-nota">${p?p.nota:''}</textarea></div>
+      <button class="btn-pri" onclick="savePlan('${tipo}','${ctx}')">Guardar</button>
+      <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    return;
+  }
+
+  if(tipo==='add-esp'||tipo==='edit-esp'){
+    const e = tipo==='edit-esp'?spp[ctx]:null;
+    mi.innerHTML=`
+      <div class="modal-tit">${e?'Editar':'Nueva'} especie</div>
+      <div class="mfield"><label>Nombre</label><input id="ae-nom" value="${e?e.nom:''}"></div>
+      <div class="mgrid2">
+        <div class="mfield"><label>Grupo (A/B/C)</label>
+          <select id="ae-grp"><option${e&&e.grp==='A'?' selected':''}>A</option><option${e&&e.grp==='B'?' selected':''}>B</option><option${e&&e.grp==='C'?' selected':''}>C</option></select>
+        </div>
+        <div class="mfield"><label>N° de camas</label><input type="number" id="ae-nc" value="${e?e.ncamas:''}" min="1" inputmode="numeric"></div>
+        <div class="mfield"><label>Tasa mm/h</label><input type="number" id="ae-tasa" value="${e?e.tasaH:''}" min="1" inputmode="numeric"></div>
+        <div class="mfield"><label>Config. riego</label><input id="ae-cfg" value="${e?e.config:''}"></div>
+      </div>
+      <button class="btn-pri" onclick="saveEsp('${tipo}',${ctx!==undefined?ctx:'null'})">Guardar</button>
+      <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    return;
+  }
+
+  if(tipo==='add-regla'||tipo==='edit-regla'){
+    const r = tipo==='edit-regla'?reglas[ctx]:null;
+    mi.innerHTML=`
+      <div class="modal-tit">${r?'Editar':'Nueva'} regla</div>
+      <div class="mgrid2">
+        <div class="mfield"><label>Emoji / ícono</label><input id="ar-ico" value="${r?r.icon:'⚠️'}" style="font-size:22px;text-align:center"></div>
+        <div></div>
+      </div>
+      <div class="mfield"><label>Condición / trigger</label><input id="ar-cond" value="${r?r.cond:''}"></div>
+      <div class="mfield"><label>Acción</label><textarea id="ar-acc">${r?r.accion:''}</textarea></div>
+      <button class="btn-pri" onclick="saveRegla('${tipo}',${ctx!==undefined?ctx:'null'})">Guardar</button>
+      ${r?`<button class="btn-pri btn-danger" style="margin-top:8px" onclick="delRegla(${ctx});closeOv()">Eliminar</button>`:''}
+      <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    return;
+  }
+}
+
+function closeOv(e){ if(e&&e.target!==document.getElementById('ov'))return; document.getElementById('ov').classList.remove('on'); }
+
+function mCalc(){
+  const esp=spp.find(x=>x.nom===_modalCtx.ctx);
+  const min=+document.getElementById('m-min').value;
+  if(!esp||!min){ document.getElementById('m-mm').textContent='—'; return; }
+  const mm=esp.tasaH*min/60;
+  document.getElementById('m-mm').textContent=mm>=10?mm.toFixed(1):mm.toFixed(2);
+}
+function mSet(n){
+  document.getElementById('m-min').value=n;
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('on',parseInt(b.textContent)===n));
+  mCalc();
+}
+
+function saveRiego(){
+  const esp=spp.find(x=>x.nom===_modalCtx.ctx);
+  const min=+document.getElementById('m-min').value;
+  if(!esp||!min||min<=0){ toast('Ingresá los minutos','err'); return; }
+  const mm=+(esp.tasaH*min/60).toFixed(3);
+  const fecha=ds(new Date());
+  eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    fecha, especie:esp.nom, min, mm, tipo:'riego', nota:'' });
+  save('pr_eventos',eventos);
+  document.getElementById('ov').classList.remove('on');
+  renderSem();
+  toast(`✓ ${esp.nom} · ${min} min · ${mm.toFixed(2)} mm`,'ok');
+}
+
+function saveLluvia(){
+  const mm=+document.getElementById('m-lluvia').value;
+  const fecha=document.getElementById('m-fecha').value;
+  if(!mm||mm<=0){ toast('Ingresá los mm','err'); return; }
+  eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    fecha, especie:'*lluvia', mm, tipo:'lluvia', min:0, nota:'' });
+  save('pr_eventos',eventos);
+  document.getElementById('ov').classList.remove('on');
+  renderSem();
+  toast(`🌧 ${mm} mm registrados`,'ok');
+}
+
+function addMes(){
+  const m=document.getElementById('m-mes').value;
+  if(!m){ toast('Seleccioná un mes','err'); return; }
+  spp.forEach(e=>{
+    if(!e.planes) e.planes=[];
+    if(!e.planes.find(p=>p.mes===m))
+      e.planes.push({mes:m,min:0,evts:0,mmEvt:0,mmSem:0,nota:''});
+  });
+  save('pr_spp',spp);
+  planMes=m;
+  document.getElementById('ov').classList.remove('on');
+  renderPlan();
+  toast(`Mes ${m} creado`,'ok');
+}
+
+function savePlan(tipo,espNom){
+  const esp=spp.find(e=>e.nom===espNom);
+  if(!esp){ toast('Especie no encontrada','err'); return; }
+  const mes=tipo==='add-plan'
+    ?(document.getElementById('mp-mes')||{value:planMes}).value
+    :planMes;
+  const min=+document.getElementById('mp-min').value;
+  const evts=+document.getElementById('mp-evts').value;
+  const mmEvt=+document.getElementById('mp-mme').value;
+  const mmSem=+document.getElementById('mp-mms').value;
+  const nota=document.getElementById('mp-nota').value.trim();
+  if(!mes||!min||!evts){ toast('Completa min, eventos y mes','err'); return; }
+  if(!esp.planes) esp.planes=[];
+  const idx=esp.planes.findIndex(p=>p.mes===mes);
+  const plan={mes,min,evts,mmEvt,mmSem,nota};
+  if(idx>=0) esp.planes[idx]=plan; else esp.planes.push(plan);
+  esp.planes.sort((a,b)=>a.mes.localeCompare(b.mes));
+  save('pr_spp',spp);
+  planMes=mes;
+  document.getElementById('ov').classList.remove('on');
+  renderPlan();
+  toast('Plan guardado','ok');
+}
+
+function saveEsp(tipo, idx){
+  const nom=document.getElementById('ae-nom').value.trim();
+  const grp=document.getElementById('ae-grp').value;
+  const nc=+document.getElementById('ae-nc').value||1;
+  const tasa=+document.getElementById('ae-tasa').value||1;
+  const cfg=document.getElementById('ae-cfg').value.trim();
+  if(!nom){ toast('Ingresá un nombre','err'); return; }
+  if(tipo==='edit-esp'&&idx!=null){ spp[idx]={...spp[idx],nom,grp,ncamas:nc,tasaH:tasa,config:cfg}; }
+  else { spp.push({nom,grp,tasaH:tasa,config:cfg,ncamas:nc,planes:[]}); }
+  save('pr_spp',spp);
+  document.getElementById('ov').classList.remove('on');
+  renderCfg();
+  renderSem();
+  toast(tipo==='edit-esp'?'Especie actualizada':'Especie agregada','ok');
+}
+
+function saveRegla(tipo,idx){
+  const ico=document.getElementById('ar-ico').value.trim()||'⚠️';
+  const cond=document.getElementById('ar-cond').value.trim();
+  const acc=document.getElementById('ar-acc').value.trim();
+  if(!cond||!acc){ toast('Completa condición y acción','err'); return; }
+  const r={id:'r'+Date.now(),icon:ico,cond,accion:acc};
+  if(tipo==='edit-regla'&&idx!=null) reglas[idx]=r; else reglas.push(r);
+  save('pr_reglas',reglas);
+  document.getElementById('ov').classList.remove('on');
+  renderCfg();
+  renderPlan();
+  toast('Regla guardada','ok');
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────
 function showSec(id){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
   document.getElementById('sec-'+id).classList.add('on');
   document.getElementById('nt-'+id).classList.add('on');
-  if(id==='plan') renderPlan();
+  if(id==='plan'){ renderPlan(); }
   if(id==='est'){ renderEstChips(); calcEst(); }
+  if(id==='cfg'){ renderCfg(); }
 }
 
-// ── TOAST ─────────────────────────────────────────────────────────────────
 function toast(m,t=''){
   const el=document.getElementById('toast');
-  el.textContent=m;el.className='toast on '+(t||'');
+  el.textContent=m; el.className='toast on '+(t||'');
   setTimeout(()=>el.className='toast',2800);
 }
 
