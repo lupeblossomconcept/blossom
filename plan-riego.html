@@ -612,22 +612,17 @@ function openModal(tipo, ctx){
     const pre = p ? [...new Set([p.min, Math.max(1,p.min-2), p.min+2, 5, 10].sort((a,b)=>a-b))] : [5,10,15];
     mi.innerHTML=`
       <div class="modal-tit">💧 Registrar riego</div>
-      <div class="modal-sub">${esp.nom} · ${esp.tasaH} mm/h${p?' · Plan: '+p.min+' min = '+p.mmEvt+' mm':''}</div>
+      <div class="modal-sub">${esp.nom} · ${esp.tasaH} mm/h${p?' · Plan: '+p.min+' min':''}</div>
       <div class="mfield"><label>Fecha</label><input type="date" id="m-fecha-r" value="${ds(new Date())}"></div>
-      <div class="mfield"><label>Minutos regados</label>
-        <div class="big-row"><input class="big-inp" type="text" id="m-min" inputmode="decimal" placeholder="0" oninput="mCalc()"><span class="big-unit">min</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px">
+        <div class="mfield" style="margin-bottom:0"><label>Minutos</label>
+          <div class="big-row" style="padding-bottom:3px"><input class="big-inp" type="text" id="m-min" inputmode="decimal" placeholder="0" oninput="mCalc()" style="font-size:36px"><span class="big-unit">min</span></div>
+        </div>
+        <div class="mfield" style="margin-bottom:0"><label>mm aplicados</label>
+          <div class="big-row" style="padding-bottom:3px"><input class="big-inp" type="text" id="m-mm-direct" inputmode="decimal" placeholder="0" oninput="mCalcFromMm()" style="font-size:36px"><span class="big-unit">mm</span></div>
+        </div>
       </div>
-      <div class="presets">${pre.map(n=>`<button class="pbtn" onclick="mSet(${n})">${n} min</button>`).join('')}</div>
-      <div class="calc-box"><span class="calc-lbl">mm calculados</span>
-        <div style="display:flex;align-items:flex-end;gap:4px"><span class="calc-val" id="m-mm-calc">—</span><span style="font-size:11px;color:var(--tx3);padding-bottom:4px">mm</span></div></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px">
-        <div style="flex:1;border-top:1px dashed var(--br2)"></div>
-        <span style="font-size:10px;color:var(--tx3);flex-shrink:0">o ingresá mm directo</span>
-        <div style="flex:1;border-top:1px dashed var(--br2)"></div>
-      </div>
-      <div class="mfield"><label>mm aplicados (directo)</label>
-        <div class="big-row"><input class="big-inp" type="text" id="m-mm-direct" inputmode="decimal" placeholder="—" oninput="mCalcDirect()"><span class="big-unit">mm</span></div>
-      </div>
+      <div class="presets" style="margin-bottom:14px">${pre.map(n=>`<button class="pbtn" onclick="mSet(${n})">${n} min</button>`).join('')}</div>
       <button class="btn-pri" onclick="saveRiego()">Guardar</button>
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
     ov.classList.add('on');
@@ -734,24 +729,36 @@ function closeOv(e){ if(e&&e.target!==document.getElementById('ov'))return; docu
 
 function pNum(v){ return parseFloat(String(v||'').replace(',','.'))||0; }
 
+let _mSync=false;
 function mCalc(){
+  if(_mSync) return;
   const esp=spp.find(x=>x.nom===_modalCtx.ctx);
-  const min=pNum(document.getElementById('m-min').value);
-  const el=document.getElementById('m-mm-calc');
-  if(!el) return;
-  if(!esp||!min){ el.textContent='—'; return; }
-  const mm=esp.tasaH*min/60;
-  el.textContent=(mm>=10?mm.toFixed(1):mm.toFixed(2));
+  const minEl=document.getElementById('m-min');
+  const mmEl=document.getElementById('m-mm-direct');
+  if(!minEl||!mmEl||!esp) return;
+  const min=pNum(minEl.value);
+  _mSync=true;
+  mmEl.value=min>0?(esp.tasaH*min/60).toFixed(2):'';
+  _mSync=false;
+}
+function mCalcFromMm(){
+  if(_mSync) return;
+  const esp=spp.find(x=>x.nom===_modalCtx.ctx);
+  const minEl=document.getElementById('m-min');
+  const mmEl=document.getElementById('m-mm-direct');
+  if(!minEl||!mmEl||!esp) return;
+  const mm=pNum(mmEl.value);
+  _mSync=true;
+  minEl.value=mm>0?(mm*60/esp.tasaH).toFixed(1):'';
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('on'));
+  _mSync=false;
 }
 function mSet(n){
-  document.getElementById('m-min').value=n;
+  const minEl=document.getElementById('m-min');
+  if(!minEl) return;
+  minEl.value=n;
   document.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('on',parseInt(b.textContent)===n));
-  document.getElementById('m-mm-direct').value='';
   mCalc();
-}
-function mCalcDirect(){
-  const v=document.getElementById('m-mm-direct').value;
-  if(v){ document.getElementById('m-mm-calc').textContent='—'; }
 }
 
 function saveRiego(){
@@ -762,7 +769,7 @@ function saveRiego(){
   const fecha=document.getElementById('m-fecha-r').value||ds(new Date());
   let mm, minSave;
   if(mmDir>0){
-    mm=+mmDir.toFixed(3); minSave=min||0;
+    mm=+mmDir.toFixed(3); minSave=min>0?min:0;
   } else if(min>0){
     mm=+(esp.tasaH*min/60).toFixed(3); minSave=min;
   } else {
