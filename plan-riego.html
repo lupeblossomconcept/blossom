@@ -234,11 +234,6 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
       <input class="big-inp" type="text" id="est-l" value="500" inputmode="decimal" oninput="calcEst()">
       <span class="big-unit">L</span>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-      <span style="font-size:11px;color:var(--tx3);flex:1">Área por cama</span>
-      <input id="est-area" type="text" value="36" inputmode="decimal" style="width:60px;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);-webkit-appearance:none;outline:none;text-align:center;" oninput="calcEst()">
-      <span style="font-size:11px;color:var(--tx3)">m²</span>
-    </div>
     <div class="ctit">Especies fertilizadas</div>
     <div class="est-chips" id="est-chips"></div>
     <div class="ctit">Resultado</div>
@@ -569,7 +564,7 @@ function togEst(nom){ estSel.has(nom)?estSel.delete(nom):estSel.add(nom); render
 function clearEst(){ estSel.clear(); renderEstChips(); calcEst(); }
 function calcEst(){
   const L=pNum(document.getElementById('est-l').value);
-  const A=pNum(document.getElementById('est-area').value)||36;
+  const A=17;
   const sel=[...estSel];
   const tot=sel.reduce((s,n)=>{ const e=spp.find(x=>x.nom===n); return s+(e?e.ncamas:0); },0);
   const res=document.getElementById('est-res');
@@ -583,7 +578,7 @@ function calcEst(){
 }
 function saveEst(){
   const L=pNum(document.getElementById('est-l').value);
-  const A=pNum(document.getElementById('est-area').value)||36;
+  const A=17;
   const sel=[...estSel];
   if(!sel.length){ toast('Seleccioná al menos una especie','err'); return; }
   if(!L){ toast('Ingresá los litros','err'); return; }
