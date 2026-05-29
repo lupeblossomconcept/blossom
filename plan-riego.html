@@ -91,13 +91,27 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .hist-mm{font-size:12px;font-weight:700;flex-shrink:0;margin:0 8px;}
 .hist-del{background:none;border:none;color:var(--tx3);font-size:15px;cursor:pointer;padding:0;}
 
-/* ESTANQUE */
+/* FERTILIZACIÓN INLINE */
+.fert-toggle-btn{display:flex;align-items:center;justify-content:space-between;width:calc(100% - 26px);margin:0 13px 11px;padding:11px 15px;background:var(--verde-l);border:1.5px solid rgba(26,92,46,.2);border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--verde);cursor:pointer;}
+.fert-section{display:none;background:var(--sf);border-radius:var(--r);margin:0 13px 11px;box-shadow:var(--shadow);padding:13px;border:1.5px solid rgba(26,92,46,.2);}
+.fert-section.open{display:block;}
+
+/* ESTANQUE chips */
 .est-chips{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
 .chip{display:flex;align-items:center;padding:10px 13px;border-radius:var(--r);border:2px solid var(--br);background:var(--sf);cursor:pointer;transition:all .15s;}
 .chip.on{border-color:var(--verde);background:var(--verde-l);}
 .chip-chk{width:19px;height:19px;border-radius:5px;border:2px solid var(--br2);margin-right:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;}
 .chip.on .chip-chk{border-color:var(--verde);background:var(--verde);color:#fff;}
 .chip-nom{font-size:13px;font-weight:600;color:var(--tx);flex:1;}
+
+/* TAREAS */
+.tarea-item{display:flex;align-items:flex-start;gap:10px;padding:10px 13px;border-bottom:1px solid var(--br);}
+.tarea-item:last-child{border-bottom:none;}
+.tarea-chk{width:20px;height:20px;border:2px solid var(--br2);border-radius:6px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;margin-top:1px;}
+.tarea-chk.done{background:var(--verde);border-color:var(--verde);color:#fff;}
+.tarea-txt{flex:1;font-size:13px;line-height:1.4;color:var(--tx);padding-top:2px;}
+.tarea-txt.done{text-decoration:line-through;color:var(--tx3);}
+.tarea-del{background:none;border:none;color:var(--tx3);font-size:16px;cursor:pointer;padding:0 2px;flex-shrink:0;line-height:1;}
 .chip.on .chip-nom{color:var(--verde);}
 .chip-n{font-size:10px;color:var(--tx3);}
 .chip.on .chip-n{color:var(--verde);}
@@ -185,14 +199,14 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <div class="hdr-sub" id="hdr-sub">Blossom Concept · María Pinto</div>
 </div>
 <div class="nav">
-  <button class="ntab on" id="nt-sem" onclick="showSec('sem')"><span class="ntab-icon">📅</span>Semana</button>
-  <button class="ntab" id="nt-est" onclick="showSec('est')"><span class="ntab-icon">🧪</span>Estanque</button>
+  <button class="ntab on" id="nt-riego" onclick="showSec('riego')"><span class="ntab-icon">📅</span>Riego</button>
   <button class="ntab" id="nt-plan" onclick="showSec('plan')"><span class="ntab-icon">📋</span>Plan</button>
+  <button class="ntab" id="nt-tar" onclick="showSec('tar')"><span class="ntab-icon">✅</span>Tareas</button>
   <button class="ntab" id="nt-cfg" onclick="showSec('cfg')"><span class="ntab-icon">⚙️</span>Config</button>
 </div>
 
-<!-- SEMANA -->
-<div class="sec on" id="sec-sem">
+<!-- RIEGO -->
+<div class="sec on" id="sec-riego">
   <div class="week-nav">
     <div class="week-lbl" id="week-lbl">—</div>
     <div class="week-btns">
@@ -210,27 +224,19 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <button class="lluvia-btn" onclick="openModal('lluvia')">
     <span>🌧 Registrar lluvia</span><span style="font-size:16px">›</span>
   </button>
-  <div id="esp-cards"></div>
-  <div class="card" id="hist-card" style="display:none">
-    <div class="ctit">Eventos esta semana</div>
-    <div id="hist-list"></div>
-  </div>
-</div>
-
-<!-- ESTANQUE -->
-<div class="sec" id="sec-est">
-  <div style="padding:0 13px">
-    <div style="background:var(--verde-l);border-radius:var(--r);padding:11px 13px;margin-bottom:12px;font-size:12px;color:var(--verde);line-height:1.5;border:1px solid rgba(26,92,46,.15)">
-      🌱 <strong>Fertilización por estanque.</strong> Los litros se dividen entre el total de camas seleccionadas y se registran como riego + fertilizante.
-    </div>
+  <button class="fert-toggle-btn" id="fert-toggle-btn" onclick="toggleFertSec()">
+    <span>🌱 Registrar fertilización</span><span id="fert-chev" style="font-size:16px">›</span>
+  </button>
+  <div class="fert-section" id="fert-section">
+    <div style="font-size:11px;color:var(--verde);margin-bottom:12px;line-height:1.5">Los litros del estanque se dividen entre las camas seleccionadas y se convierten a mm.</div>
     <div class="ctit">Litros en el estanque</div>
     <div class="big-row">
       <input class="big-inp" type="number" id="est-l" value="500" min="1" inputmode="numeric" oninput="calcEst()">
       <span class="big-unit">L</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-      <span style="font-size:11px;color:var(--tx3);flex:1">Área por cama (para mm)</span>
-      <input id="est-area" type="number" value="36" min="1" inputmode="numeric" style="width:60px;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;background:var(--sf);color:var(--tx);-webkit-appearance:none;outline:none;text-align:center;" oninput="calcEst()">
+      <span style="font-size:11px;color:var(--tx3);flex:1">Área por cama</span>
+      <input id="est-area" type="number" value="36" min="1" inputmode="numeric" style="width:60px;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);-webkit-appearance:none;outline:none;text-align:center;" oninput="calcEst()">
       <span style="font-size:11px;color:var(--tx3)">m²</span>
     </div>
     <div class="ctit">Especies fertilizadas</div>
@@ -239,8 +245,13 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     <div class="est-res" id="est-res">
       <div class="est-row" style="color:var(--tx3);font-size:12px">Seleccioná al menos una especie</div>
     </div>
-    <button class="btn-pri" style="margin-bottom:8px" onclick="saveEst()">🌱 Registrar fertilización</button>
+    <button class="btn-pri" style="margin-bottom:8px;margin-top:4px" onclick="saveEst()">🌱 Registrar fertilización</button>
     <button class="btn-sec" onclick="clearEst()">Limpiar selección</button>
+  </div>
+  <div id="esp-cards"></div>
+  <div class="card" id="hist-card" style="display:none">
+    <div class="ctit">Eventos esta semana</div>
+    <div id="hist-list"></div>
   </div>
 </div>
 
@@ -250,6 +261,19 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <div id="plan-cards"></div>
   <div style="margin:4px 13px 8px;font-size:9.5px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;">⚠ Reglas operacionales</div>
   <div id="reglas-list"></div>
+  <div style="height:20px"></div>
+</div>
+
+<!-- TAREAS -->
+<div class="sec" id="sec-tar">
+  <div style="padding:4px 13px 8px;display:flex;align-items:center;justify-content:space-between">
+    <div class="ctit" style="margin-bottom:0">Tareas pendientes</div>
+    <button style="background:none;border:none;font-size:10px;font-weight:600;color:var(--tx3);cursor:pointer;font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.05em;" onclick="clearDone()">Limpiar hechas</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="tar-list"><div style="padding:14px 13px;font-size:12px;color:var(--tx3)">Sin tareas — ¡todo en orden! 🌸</div></div>
+  </div>
+  <button class="add-btn" onclick="openModal('add-tar')">+ Agregar tarea</button>
   <div style="height:20px"></div>
 </div>
 
@@ -335,10 +359,12 @@ const DEF_REGLAS = [
 let spp    = JSON.parse(localStorage.getItem('pr_spp')    || 'null') || DEF_SPP.map(e=>({...e,planes:[...e.planes]}));
 let reglas = JSON.parse(localStorage.getItem('pr_reglas') || 'null') || DEF_REGLAS.map(r=>({...r}));
 let eventos= JSON.parse(localStorage.getItem('pr_eventos')|| localStorage.getItem('plan_riego_v1') || '[]');
+let tareas = JSON.parse(localStorage.getItem('pr_tareas') || '[]');
 let weekOff= 0;
 let planMes= '';
 let estSel = new Set();
-let editIdx= null; // para edición de especie/regla
+let editIdx= null;
+let fertOpen= false;
 
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 function saveAll(){ save('pr_spp',spp); save('pr_reglas',reglas); save('pr_eventos',eventos); }
@@ -571,9 +597,9 @@ function saveEst(){
   });
   save('pr_eventos',eventos);
   clearEst();
+  if(fertOpen) toggleFertSec();
   renderSem();
   toast(`✓ ${sel.length} especie${sel.length>1?'s':''} · ${mmC.toFixed(2)} mm c/u`,'ok');
-  showSec('sem');
 }
 
 // ── MODALS ────────────────────────────────────────────────────────────────
@@ -666,6 +692,19 @@ function openModal(tipo, ctx){
       <button class="btn-pri" onclick="saveEsp('${tipo}',${ctx!==undefined?ctx:'null'})">Guardar</button>
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
     ov.classList.add('on');
+    return;
+  }
+
+  if(tipo==='add-tar'){
+    mi.innerHTML=`
+      <div class="modal-tit">✅ Nueva tarea</div>
+      <div class="mfield"><label>Descripción</label>
+        <input id="tar-txt" placeholder="ej: Revisar Lisianthus camas 1-5" style="font-size:14px">
+      </div>
+      <button class="btn-pri" onclick="saveTarea()">Agregar</button>
+      <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    setTimeout(()=>{const el=document.getElementById('tar-txt');if(el)el.focus();},120);
     return;
   }
 
@@ -797,6 +836,38 @@ function saveRegla(tipo,idx){
   toast('Regla guardada','ok');
 }
 
+// ── TAREAS ────────────────────────────────────────────────────────────────
+function renderTareas(){
+  const el=document.getElementById('tar-list');
+  if(!tareas.length){ el.innerHTML='<div style="padding:14px 13px;font-size:12px;color:var(--tx3)">Sin tareas — ¡todo en orden! 🌸</div>'; return; }
+  el.innerHTML=tareas.map((t,i)=>`
+    <div class="tarea-item">
+      <div class="tarea-chk${t.done?' done':''}" onclick="toggleTarea(${i})">${t.done?'✓':''}</div>
+      <span class="tarea-txt${t.done?' done':''}">${t.texto}</span>
+      <button class="tarea-del" onclick="delTarea(${i})">×</button>
+    </div>`).join('');
+}
+function toggleTarea(i){ tareas[i].done=!tareas[i].done; localStorage.setItem('pr_tareas',JSON.stringify(tareas)); renderTareas(); }
+function delTarea(i){ tareas.splice(i,1); localStorage.setItem('pr_tareas',JSON.stringify(tareas)); renderTareas(); }
+function clearDone(){ tareas=tareas.filter(t=>!t.done); localStorage.setItem('pr_tareas',JSON.stringify(tareas)); renderTareas(); toast('Completadas eliminadas','ok'); }
+function saveTarea(){
+  const txt=(document.getElementById('tar-txt').value||'').trim();
+  if(!txt){ toast('Ingresá una tarea','err'); return; }
+  tareas.push({id:Date.now().toString(36),texto:txt,done:false});
+  localStorage.setItem('pr_tareas',JSON.stringify(tareas));
+  document.getElementById('ov').classList.remove('on');
+  renderTareas();
+  toast('Tarea agregada','ok');
+}
+
+// ── FERT TOGGLE ───────────────────────────────────────────────────────────
+function toggleFertSec(){
+  fertOpen=!fertOpen;
+  document.getElementById('fert-section').classList.toggle('open',fertOpen);
+  document.getElementById('fert-chev').textContent=fertOpen?'▾':'›';
+  if(fertOpen){ renderEstChips(); calcEst(); }
+}
+
 // ── NAV ───────────────────────────────────────────────────────────────────
 function showSec(id){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
@@ -804,8 +875,8 @@ function showSec(id){
   document.getElementById('sec-'+id).classList.add('on');
   document.getElementById('nt-'+id).classList.add('on');
   if(id==='plan'){ renderPlan(); }
-  if(id==='est'){ renderEstChips(); calcEst(); }
   if(id==='cfg'){ renderCfg(); }
+  if(id==='tar'){ renderTareas(); }
 }
 
 function toast(m,t=''){
@@ -816,7 +887,6 @@ function toast(m,t=''){
 
 // Init
 renderSem();
-renderPlan();
 </script>
 </body>
 </html>
