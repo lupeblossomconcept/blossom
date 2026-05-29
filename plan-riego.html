@@ -189,13 +189,29 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .toast.on{opacity:1;}
 .toast.ok{background:var(--verde);}
 .toast.err{background:var(--rojo);}
+
+/* SHEETS */
+.sheets-section{background:var(--sf);border-radius:var(--r);margin:0 13px 11px;padding:13px;box-shadow:var(--shadow);border:1.5px solid rgba(26,92,46,.15);}
+.sheets-lbl{font-size:9.5px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;display:block;}
+.sheets-input{width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:12px;background:var(--gris);color:var(--tx);font-family:'Montserrat',sans-serif;outline:none;-webkit-appearance:none;}
+.sheets-input:focus{border-color:var(--verde);}
+.sheets-btns{display:flex;gap:8px;margin-top:10px;}
+.sheets-btn{flex:1;padding:10px 8px;border:none;border-radius:var(--rs);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+.sheets-btn-sync{background:var(--verde);color:#fff;}
+.sheets-btn-code{background:var(--gris);color:var(--verde);border:1.5px solid rgba(26,92,46,.3);}
+.code-block{background:#1a0f14;color:#f5e0ea;border-radius:var(--rs);padding:14px;font-family:monospace;font-size:10.5px;line-height:1.6;max-height:55vh;overflow-y:auto;white-space:pre;margin-bottom:14px;border:1px solid #3a1f2e;}
+.copy-code-btn{width:100%;padding:11px;background:var(--bordo);color:#fff;border:none;border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:7px;}
+.sync-hdr-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 10px;color:#fff;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;}
 </style>
 </head>
 <body>
 <div class="app">
 
 <div class="hdr">
-  <h1>Plan de Riego</h1>
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h1>Plan de Riego</h1>
+    <button class="sync-hdr-btn" onclick="syncSheets()">📊 Sync Sheets</button>
+  </div>
   <div class="hdr-sub" id="hdr-sub">Blossom Concept · María Pinto</div>
 </div>
 <div class="nav">
@@ -284,6 +300,18 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   </div>
   <div id="cfg-reglas"></div>
   <button class="add-btn" onclick="openModal('add-regla')">+ Agregar regla</button>
+  <div style="padding:0 13px;margin-bottom:6px;margin-top:10px">
+    <div class="ctit" style="margin-bottom:6px">📊 Google Sheets</div>
+  </div>
+  <div class="sheets-section">
+    <span class="sheets-lbl">URL de tu Web App (Google Apps Script)</span>
+    <input class="sheets-input" id="sheets-url" type="url" placeholder="https://script.google.com/macros/s/..." oninput="localStorage.setItem('pr_sheets_url',this.value)">
+    <div style="font-size:10px;color:var(--tx3);margin-top:6px;line-height:1.5">Pegá la URL del Web App que creaste en tu planilla. Los datos se escriben en la hoja "Registro Riego".</div>
+    <div class="sheets-btns">
+      <button class="sheets-btn sheets-btn-sync" onclick="syncSheets()">📊 Sincronizar ahora</button>
+      <button class="sheets-btn sheets-btn-code" onclick="openModal('sheets-code')">Ver código</button>
+    </div>
+  </div>
   <div style="height:20px"></div>
 </div>
 
@@ -526,6 +554,10 @@ function toggleRegla(i){
 
 // ── CONFIG ────────────────────────────────────────────────────────────────
 function renderCfg(){
+  setTimeout(()=>{
+    const u=document.getElementById('sheets-url');
+    if(u) u.value=localStorage.getItem('pr_sheets_url')||'';
+  },0);
   document.getElementById('cfg-spp').innerHTML = spp.map((e,i)=>`
     <div class="cfg-esp-item">
       <div class="cfg-esp-info">
@@ -723,6 +755,19 @@ function openModal(tipo, ctx){
     ov.classList.add('on');
     return;
   }
+
+  if(tipo==='sheets-code'){
+    mi.innerHTML=`
+      <div class="modal-tit">📊 Código Apps Script</div>
+      <div class="modal-sub" style="margin-bottom:12px">Copiá este código en tu planilla Google Sheets:<br>
+        <span style="font-size:10px">Extensiones → Apps Script → pegar → Implementar → Web App → Acceso: Cualquier persona → Copiar URL</span>
+      </div>
+      <div class="code-block" id="code-block-inner">${APPS_SCRIPT_CODE.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      <button class="copy-code-btn" onclick="copyCode()">📋 Copiar código</button>
+      <button class="btn-sec" onclick="closeOv()">Cerrar</button>`;
+    ov.classList.add('on');
+    return;
+  }
 }
 
 function closeOv(e){ if(e&&e.target!==document.getElementById('ov'))return; document.getElementById('ov').classList.remove('on'); }
@@ -913,7 +958,116 @@ function toast(m,t=''){
   setTimeout(()=>el.className='toast',2800);
 }
 
-// Init
+// ── GOOGLE SHEETS ─────────────────────────────────────────────────────────
+const APPS_SCRIPT_CODE = `function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var evs = data.eventos || [];
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Registro Riego');
+    if (!sheet) sheet = ss.insertSheet('Registro Riego');
+
+    sheet.clearContents();
+    sheet.clearFormats();
+
+    var header = [['Fecha','Semana','Especie','Tipo','mm Aplicados','Minutos','Nota']];
+    sheet.getRange(1,1,1,7).setValues(header);
+    var hdr = sheet.getRange(1,1,1,7);
+    hdr.setBackground('#8b1a4a');
+    hdr.setFontColor('#ffffff');
+    hdr.setFontWeight('bold');
+    hdr.setFontSize(11);
+    hdr.setHorizontalAlignment('center');
+    sheet.setFrozenRows(1);
+
+    evs.sort(function(a,b){ return a.fecha > b.fecha ? 1 : -1; });
+
+    if (evs.length > 0) {
+      var rows = evs.map(function(ev) {
+        var tipo = ev.tipo === 'riego' ? '💧 Riego'
+                 : ev.tipo === 'fertilizacion' ? '🌱 Fertilización'
+                 : '🌧 Lluvia';
+        return [
+          ev.fecha,
+          semana(ev.fecha),
+          ev.especie === '*lluvia' ? 'Todas las especies' : ev.especie,
+          tipo,
+          ev.mm,
+          ev.min || '',
+          ev.nota || ''
+        ];
+      });
+
+      sheet.getRange(2,1,rows.length,7).setValues(rows);
+
+      rows.forEach(function(row, i) {
+        var color = row[3].indexOf('Riego') >= 0 ? '#e8f0ff'
+                  : row[3].indexOf('Fert') >= 0 ? '#e8f5ed'
+                  : '#e0f3ff';
+        sheet.getRange(i+2,1,1,7).setBackground(color);
+      });
+
+      sheet.getRange(2,5,rows.length,1).setNumberFormat('0.00');
+      sheet.getRange(1,1,rows.length+1,7).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
+    }
+
+    sheet.setColumnWidth(1,100);
+    sheet.setColumnWidth(2,150);
+    sheet.setColumnWidth(3,140);
+    sheet.setColumnWidth(4,130);
+    sheet.setColumnWidth(5,100);
+    sheet.setColumnWidth(6,80);
+    sheet.setColumnWidth(7,220);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ok:true,n:evs.length}))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({error:err.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function semana(fechaStr) {
+  var d = new Date(fechaStr + 'T12:00:00');
+  var dw = d.getDay();
+  var mon = new Date(d);
+  mon.setDate(d.getDate() + (dw === 0 ? -6 : 1 - dw));
+  var sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  function fmt(x){ return x.getDate() + '/' + (x.getMonth()+1); }
+  return fmt(mon) + ' – ' + fmt(sun);
+}`;
+
+function copyCode(){
+  navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(()=>{
+    toast('✓ Código copiado al portapapeles','ok');
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=APPS_SCRIPT_CODE;
+    document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('✓ Código copiado','ok');
+  });
+}
+
+async function syncSheets(){
+  const url=(localStorage.getItem('pr_sheets_url')||'').trim();
+  if(!url){ toast('Configurá la URL en Config → Google Sheets','err'); showSec('cfg'); return; }
+  toast('Sincronizando...','');
+  try {
+    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({eventos})});
+    toast(`✓ ${eventos.length} eventos enviados a Sheets`,'ok');
+  } catch(err) {
+    toast('Error al sincronizar','err');
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
 renderSem();
 </script>
 </body>
