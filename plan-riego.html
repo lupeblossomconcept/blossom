@@ -378,6 +378,9 @@ const DEF_REGLAS = [
    accion:'Nunca superar 10 min/evento en invierno. 10min=5mm, excesivo para ETo invernal. Preferir 4–8min según etapa.'},
 ];
 
+// ── FIREBASE ──────────────────────────────────────────────────────────────
+const FB_URL = 'https://blossom-concept-default-rtdb.firebaseio.com/riego';
+
 // ── ESTADO ────────────────────────────────────────────────────────────────
 let spp    = JSON.parse(localStorage.getItem('pr_spp')    || 'null') || DEF_SPP.map(e=>({...e,planes:[...e.planes]}));
 let reglas = JSON.parse(localStorage.getItem('pr_reglas') || 'null') || DEF_REGLAS.map(r=>({...r}));
@@ -389,8 +392,27 @@ let estSel = new Set();
 let editIdx= null;
 let fertOpen= false;
 
-function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
-function saveAll(){ save('pr_spp',spp); save('pr_reglas',reglas); save('pr_eventos',eventos); }
+function save(k,v){
+  localStorage.setItem(k, JSON.stringify(v));
+  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas'}[k];
+  if(fk) fetch(`${FB_URL}/${fk}.json`,{method:'PUT',body:JSON.stringify(v)}).catch(()=>{});
+}
+function saveAll(){ save('pr_spp',spp); save('pr_reglas',reglas); save('pr_eventos',eventos); save('pr_tareas',tareas); }
+
+async function loadAll(){
+  try {
+    const r=await fetch(`${FB_URL}.json`);
+    const d=await r.json()||{};
+    if(d.spp!=null)    { spp=d.spp;    localStorage.setItem('pr_spp',JSON.stringify(spp)); }
+    else fetch(`${FB_URL}/spp.json`,{method:'PUT',body:JSON.stringify(spp)}).catch(()=>{});
+    if(d.reglas!=null) { reglas=d.reglas; localStorage.setItem('pr_reglas',JSON.stringify(reglas)); }
+    else fetch(`${FB_URL}/reglas.json`,{method:'PUT',body:JSON.stringify(reglas)}).catch(()=>{});
+    if(d.eventos!=null){ eventos=d.eventos; localStorage.setItem('pr_eventos',JSON.stringify(eventos)); }
+    else fetch(`${FB_URL}/eventos.json`,{method:'PUT',body:JSON.stringify(eventos)}).catch(()=>{});
+    if(d.tareas!=null) { tareas=d.tareas; localStorage.setItem('pr_tareas',JSON.stringify(tareas)); }
+    else fetch(`${FB_URL}/tareas.json`,{method:'PUT',body:JSON.stringify(tareas)}).catch(()=>{});
+  } catch(e){}
+}
 
 // ── SEMANA ────────────────────────────────────────────────────────────────
 function wMon(off=0){
@@ -1069,6 +1091,15 @@ async function syncSheets(){
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 renderSem();
+loadAll().then(()=>{
+  renderSem();
+  const act=document.querySelector('.sec.on');
+  if(act){
+    if(act.id==='sec-tar')  renderTareas();
+    if(act.id==='sec-cfg')  renderCfg();
+    if(act.id==='sec-plan') renderPlan();
+  }
+});
 </script>
 </body>
 </html>
