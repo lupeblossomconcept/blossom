@@ -381,7 +381,7 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
 const FIREBASE='https://blossom-concept-default-rtdb.firebaseio.com';
 const METAS={Lisianthus:3978800,Antirrhinum:1909600,Cosmos:4760000,Girasol:2957500,Estatice:1827000,Zinnia:5600000};
 const META_TOTAL=21032900;
-const COSTOS_BASE={Lisianthus:1509170,Cosmos:669039,Zinnia:669039,Girasol:0,Antirrhinum:517701};
+const COSTOS_BASE={Lisianthus:0,Cosmos:669039,Zinnia:669039,Girasol:0,Antirrhinum:0};
 
 let productos=[
   {nom:'Ultrasol',        precio:1500,   cat:'Fertilizacion', uni:'kg'},
@@ -1606,12 +1606,14 @@ function camaActivaEnMes(c,m){
 function cFijoEsp(esp,fijoRecs){
   return Math.round(fijoRecs.reduce(function(s,g){
     var n=camasVida.filter(function(c){return c.especie===esp&&camaActivaEnMes(c,g.mes);}).length;
-    return s+g.monto*n/(g.ncm||1);
+    var nTot=camasVida.filter(function(c){return camaActivaEnMes(c,g.mes);}).length||(g.ncm||1);
+    return s+g.monto*n/nTot;
   },0));
 }
 function cFijoCama(c,fijoRecs){
   return Math.round(fijoRecs.reduce(function(s,g){
-    return s+(camaActivaEnMes(c,g.mes)?g.monto/(g.ncm||1):0);
+    var nTot=camasVida.filter(function(c2){return camaActivaEnMes(c2,g.mes);}).length||(g.ncm||1);
+    return s+(camaActivaEnMes(c,g.mes)?g.monto/nTot:0);
   },0));
 }
 
@@ -1624,7 +1626,8 @@ function renderDash(){
   var gf=mes?gastos.filter(function(g){return (g.fecha||g.mes||'').startsWith(mes);}):gastos;
   var tV=vf.reduce(function(s,v){return s+v.total;},0);
   var tBase=mes?0:Object.values(COSTOS_BASE).reduce(function(s,c){return s+c;},0);
-  var tG=gf.reduce(function(s,g){return s+g.monto;},0)+tBase;
+  var tCp=mes?0:camasVida.reduce(function(s,c){return s+(c.costoPlantin||0);},0);
+  var tG=gf.reduce(function(s,g){return s+g.monto;},0)+tBase+tCp;
   var ren=tV-tG;
   var tP=vf.reduce(function(s,v){return s+v.paquetes;},0);
   var nAct=camasVida.filter(function(c){return !c.fechaBaja;}).length;
