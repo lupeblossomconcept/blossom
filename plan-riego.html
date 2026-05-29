@@ -981,7 +981,12 @@ function toast(m,t=''){
 }
 
 // ── GOOGLE SHEETS ─────────────────────────────────────────────────────────
-const APPS_SCRIPT_CODE = `function doPost(e) {
+const APPS_SCRIPT_CODE = `function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({ok:true,msg:'Blossom Riego API activa'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var evs = data.eventos || [];
@@ -1082,10 +1087,15 @@ async function syncSheets(){
   if(!url){ toast('Configurá la URL en Config → Google Sheets','err'); showSec('cfg'); return; }
   toast('Sincronizando...','');
   try {
-    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({eventos})});
-    toast(`✓ ${eventos.length} eventos enviados a Sheets`,'ok');
-  } catch(err) {
-    toast('Error al sincronizar','err');
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({eventos})});
+    const txt=await r.text();
+    let d={};
+    try{ d=JSON.parse(txt); }catch(e){}
+    if(d.error) throw new Error(d.error);
+    toast(`✓ ${d.n!=null?d.n:eventos.length} eventos enviados a Sheets`,'ok');
+  } catch(err){
+    toast('Error: '+err.message,'err');
+    console.error('Sheets sync:',err);
   }
 }
 
