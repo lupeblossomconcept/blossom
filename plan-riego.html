@@ -231,12 +231,12 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     <div style="font-size:11px;color:var(--verde);margin-bottom:12px;line-height:1.5">Los litros del estanque se dividen entre las camas seleccionadas y se convierten a mm.</div>
     <div class="ctit">Litros en el estanque</div>
     <div class="big-row">
-      <input class="big-inp" type="number" id="est-l" value="500" min="1" inputmode="numeric" oninput="calcEst()">
+      <input class="big-inp" type="text" id="est-l" value="500" inputmode="decimal" oninput="calcEst()">
       <span class="big-unit">L</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
       <span style="font-size:11px;color:var(--tx3);flex:1">Área por cama</span>
-      <input id="est-area" type="number" value="36" min="1" inputmode="numeric" style="width:60px;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);-webkit-appearance:none;outline:none;text-align:center;" oninput="calcEst()">
+      <input id="est-area" type="text" value="36" inputmode="decimal" style="width:60px;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);-webkit-appearance:none;outline:none;text-align:center;" oninput="calcEst()">
       <span style="font-size:11px;color:var(--tx3)">m²</span>
     </div>
     <div class="ctit">Especies fertilizadas</div>
@@ -568,8 +568,8 @@ function renderEstChips(){
 function togEst(nom){ estSel.has(nom)?estSel.delete(nom):estSel.add(nom); renderEstChips(); calcEst(); }
 function clearEst(){ estSel.clear(); renderEstChips(); calcEst(); }
 function calcEst(){
-  const L=+document.getElementById('est-l').value||0;
-  const A=+document.getElementById('est-area').value||36;
+  const L=pNum(document.getElementById('est-l').value);
+  const A=pNum(document.getElementById('est-area').value)||36;
   const sel=[...estSel];
   const tot=sel.reduce((s,n)=>{ const e=spp.find(x=>x.nom===n); return s+(e?e.ncamas:0); },0);
   const res=document.getElementById('est-res');
@@ -582,8 +582,8 @@ function calcEst(){
     ${sel.map(n=>{ const e=spp.find(x=>x.nom===n); return `<div class="est-row"><span class="est-rlbl">${n} (${e?e.ncamas:0} camas)</span><span style="font-size:11px;color:var(--tx2)">${((e?e.ncamas:0)*lC).toFixed(0)} L · ${mmC.toFixed(2)} mm</span></div>`; }).join('')}`;
 }
 function saveEst(){
-  const L=+document.getElementById('est-l').value||0;
-  const A=+document.getElementById('est-area').value||36;
+  const L=pNum(document.getElementById('est-l').value);
+  const A=pNum(document.getElementById('est-area').value)||36;
   const sel=[...estSel];
   if(!sel.length){ toast('Seleccioná al menos una especie','err'); return; }
   if(!L){ toast('Ingresá los litros','err'); return; }
@@ -618,12 +618,21 @@ function openModal(tipo, ctx){
     mi.innerHTML=`
       <div class="modal-tit">💧 Registrar riego</div>
       <div class="modal-sub">${esp.nom} · ${esp.tasaH} mm/h${p?' · Plan: '+p.min+' min = '+p.mmEvt+' mm':''}</div>
+      <div class="mfield"><label>Fecha</label><input type="date" id="m-fecha-r" value="${ds(new Date())}"></div>
       <div class="mfield"><label>Minutos regados</label>
-        <div class="big-row"><input class="big-inp" type="number" id="m-min" value="" min="0" inputmode="decimal" placeholder="0" oninput="mCalc()"><span class="big-unit">min</span></div>
+        <div class="big-row"><input class="big-inp" type="text" id="m-min" inputmode="decimal" placeholder="0" oninput="mCalc()"><span class="big-unit">min</span></div>
       </div>
       <div class="presets">${pre.map(n=>`<button class="pbtn" onclick="mSet(${n})">${n} min</button>`).join('')}</div>
-      <div class="calc-box"><span class="calc-lbl">Agua aplicada</span>
-        <div style="display:flex;align-items:flex-end;gap:4px"><span class="calc-val" id="m-mm">—</span><span style="font-size:11px;color:var(--tx3);padding-bottom:4px">mm</span></div></div>
+      <div class="calc-box"><span class="calc-lbl">mm calculados</span>
+        <div style="display:flex;align-items:flex-end;gap:4px"><span class="calc-val" id="m-mm-calc">—</span><span style="font-size:11px;color:var(--tx3);padding-bottom:4px">mm</span></div></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px">
+        <div style="flex:1;border-top:1px dashed var(--br2)"></div>
+        <span style="font-size:10px;color:var(--tx3);flex-shrink:0">o ingresá mm directo</span>
+        <div style="flex:1;border-top:1px dashed var(--br2)"></div>
+      </div>
+      <div class="mfield"><label>mm aplicados (directo)</label>
+        <div class="big-row"><input class="big-inp" type="text" id="m-mm-direct" inputmode="decimal" placeholder="—" oninput="mCalcDirect()"><span class="big-unit">mm</span></div>
+      </div>
       <button class="btn-pri" onclick="saveRiego()">Guardar</button>
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
     ov.classList.add('on');
@@ -636,7 +645,7 @@ function openModal(tipo, ctx){
       <div class="modal-tit">🌧 Registrar lluvia</div>
       <div class="modal-sub">Los mm de lluvia se suman al riego de todas las especies esta semana</div>
       <div class="mfield"><label>Milímetros de lluvia</label>
-        <div class="big-row"><input class="big-inp" type="number" id="m-lluvia" value="" min="0" inputmode="decimal" placeholder="0"><span class="big-unit">mm</span></div>
+        <div class="big-row"><input class="big-inp" type="text" id="m-lluvia" inputmode="decimal" placeholder="0"><span class="big-unit">mm</span></div>
       </div>
       <div class="mfield"><label>Fecha</label><input type="date" id="m-fecha" value="${ds(new Date())}"></div>
       <button class="btn-pri" onclick="saveLluvia()">Guardar</button>
@@ -728,35 +737,52 @@ function openModal(tipo, ctx){
 
 function closeOv(e){ if(e&&e.target!==document.getElementById('ov'))return; document.getElementById('ov').classList.remove('on'); }
 
+function pNum(v){ return parseFloat(String(v||'').replace(',','.'))||0; }
+
 function mCalc(){
   const esp=spp.find(x=>x.nom===_modalCtx.ctx);
-  const min=+document.getElementById('m-min').value;
-  if(!esp||!min){ document.getElementById('m-mm').textContent='—'; return; }
+  const min=pNum(document.getElementById('m-min').value);
+  const el=document.getElementById('m-mm-calc');
+  if(!el) return;
+  if(!esp||!min){ el.textContent='—'; return; }
   const mm=esp.tasaH*min/60;
-  document.getElementById('m-mm').textContent=mm>=10?mm.toFixed(1):mm.toFixed(2);
+  el.textContent=(mm>=10?mm.toFixed(1):mm.toFixed(2));
 }
 function mSet(n){
   document.getElementById('m-min').value=n;
   document.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('on',parseInt(b.textContent)===n));
+  document.getElementById('m-mm-direct').value='';
   mCalc();
+}
+function mCalcDirect(){
+  const v=document.getElementById('m-mm-direct').value;
+  if(v){ document.getElementById('m-mm-calc').textContent='—'; }
 }
 
 function saveRiego(){
   const esp=spp.find(x=>x.nom===_modalCtx.ctx);
-  const min=+document.getElementById('m-min').value;
-  if(!esp||!min||min<=0){ toast('Ingresá los minutos','err'); return; }
-  const mm=+(esp.tasaH*min/60).toFixed(3);
-  const fecha=ds(new Date());
+  if(!esp){ toast('Error','err'); return; }
+  const min=pNum(document.getElementById('m-min').value);
+  const mmDir=pNum(document.getElementById('m-mm-direct').value);
+  const fecha=document.getElementById('m-fecha-r').value||ds(new Date());
+  let mm, minSave;
+  if(mmDir>0){
+    mm=+mmDir.toFixed(3); minSave=min||0;
+  } else if(min>0){
+    mm=+(esp.tasaH*min/60).toFixed(3); minSave=min;
+  } else {
+    toast('Ingresá minutos o mm','err'); return;
+  }
   eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-    fecha, especie:esp.nom, min, mm, tipo:'riego', nota:'' });
+    fecha, especie:esp.nom, min:minSave, mm, tipo:'riego', nota:'' });
   save('pr_eventos',eventos);
   document.getElementById('ov').classList.remove('on');
   renderSem();
-  toast(`✓ ${esp.nom} · ${min} min · ${mm.toFixed(2)} mm`,'ok');
+  toast(`✓ ${esp.nom} · ${mm.toFixed(2)} mm`,'ok');
 }
 
 function saveLluvia(){
-  const mm=+document.getElementById('m-lluvia').value;
+  const mm=pNum(document.getElementById('m-lluvia').value);
   const fecha=document.getElementById('m-fecha').value;
   if(!mm||mm<=0){ toast('Ingresá los mm','err'); return; }
   eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
