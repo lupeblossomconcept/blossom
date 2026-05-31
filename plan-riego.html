@@ -1092,7 +1092,7 @@ function pNum(v){ return parseFloat(String(v||'').replace(',','.'))||0; }
 let _mSync=false;
 function mCalc(){
   if(_mSync) return;
-  const esp=spp.find(x=>x.nom===_modalCtx.ctx);
+  const esp=spp[parseInt(_modalCtx.ctx)];
   const minEl=document.getElementById('m-min');
   const mmEl=document.getElementById('m-mm-direct');
   if(!minEl||!mmEl||!esp) return;
@@ -1103,7 +1103,7 @@ function mCalc(){
 }
 function mCalcFromMm(){
   if(_mSync) return;
-  const esp=spp.find(x=>x.nom===_modalCtx.ctx);
+  const esp=spp[parseInt(_modalCtx.ctx)];
   const minEl=document.getElementById('m-min');
   const mmEl=document.getElementById('m-mm-direct');
   if(!minEl||!mmEl||!esp) return;
@@ -1122,7 +1122,7 @@ function mSet(n){
 }
 
 function saveRiego(){
-  const esp=spp.find(x=>x.nom===_modalCtx.ctx);
+  const esp=spp[parseInt(_modalCtx.ctx)];
   if(!esp){ toast('Error','err'); return; }
   if(_camasSelRiego.size===0){ toast('Seleccioná al menos una cama','err'); return; }
   const min=pNum(document.getElementById('m-min').value);
@@ -1266,7 +1266,7 @@ function renderCamasRiego(ncamas){
 }
 function togCamaRiego(n){
   _camasSelRiego.has(n)?_camasSelRiego.delete(n):_camasSelRiego.add(n);
-  const esp=spp.find(x=>x.nom===_modalCtx.ctx);
+  const esp=spp[parseInt(_modalCtx.ctx)];
   if(esp) renderCamasRiego(esp.ncamas);
 }
 
