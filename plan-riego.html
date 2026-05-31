@@ -303,6 +303,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   </div>
   <div id="cfg-spp"></div>
   <button class="add-btn" onclick="openModal('add-esp')">+ Agregar especie</button>
+  <div id="cfg-huerfanos"></div>
   <div style="padding:0 13px;margin-bottom:6px;margin-top:4px">
     <div class="ctit" style="margin-bottom:6px">Reglas operacionales</div>
   </div>
@@ -399,6 +400,7 @@ let planMes= '';
 let estSel = new Set();
 let estSelCamas = {};
 let _camasSelRiego = new Set();
+let _huerfanosList = [];
 let editIdx= null;
 let fertOpen= false;
 
@@ -596,6 +598,16 @@ function toggleRegla(i){
 }
 
 // ── CONFIG ────────────────────────────────────────────────────────────────
+function getHuerfanos(){
+  const ids=new Set(spp.map(e=>espId(e)));
+  const groups={};
+  eventos.forEach(ev=>{
+    if(ev.tipo==='lluvia'||!ev.especie||ev.especie==='*lluvia') return;
+    if(!ids.has(ev.especie)){ groups[ev.especie]=(groups[ev.especie]||0)+1; }
+  });
+  return groups;
+}
+
 function renderCfg(){
   setTimeout(()=>{
     const u=document.getElementById('sheets-url');
@@ -620,6 +632,50 @@ function renderCfg(){
         <button class="icon-btn" onclick="delRegla(${i})">🗑️</button>
       </div>
     </div>`).join('');
+
+  // Eventos huérfanos
+  const hObj=getHuerfanos();
+  _huerfanosList=Object.keys(hObj);
+  const hEl=document.getElementById('cfg-huerfanos');
+  if(_huerfanosList.length){
+    hEl.innerHTML=`
+      <div style="padding:8px 13px 4px;display:flex;align-items:center;gap:6px">
+        <span style="font-size:13px">⚠️</span>
+        <div class="ctit" style="margin-bottom:0;color:var(--rojo)">Eventos sin especie activa</div>
+      </div>
+      ${_huerfanosList.map((k,i)=>`
+        <div class="cfg-esp-item" style="border-left:3px solid var(--rojo);margin-left:13px;margin-right:0;border-radius:0 var(--rs) var(--rs) 0">
+          <div class="cfg-esp-info">
+            <div class="cfg-esp-nom" style="color:var(--rojo)">${k}</div>
+            <div class="cfg-esp-sub">${hObj[k]} evento${hObj[k]>1?'s':''} · especie ya no existe</div>
+          </div>
+          <button class="icon-btn" style="font-size:13px" onclick="openModal('reasignar',${i})" title="Reasignar">↗️</button>
+        </div>`).join('')}`;
+  } else {
+    hEl.innerHTML='';
+  }
+}
+function doReasignar(idx){
+  const oldNom=_huerfanosList[idx];
+  const newIdx=parseInt(document.getElementById('reas-sel').value);
+  if(isNaN(newIdx)||!spp[newIdx]){ toast('Elegí una especie','err'); return; }
+  const newId=espId(spp[newIdx]);
+  let cnt=0;
+  eventos.forEach(ev=>{ if(ev.especie===oldNom){ ev.especie=newId; cnt++; } });
+  save('pr_eventos',eventos);
+  document.getElementById('ov').classList.remove('on');
+  renderCfg(); renderSem();
+  toast(`✓ ${cnt} evento${cnt>1?'s':''} reasignados a ${newId}`,'ok');
+}
+function delHuerfanos(idx){
+  const oldNom=_huerfanosList[idx];
+  const cnt=eventos.filter(e=>e.especie===oldNom).length;
+  if(!confirm(`¿Eliminar ${cnt} evento${cnt>1?'s':''} de "${oldNom}"?`)) return;
+  eventos=eventos.filter(e=>e.especie!==oldNom);
+  save('pr_eventos',eventos);
+  document.getElementById('ov').classList.remove('on');
+  renderCfg(); renderSem();
+  toast('Eventos eliminados','ok');
 }
 function delEsp(i){ if(!confirm('¿Eliminar '+spp[i].nom+'?')) return; spp.splice(i,1); save('pr_spp',spp); renderCfg(); toast('Especie eliminada'); }
 function delRegla(i){ reglas.splice(i,1); save('pr_reglas',reglas); renderCfg(); renderPlan(); toast('Regla eliminada'); }
@@ -794,6 +850,29 @@ function openModal(tipo, ctx){
       <div class="mfield"><label>Nota / criterio</label><textarea id="mp-nota">${p?p.nota:''}</textarea></div>
       <button class="btn-pri" onclick="savePlan('${tipo}','${ctx}')">Guardar</button>
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    return;
+  }
+
+  if(tipo==='reasignar'){
+    const oldNom=_huerfanosList[parseInt(ctx)];
+    if(!oldNom){ return; }
+    const cnt=eventos.filter(e=>e.especie===oldNom).length;
+    mi.innerHTML=`
+      <div class="modal-tit">↗️ Reasignar eventos</div>
+      <div class="modal-sub">${cnt} evento${cnt>1?'s':''} registrados como "<strong>${oldNom}</strong>"</div>
+      <div class="mfield">
+        <label>Reasignar a</label>
+        <select id="reas-sel">
+          <option value="">— Elegir especie activa —</option>
+          ${spp.map((e,i)=>`<option value="${i}">${espId(e)}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn-pri" onclick="doReasignar(${parseInt(ctx)})">Reasignar eventos</button>
+      <button class="btn-sec" onclick="closeOv()">Cancelar</button>
+      <div style="margin-top:12px;border-top:1px solid var(--br);padding-top:12px">
+        <button class="btn-pri btn-danger" onclick="delHuerfanos(${parseInt(ctx)})">🗑 Eliminar estos ${cnt} evento${cnt>1?'s':''}</button>
+      </div>`;
     ov.classList.add('on');
     return;
   }
