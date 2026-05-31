@@ -439,8 +439,9 @@ function planForMes(esp, mk){
   if(!esp.planes||!esp.planes.length) return null;
   const exact = esp.planes.find(p=>p.mes===mk);
   if(exact) return exact;
-  const sorted = [...esp.planes].sort((a,b)=>b.mes.localeCompare(a.mes));
-  return sorted[0];
+  const sorted = [...esp.planes].sort((a,b)=>a.mes.localeCompare(b.mes));
+  // próximo plan hacia adelante; si no hay, el último disponible
+  return sorted.find(p=>p.mes>=mk) || sorted[sorted.length-1];
 }
 
 function navW(n){ weekOff = n===0?0:weekOff+n; renderSem(); }
