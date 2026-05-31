@@ -1759,13 +1759,14 @@ function renderDash(){
       '</div>'+
       '<div class="acordeon-body" style="padding:10px 12px">'+
         '<div class="cnums" style="margin-bottom:10px">'+
-          '<div class="cni"><div class="cnl">Plantines</div><div class="cnv">'+fmt(cpEsp)+'</div></div>'+
+          '<div class="cni"><div class="cnl">Plantines</div><div class="cnv">'+fmt(cb)+'</div></div>'+
           '<div class="cni"><div class="cnl">Fertilización</div><div class="cnv">'+fmt(aplics.filter(function(g){return g.cat==='Fertilizacion';}).reduce(function(s,g){return s+g.monto;},0))+'</div></div>'+
           '<div class="cni"><div class="cnl">Fitosanitarios</div><div class="cnv">'+fmt(aplics.filter(function(g){return g.cat==='Fitosanitario';}).reduce(function(s,g){return s+g.monto;},0))+'</div></div>'+
           '<div class="cni"><div class="cnl">Insumos</div><div class="cnv">'+fmt(cInsumo)+'</div></div>'+
         '</div>'+
-        (cpEsp>0?'<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Plantines / Semillas</div>'+
-          '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>'+e+' ('+nCamasEspT+' camas)</span><span>'+fmt(cpEsp)+'</span></div>'+
+        (cb>0?'<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Plantines / Semillas</div>'+
+          (cbBase>0?'<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>Estimado pre-app ('+nCamasEspT+' camas)</span><span>'+fmt(cbBase)+'</span></div>':'')+
+          (cpEsp>0?'<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>'+e+' ('+nCamasEspT+' camas)</span><span>'+fmt(cpEsp)+'</span></div>':'')+
           '<div style="margin-bottom:8px"></div>':'')+
         (detFert?'<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Fertilización</div>'+detFert+'<div style="margin-bottom:8px"></div>':'')+
         (detFito?'<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;margin-top:6px">Fitosanitarios</div>'+detFito+'<div style="margin-bottom:8px"></div>':'')+
