@@ -64,7 +64,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .esp-top{display:flex;align-items:center;justify-content:space-between;padding:11px 13px 8px;}
 .esp-nom{font-size:13px;font-weight:700;color:var(--tx);}
 .esp-cfg{font-size:9.5px;color:var(--tx3);margin-top:2px;}
-.grp-badge{font-size:8px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;margin-left:8px;}
+.grp-badge{font-size:8px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;margin-left:8px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .gA{background:var(--verde-l);color:var(--verde);}
 .gB{background:var(--azul-l);color:var(--azul);}
 .gC{background:var(--am-l);color:var(--am);}
@@ -402,6 +402,8 @@ let _camasSelRiego = new Set();
 let editIdx= null;
 let fertOpen= false;
 
+function espId(e){ return e.nom+(e.etapa?' · '+e.etapa:''); }
+
 function save(k,v){
   localStorage.setItem(k, JSON.stringify(v));
   const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas'}[k];
@@ -471,10 +473,10 @@ function renderSem(){
 
   // Cards por especie
   const cont = document.getElementById('esp-cards');
-  cont.innerHTML = spp.map(e=>{
+  cont.innerHTML = spp.map((e,idx)=>{
     const plan = planForMes(e, mk);
     if(!plan) return '';
-    const evE   = wEvts.filter(v=>v.especie===e.nom);
+    const evE   = wEvts.filter(v=>v.especie===espId(e));
     const mmR   = evE.filter(v=>v.tipo==='riego').reduce((s,v)=>s+v.mm,0);
     const mmF   = evE.filter(v=>v.tipo==='fertilizacion').reduce((s,v)=>s+v.mm,0);
     const mmL   = lluvia; // lluvia aplica a todas
@@ -486,8 +488,12 @@ function renderSem(){
     const gc = e.grp==='A'?'gA':e.grp==='B'?'gB':'gC';
     return `<div class="esp-card">
       <div class="esp-top">
-        <div><div class="esp-nom">${e.nom}</div><div class="esp-cfg">${e.tasaH} mm/h · ${plan.evts} evts/sem · ${plan.mmEvt} mm/evt</div></div>
-        <span class="grp-badge ${gc}">Grp ${e.grp}</span>
+        <div>
+          <div class="esp-nom">${e.nom}</div>
+          ${e.etapa?`<div style="font-size:10px;color:var(--tx3);margin-top:1px">${e.etapa}</div>`:''}
+          <div class="esp-cfg">${e.tasaH} mm/h · ${plan.evts} evts/sem · ${plan.mmEvt} mm/evt</div>
+        </div>
+        <span class="grp-badge ${gc}">${e.etapa||'Grp '+e.grp}</span>
       </div>
       <div class="esp-prog">
         <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${fill}"></div></div>
@@ -499,7 +505,7 @@ function renderSem(){
         </div>
         <div class="esp-stat">${total.toFixed(1)} / ${plan.mmSem} mm · faltan <strong>${rem.toFixed(1)} mm</strong></div>
       </div>
-      <button class="esp-reg-btn" onclick="openModal('riego','${e.nom}')">💧 Registrar riego</button>
+      <button class="esp-reg-btn" onclick="openModal('riego',${idx})">💧 Registrar riego</button>
     </div>`;
   }).join('');
 
@@ -547,9 +553,13 @@ function renderPlan(){
     const gc=e.grp==='A'?'gA':e.grp==='B'?'gB':'gC';
     return `<div class="plan-card">
       <div class="plan-hdr">
-        <div><div class="plan-nom">${e.nom}</div><div class="plan-cfg">${e.config} · ${e.ncamas} camas</div></div>
+        <div>
+          <div class="plan-nom">${e.nom}</div>
+          ${e.etapa?`<div style="font-size:9.5px;color:var(--tx3);margin-top:1px">${e.etapa}</div>`:''}
+          <div class="plan-cfg">${e.config} · ${e.ncamas} camas</div>
+        </div>
         <div style="display:flex;gap:2px;align-items:center">
-          <span class="grp-badge ${gc}">Grp ${e.grp}</span>
+          <span class="grp-badge ${gc}">${e.etapa||'Grp '+e.grp}</span>
           ${p?`<button class="icon-btn" onclick="openModal('edit-plan','${e.nom}')">✏️</button>`
              :`<button class="icon-btn" onclick="openModal('add-plan','${e.nom}')">➕</button>`}
         </div>
@@ -593,7 +603,7 @@ function renderCfg(){
   document.getElementById('cfg-spp').innerHTML = spp.map((e,i)=>`
     <div class="cfg-esp-item">
       <div class="cfg-esp-info">
-        <div class="cfg-esp-nom">${e.nom} <span class="grp-badge ${e.grp==='A'?'gA':e.grp==='B'?'gB':'gC'}">Grp ${e.grp}</span></div>
+        <div class="cfg-esp-nom">${e.nom} <span class="grp-badge ${e.grp==='A'?'gA':e.grp==='B'?'gB':'gC'}">${e.etapa||'Grp '+e.grp}</span></div>
         <div class="cfg-esp-sub">${e.tasaH} mm/h · ${e.ncamas} camas · ${(e.planes||[]).length} plan(es)</div>
       </div>
       <button class="icon-btn" onclick="openModal('edit-esp',${i})">✏️</button>
@@ -615,40 +625,43 @@ function delRegla(i){ reglas.splice(i,1); save('pr_reglas',reglas); renderCfg();
 
 // ── ESTANQUE ──────────────────────────────────────────────────────────────
 function renderEstChips(){
-  document.getElementById('est-chips').innerHTML = spp.map(e=>{
-    const on=estSel.has(e.nom);
-    const sc=estSelCamas[e.nom];
+  document.getElementById('est-chips').innerHTML = spp.map((e,idx)=>{
+    const on=estSel.has(idx);
+    const sc=estSelCamas[idx];
     const nSel=sc?sc.size:e.ncamas;
     const lbl=on&&sc&&sc.size<e.ncamas?nSel+'/'+e.ncamas:e.ncamas;
-    const chipEl=`<div class="chip${on?' on':''}" onclick="togEst('${e.nom}')">
+    const chipEl=`<div class="chip${on?' on':''}" onclick="togEst(${idx})">
       <div class="chip-chk">${on?'✓':''}</div>
-      <span class="chip-nom">${e.nom}</span>
+      <div style="flex:1;min-width:0">
+        <div class="chip-nom">${e.nom}</div>
+        ${e.etapa?`<div style="font-size:9.5px;color:${on?'var(--verde)':'var(--tx3)'};margin-top:1px">${e.etapa}</div>`:''}
+      </div>
       <span class="chip-n">${lbl} camas</span>
     </div>`;
     if(!on) return chipEl;
     const beds=Array.from({length:e.ncamas},(_,i)=>{
       const n=i+1,sel=sc&&sc.has(n);
-      return `<div class="cama-n${sel?' on-v':''}" onclick="togCama('${e.nom}',${n})">${n}</div>`;
+      return `<div class="cama-n${sel?' on-v':''}" onclick="togCama(${idx},${n})">${n}</div>`;
     }).join('');
     return `<div class="chip-group">${chipEl}<div class="chip-camas">${beds}</div></div>`;
   }).join('');
 }
-function togEst(nom){
-  if(estSel.has(nom)){
-    estSel.delete(nom);
-    delete estSelCamas[nom];
+function togEst(idx){
+  if(estSel.has(idx)){
+    estSel.delete(idx);
+    delete estSelCamas[idx];
   } else {
-    const e=spp.find(x=>x.nom===nom);
-    estSel.add(nom);
-    estSelCamas[nom]=new Set(Array.from({length:e?e.ncamas:0},(_,i)=>i+1));
+    const e=spp[idx];
+    estSel.add(idx);
+    estSelCamas[idx]=new Set(Array.from({length:e?e.ncamas:0},(_,i)=>i+1));
   }
   renderEstChips(); calcEst();
 }
-function togCama(nom,n){
-  const sc=estSelCamas[nom];
+function togCama(idx,n){
+  const sc=estSelCamas[idx];
   if(!sc) return;
   sc.has(n)?sc.delete(n):sc.add(n);
-  if(sc.size===0){ estSel.delete(nom); delete estSelCamas[nom]; }
+  if(sc.size===0){ estSel.delete(idx); delete estSelCamas[idx]; }
   renderEstChips(); calcEst();
 }
 function clearEst(){ estSel.clear(); estSelCamas={}; renderEstChips(); calcEst(); }
@@ -656,7 +669,7 @@ function calcEst(){
   const L=pNum(document.getElementById('est-l').value);
   const A=17;
   const sel=[...estSel];
-  const tot=sel.reduce((s,n)=>{ const e=spp.find(x=>x.nom===n); const sc=estSelCamas[n]; return s+(sc?sc.size:e?e.ncamas:0); },0);
+  const tot=sel.reduce((s,idx)=>{ const e=spp[idx]; const sc=estSelCamas[idx]; return s+(sc?sc.size:e?e.ncamas:0); },0);
   const res=document.getElementById('est-res');
   if(!sel.length||!L){ res.innerHTML=`<div class="est-row" style="color:var(--tx3);font-size:12px">${!L?'Ingresá los litros':'Seleccioná al menos una especie'}</div>`; return; }
   const lC=L/tot, mmC=lC/A;
@@ -664,13 +677,13 @@ function calcEst(){
     <div class="est-row"><span class="est-rlbl">Total camas seleccionadas</span><div><span class="est-rval" style="color:var(--tx)">${tot}</span> <span style="font-size:10px;color:var(--tx3)">camas</span></div></div>
     <div class="est-row"><span class="est-rlbl">Litros por cama</span><div><span class="est-rval">${lC.toFixed(1)}</span> <span style="font-size:10px;color:var(--tx3)">L/cama</span></div></div>
     <div class="est-row" style="background:var(--verde-l)"><span class="est-rlbl" style="color:var(--verde);font-weight:600">mm aplicados por cama</span><div><span class="est-rval" style="color:var(--verde)">${mmC.toFixed(2)}</span> <span style="font-size:10px;color:var(--verde)">mm</span></div></div>
-    ${sel.map(n=>{
-      const e=spp.find(x=>x.nom===n);
-      const sc=estSelCamas[n];
-      const nc=sc?sc.size:e?e.ncamas:0;
-      const parcial=sc&&sc.size<(e?e.ncamas:0);
+    ${sel.map(idx=>{
+      const e=spp[idx]; if(!e) return '';
+      const sc=estSelCamas[idx];
+      const nc=sc?sc.size:e.ncamas;
+      const parcial=sc&&sc.size<e.ncamas;
       const sublbl=parcial?` · camas ${[...sc].sort((a,b)=>a-b).join(',')}` : '';
-      return `<div class="est-row"><span class="est-rlbl">${n}${sublbl}</span><span style="font-size:11px;color:var(--tx2)">${(nc*lC).toFixed(0)} L · ${mmC.toFixed(2)} mm</span></div>`;
+      return `<div class="est-row"><span class="est-rlbl">${espId(e)}${sublbl}</span><span style="font-size:11px;color:var(--tx2)">${(nc*lC).toFixed(0)} L · ${mmC.toFixed(2)} mm</span></div>`;
     }).join('')}`;
 }
 function saveEst(){
@@ -679,17 +692,17 @@ function saveEst(){
   const sel=[...estSel];
   if(!sel.length){ toast('Seleccioná al menos una especie','err'); return; }
   if(!L){ toast('Ingresá los litros','err'); return; }
-  const tot=sel.reduce((s,n)=>{ const e=spp.find(x=>x.nom===n); const sc=estSelCamas[n]; return s+(sc?sc.size:e?e.ncamas:0); },0);
+  const tot=sel.reduce((s,idx)=>{ const e=spp[idx]; const sc=estSelCamas[idx]; return s+(sc?sc.size:e?e.ncamas:0); },0);
   if(!tot){ toast('Seleccioná al menos una cama','err'); return; }
   const lC=L/tot, mmC=+(lC/A).toFixed(3);
   const fecha=ds(new Date());
-  sel.forEach(nom=>{
-    const e=spp.find(x=>x.nom===nom);
-    const sc=estSelCamas[nom];
-    const parcial=sc&&sc.size<(e?e.ncamas:0);
+  sel.forEach(idx=>{
+    const e=spp[idx]; if(!e) return;
+    const sc=estSelCamas[idx];
+    const parcial=sc&&sc.size<e.ncamas;
     const camasTag=parcial?` · camas ${[...sc].sort((a,b)=>a-b).join(',')}` : '';
     eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-      fecha, especie:nom, min:0, mm:mmC, tipo:'fertilizacion',
+      fecha, especie:espId(e), min:0, mm:mmC, tipo:'fertilizacion',
       nota:`Estanque ${L}L ÷ ${tot} camas = ${lC.toFixed(1)} L/cama${camasTag}`,
       camas: parcial?[...sc].sort((a,b)=>a-b):null });
   });
@@ -708,7 +721,7 @@ function openModal(tipo, ctx){
   const ov = document.getElementById('ov');
 
   if(tipo==='riego'){
-    const esp = spp.find(e=>e.nom===ctx);
+    const esp = spp[parseInt(ctx)];
     if(!esp) return;
     const mk  = mesKey(wMon(weekOff));
     const p   = planForMes(esp, mk);
@@ -789,6 +802,14 @@ function openModal(tipo, ctx){
     mi.innerHTML=`
       <div class="modal-tit">${e?'Editar':'Nueva'} especie</div>
       <div class="mfield"><label>Nombre</label><input id="ae-nom" value="${e?e.nom:''}"></div>
+      <div class="mfield"><label>Etapa / Fase (opcional)</label>
+        <input id="ae-etapa" value="${e?e.etapa||'':''}" placeholder="ej: Floración, Crecimiento veg., Trasplante">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">
+          ${['Crecimiento veg.','Floración','Post-trasplante','Trasplante','Producción'].map(t=>
+            `<button type="button" class="pbtn" style="font-size:10px" onclick="document.getElementById('ae-etapa').value='${t}'">${t}</button>`
+          ).join('')}
+        </div>
+      </div>
       <div class="mgrid2">
         <div class="mfield"><label>Grupo (A/B/C)</label>
           <select id="ae-grp"><option${e&&e.grp==='A'?' selected':''}>A</option><option${e&&e.grp==='B'?' selected':''}>B</option><option${e&&e.grp==='C'?' selected':''}>C</option></select>
@@ -902,7 +923,7 @@ function saveRiego(){
   const camasArr=allCamas?null:[..._camasSelRiego].sort((a,b)=>a-b);
   const nota=allCamas?'':`camas ${camasArr.join(',')}`;
   eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-    fecha, especie:esp.nom, min:minSave, mm, tipo:'riego', nota, camas:camasArr });
+    fecha, especie:espId(esp), min:minSave, mm, tipo:'riego', nota, camas:camasArr });
   save('pr_eventos',eventos);
   document.getElementById('ov').classList.remove('on');
   renderSem();
@@ -963,13 +984,14 @@ function savePlan(tipo,espNom){
 
 function saveEsp(tipo, idx){
   const nom=document.getElementById('ae-nom').value.trim();
+  const etapa=document.getElementById('ae-etapa').value.trim();
   const grp=document.getElementById('ae-grp').value;
   const nc=+document.getElementById('ae-nc').value||1;
   const tasa=+document.getElementById('ae-tasa').value||1;
   const cfg=document.getElementById('ae-cfg').value.trim();
   if(!nom){ toast('Ingresá un nombre','err'); return; }
-  if(tipo==='edit-esp'&&idx!=null){ spp[idx]={...spp[idx],nom,grp,ncamas:nc,tasaH:tasa,config:cfg}; }
-  else { spp.push({nom,grp,tasaH:tasa,config:cfg,ncamas:nc,planes:[]}); }
+  if(tipo==='edit-esp'&&idx!=null){ spp[idx]={...spp[idx],nom,etapa,grp,ncamas:nc,tasaH:tasa,config:cfg}; }
+  else { spp.push({nom,etapa,grp,tasaH:tasa,config:cfg,ncamas:nc,planes:[]}); }
   save('pr_spp',spp);
   document.getElementById('ov').classList.remove('on');
   renderCfg();
