@@ -405,6 +405,38 @@ let editIdx= null;
 let fertOpen= false;
 
 function espId(e){ return e.nom+(e.etapa?' · '+e.etapa:''); }
+
+const ETAPA_PAL=[
+  {bg:'var(--verde-l)',tx:'var(--verde)'},
+  {bg:'var(--azul-l)',tx:'var(--azul)'},
+  {bg:'var(--am-l)',tx:'var(--am)'},
+  {bg:'var(--cielo-l)',tx:'var(--cielo)'},
+  {bg:'var(--rose)',tx:'var(--bordo)'},
+];
+function etapaColor(etapa){
+  if(!etapa) return null;
+  let h=0; for(let i=0;i<etapa.length;i++) h=(h*31+etapa.charCodeAt(i))%ETAPA_PAL.length;
+  return ETAPA_PAL[((h%ETAPA_PAL.length)+ETAPA_PAL.length)%ETAPA_PAL.length];
+}
+function badgeHtml(e){
+  const ec=etapaColor(e.etapa);
+  if(ec) return `<span class="grp-badge" style="background:${ec.bg};color:${ec.tx}">${e.etapa}</span>`;
+  const gc=e.grp==='A'?'gA':e.grp==='B'?'gB':'gC';
+  return `<span class="grp-badge ${gc}">Grp ${e.grp}</span>`;
+}
+function sortedSpp(){
+  return spp.map((e,i)=>({...e,_idx:i}))
+    .sort((a,b)=>{
+      const ea=a.etapa||'zzz', eb=b.etapa||'zzz';
+      if(ea!==eb) return ea.localeCompare(eb,'es');
+      return a.nom.localeCompare(b.nom,'es');
+    });
+}
+function etapaHdr(etapa){
+  const ec=etapaColor(etapa);
+  return `<div style="padding:6px 13px 2px;font-size:9px;font-weight:700;color:${ec?ec.tx:'var(--tx3)'};text-transform:uppercase;letter-spacing:.08em">${etapa}</div>`;
+}
+
 function parseCintas(cfg){ const m=(cfg||'').match(/(\d+)\s*cinta/); return m?parseInt(m[1]):3; }
 function parseGoteros(cfg){ const m=(cfg||'').match(/c\/(\d+)cm/); return m?parseInt(m[1]):20; }
 function updateCfgPreview(){
@@ -490,27 +522,28 @@ function renderSem(){
 
   // Cards por especie
   const cont = document.getElementById('esp-cards');
-  cont.innerHTML = spp.map((e,idx)=>{
+  let _le='';
+  cont.innerHTML = sortedSpp().map(e=>{
     const plan = planForMes(e, mk);
     if(!plan) return '';
     const evE   = wEvts.filter(v=>v.especie===espId(e));
     const mmR   = evE.filter(v=>v.tipo==='riego').reduce((s,v)=>s+v.mm,0);
     const mmF   = evE.filter(v=>v.tipo==='fertilizacion').reduce((s,v)=>s+v.mm,0);
-    const mmL   = lluvia; // lluvia aplica a todas
+    const mmL   = lluvia;
     const total = mmR+mmF+mmL;
     const pct   = plan.mmSem>0?Math.min(100,total/plan.mmSem*100):0;
     const rem   = Math.max(0,plan.mmSem-total);
     let fill = 'linear-gradient(90deg,var(--bordo2),var(--bordo3))';
     if(pct>=100) fill='var(--verde)';
-    const gc = e.grp==='A'?'gA':e.grp==='B'?'gB':'gC';
-    return `<div class="esp-card">
+    const hdr = e.etapa&&e.etapa!==_le ? etapaHdr(e.etapa) : '';
+    _le=e.etapa||'';
+    return hdr+`<div class="esp-card">
       <div class="esp-top">
         <div>
           <div class="esp-nom">${e.nom}</div>
-          ${e.etapa?`<div style="font-size:10px;color:var(--tx3);margin-top:1px">${e.etapa}</div>`:''}
           <div class="esp-cfg">${e.tasaH} mm/h · ${plan.evts} evts/sem · ${plan.mmEvt} mm/evt</div>
         </div>
-        <span class="grp-badge ${gc}">${e.etapa||'Grp '+e.grp}</span>
+        ${badgeHtml(e)}
       </div>
       <div class="esp-prog">
         <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${fill}"></div></div>
@@ -522,7 +555,7 @@ function renderSem(){
         </div>
         <div class="esp-stat">${total.toFixed(1)} / ${plan.mmSem} mm · faltan <strong>${rem.toFixed(1)} mm</strong></div>
       </div>
-      <button class="esp-reg-btn" onclick="openModal('riego',${idx})">💧 Registrar riego</button>
+      <button class="esp-reg-btn" onclick="openModal('riego',${e._idx})">💧 Registrar riego</button>
     </div>`;
   }).join('');
 
@@ -565,18 +598,19 @@ function renderPlan(){
   document.getElementById('mes-bar').innerHTML =
     meses.map(m=>`<button class="mes-chip${m===planMes?' on':''}" onclick="setPlanMes('${m}')">${m}</button>`).join('')+
     `<button class="mes-chip add" onclick="openModal('add-mes')">+ Mes</button>`;
-  document.getElementById('plan-cards').innerHTML = spp.map(e=>{
+  let _lep='';
+  document.getElementById('plan-cards').innerHTML = sortedSpp().map(e=>{
     const p=e.planes&&e.planes.find(pl=>pl.mes===planMes);
-    const gc=e.grp==='A'?'gA':e.grp==='B'?'gB':'gC';
-    return `<div class="plan-card">
+    const hdr=e.etapa&&e.etapa!==_lep?etapaHdr(e.etapa):'';
+    _lep=e.etapa||'';
+    return hdr+`<div class="plan-card">
       <div class="plan-hdr">
         <div>
           <div class="plan-nom">${e.nom}</div>
-          ${e.etapa?`<div style="font-size:9.5px;color:var(--tx3);margin-top:1px">${e.etapa}</div>`:''}
           <div class="plan-cfg">${e.config} · ${e.ncamas} camas</div>
         </div>
         <div style="display:flex;gap:2px;align-items:center">
-          <span class="grp-badge ${gc}">${e.etapa||'Grp '+e.grp}</span>
+          ${badgeHtml(e)}
           ${p?`<button class="icon-btn" onclick="openModal('edit-plan','${e.nom}')">✏️</button>`
              :`<button class="icon-btn" onclick="openModal('add-plan','${e.nom}')">➕</button>`}
         </div>
@@ -627,15 +661,19 @@ function renderCfg(){
     const u=document.getElementById('sheets-url');
     if(u) u.value=localStorage.getItem('pr_sheets_url')||'';
   },0);
-  document.getElementById('cfg-spp').innerHTML = spp.map((e,i)=>`
-    <div class="cfg-esp-item">
+  let _lec='';
+  document.getElementById('cfg-spp').innerHTML = sortedSpp().map(e=>{
+    const hdr=e.etapa&&e.etapa!==_lec?etapaHdr(e.etapa):'';
+    _lec=e.etapa||'';
+    return hdr+`<div class="cfg-esp-item">
       <div class="cfg-esp-info">
-        <div class="cfg-esp-nom">${e.nom} <span class="grp-badge ${e.grp==='A'?'gA':e.grp==='B'?'gB':'gC'}">${e.etapa||'Grp '+e.grp}</span></div>
+        <div class="cfg-esp-nom">${e.nom} ${badgeHtml(e)}</div>
         <div class="cfg-esp-sub">${e.tasaH} mm/h · ${e.ncamas} camas · ${(e.planes||[]).length} plan(es)</div>
       </div>
-      <button class="icon-btn" onclick="openModal('edit-esp',${i})">✏️</button>
-      <button class="icon-btn" onclick="delEsp(${i})">🗑️</button>
-    </div>`).join('');
+      <button class="icon-btn" onclick="openModal('edit-esp',${e._idx})">✏️</button>
+      <button class="icon-btn" onclick="delEsp(${e._idx})">🗑️</button>
+    </div>`;
+  }).join('');
 
   document.getElementById('cfg-reglas').innerHTML = reglas.map((r,i)=>`
     <div class="regla-card">
@@ -696,25 +734,30 @@ function delRegla(i){ reglas.splice(i,1); save('pr_reglas',reglas); renderCfg();
 
 // ── ESTANQUE ──────────────────────────────────────────────────────────────
 function renderEstChips(){
-  document.getElementById('est-chips').innerHTML = spp.map((e,idx)=>{
+  let _lee='';
+  document.getElementById('est-chips').innerHTML = sortedSpp().map(e=>{
+    const idx=e._idx;
     const on=estSel.has(idx);
     const sc=estSelCamas[idx];
     const nSel=sc?sc.size:e.ncamas;
     const lbl=on&&sc&&sc.size<e.ncamas?nSel+'/'+e.ncamas:e.ncamas;
+    const ec=etapaColor(e.etapa);
+    const hdrChip=e.etapa&&e.etapa!==_lee
+      ?`<div style="padding:6px 0 2px;font-size:9px;font-weight:700;color:${ec?ec.tx:'var(--tx3)'};text-transform:uppercase;letter-spacing:.07em">${e.etapa}</div>`:'';
+    _lee=e.etapa||'';
     const chipEl=`<div class="chip${on?' on':''}" onclick="togEst(${idx})">
       <div class="chip-chk">${on?'✓':''}</div>
       <div style="flex:1;min-width:0">
         <div class="chip-nom">${e.nom}</div>
-        ${e.etapa?`<div style="font-size:9.5px;color:${on?'var(--verde)':'var(--tx3)'};margin-top:1px">${e.etapa}</div>`:''}
       </div>
       <span class="chip-n">${lbl} camas</span>
     </div>`;
-    if(!on) return chipEl;
+    if(!on) return hdrChip+chipEl;
     const beds=Array.from({length:e.ncamas},(_,i)=>{
       const n=i+1,sel=sc&&sc.has(n);
       return `<div class="cama-n${sel?' on-v':''}" onclick="togCama(${idx},${n})">${n}</div>`;
     }).join('');
-    return `<div class="chip-group">${chipEl}<div class="chip-camas">${beds}</div></div>`;
+    return hdrChip+`<div class="chip-group">${chipEl}<div class="chip-camas">${beds}</div></div>`;
   }).join('');
 }
 function togEst(idx){
