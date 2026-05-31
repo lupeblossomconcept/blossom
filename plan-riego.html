@@ -202,6 +202,14 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .code-block{background:#1a0f14;color:#f5e0ea;border-radius:var(--rs);padding:14px;font-family:monospace;font-size:10.5px;line-height:1.6;max-height:55vh;overflow-y:auto;white-space:pre;margin-bottom:14px;border:1px solid #3a1f2e;}
 .copy-code-btn{width:100%;padding:11px;background:var(--bordo);color:#fff;border:none;border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:7px;}
 .sync-hdr-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 10px;color:#fff;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;}
+
+/* CAMAS */
+.chip-group{border-radius:var(--r);overflow:hidden;border:2px solid var(--verde);}
+.chip-group .chip,.chip-group .chip.on{border-color:transparent!important;border-radius:0!important;border-bottom:1px solid rgba(26,92,46,.15)!important;}
+.chip-camas{background:var(--verde-l);padding:8px 11px;display:flex;flex-wrap:wrap;gap:5px;}
+.cama-n{width:28px;height:28px;border-radius:7px;border:1.5px solid var(--br2);background:var(--sf);font-size:11px;font-weight:700;color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;font-family:'Montserrat',sans-serif;}
+.cama-n.on-v{border-color:var(--verde);background:var(--verde);color:#fff;}
+.cama-n.on-a{border-color:var(--azul);background:var(--azul);color:#fff;}
 </style>
 </head>
 <body>
@@ -389,6 +397,8 @@ let tareas = JSON.parse(localStorage.getItem('pr_tareas') || '[]');
 let weekOff= 0;
 let planMes= '';
 let estSel = new Set();
+let estSelCamas = {};
+let _camasSelRiego = new Set();
 let editIdx= null;
 let fertOpen= false;
 
@@ -607,28 +617,61 @@ function delRegla(i){ reglas.splice(i,1); save('pr_reglas',reglas); renderCfg();
 function renderEstChips(){
   document.getElementById('est-chips').innerHTML = spp.map(e=>{
     const on=estSel.has(e.nom);
-    return `<div class="chip${on?' on':''}" onclick="togEst('${e.nom}')">
+    const sc=estSelCamas[e.nom];
+    const nSel=sc?sc.size:e.ncamas;
+    const lbl=on&&sc&&sc.size<e.ncamas?nSel+'/'+e.ncamas:e.ncamas;
+    const chipEl=`<div class="chip${on?' on':''}" onclick="togEst('${e.nom}')">
       <div class="chip-chk">${on?'✓':''}</div>
       <span class="chip-nom">${e.nom}</span>
-      <span class="chip-n">${e.ncamas} camas</span>
+      <span class="chip-n">${lbl} camas</span>
     </div>`;
+    if(!on) return chipEl;
+    const beds=Array.from({length:e.ncamas},(_,i)=>{
+      const n=i+1,sel=sc&&sc.has(n);
+      return `<div class="cama-n${sel?' on-v':''}" onclick="togCama('${e.nom}',${n})">${n}</div>`;
+    }).join('');
+    return `<div class="chip-group">${chipEl}<div class="chip-camas">${beds}</div></div>`;
   }).join('');
 }
-function togEst(nom){ estSel.has(nom)?estSel.delete(nom):estSel.add(nom); renderEstChips(); calcEst(); }
-function clearEst(){ estSel.clear(); renderEstChips(); calcEst(); }
+function togEst(nom){
+  if(estSel.has(nom)){
+    estSel.delete(nom);
+    delete estSelCamas[nom];
+  } else {
+    const e=spp.find(x=>x.nom===nom);
+    estSel.add(nom);
+    estSelCamas[nom]=new Set(Array.from({length:e?e.ncamas:0},(_,i)=>i+1));
+  }
+  renderEstChips(); calcEst();
+}
+function togCama(nom,n){
+  const sc=estSelCamas[nom];
+  if(!sc) return;
+  sc.has(n)?sc.delete(n):sc.add(n);
+  if(sc.size===0){ estSel.delete(nom); delete estSelCamas[nom]; }
+  renderEstChips(); calcEst();
+}
+function clearEst(){ estSel.clear(); estSelCamas={}; renderEstChips(); calcEst(); }
 function calcEst(){
   const L=pNum(document.getElementById('est-l').value);
   const A=17;
   const sel=[...estSel];
-  const tot=sel.reduce((s,n)=>{ const e=spp.find(x=>x.nom===n); return s+(e?e.ncamas:0); },0);
+  const tot=sel.reduce((s,n)=>{ const e=spp.find(x=>x.nom===n); const sc=estSelCamas[n]; return s+(sc?sc.size:e?e.ncamas:0); },0);
   const res=document.getElementById('est-res');
   if(!sel.length||!L){ res.innerHTML=`<div class="est-row" style="color:var(--tx3);font-size:12px">${!L?'Ingresá los litros':'Seleccioná al menos una especie'}</div>`; return; }
   const lC=L/tot, mmC=lC/A;
   res.innerHTML=`
-    <div class="est-row"><span class="est-rlbl">Total camas</span><div><span class="est-rval" style="color:var(--tx)">${tot}</span> <span style="font-size:10px;color:var(--tx3)">camas</span></div></div>
+    <div class="est-row"><span class="est-rlbl">Total camas seleccionadas</span><div><span class="est-rval" style="color:var(--tx)">${tot}</span> <span style="font-size:10px;color:var(--tx3)">camas</span></div></div>
     <div class="est-row"><span class="est-rlbl">Litros por cama</span><div><span class="est-rval">${lC.toFixed(1)}</span> <span style="font-size:10px;color:var(--tx3)">L/cama</span></div></div>
     <div class="est-row" style="background:var(--verde-l)"><span class="est-rlbl" style="color:var(--verde);font-weight:600">mm aplicados por cama</span><div><span class="est-rval" style="color:var(--verde)">${mmC.toFixed(2)}</span> <span style="font-size:10px;color:var(--verde)">mm</span></div></div>
-    ${sel.map(n=>{ const e=spp.find(x=>x.nom===n); return `<div class="est-row"><span class="est-rlbl">${n} (${e?e.ncamas:0} camas)</span><span style="font-size:11px;color:var(--tx2)">${((e?e.ncamas:0)*lC).toFixed(0)} L · ${mmC.toFixed(2)} mm</span></div>`; }).join('')}`;
+    ${sel.map(n=>{
+      const e=spp.find(x=>x.nom===n);
+      const sc=estSelCamas[n];
+      const nc=sc?sc.size:e?e.ncamas:0;
+      const parcial=sc&&sc.size<(e?e.ncamas:0);
+      const sublbl=parcial?` · camas ${[...sc].sort((a,b)=>a-b).join(',')}` : '';
+      return `<div class="est-row"><span class="est-rlbl">${n}${sublbl}</span><span style="font-size:11px;color:var(--tx2)">${(nc*lC).toFixed(0)} L · ${mmC.toFixed(2)} mm</span></div>`;
+    }).join('')}`;
 }
 function saveEst(){
   const L=pNum(document.getElementById('est-l').value);
@@ -636,13 +679,19 @@ function saveEst(){
   const sel=[...estSel];
   if(!sel.length){ toast('Seleccioná al menos una especie','err'); return; }
   if(!L){ toast('Ingresá los litros','err'); return; }
-  const tot=sel.reduce((s,n)=>{ const e=spp.find(x=>x.nom===n); return s+(e?e.ncamas:0); },0);
+  const tot=sel.reduce((s,n)=>{ const e=spp.find(x=>x.nom===n); const sc=estSelCamas[n]; return s+(sc?sc.size:e?e.ncamas:0); },0);
+  if(!tot){ toast('Seleccioná al menos una cama','err'); return; }
   const lC=L/tot, mmC=+(lC/A).toFixed(3);
   const fecha=ds(new Date());
   sel.forEach(nom=>{
+    const e=spp.find(x=>x.nom===nom);
+    const sc=estSelCamas[nom];
+    const parcial=sc&&sc.size<(e?e.ncamas:0);
+    const camasTag=parcial?` · camas ${[...sc].sort((a,b)=>a-b).join(',')}` : '';
     eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
       fecha, especie:nom, min:0, mm:mmC, tipo:'fertilizacion',
-      nota:`Estanque ${L}L ÷ ${tot} camas = ${lC.toFixed(1)} L/cama` });
+      nota:`Estanque ${L}L ÷ ${tot} camas = ${lC.toFixed(1)} L/cama${camasTag}`,
+      camas: parcial?[...sc].sort((a,b)=>a-b):null });
   });
   save('pr_eventos',eventos);
   clearEst();
@@ -667,6 +716,10 @@ function openModal(tipo, ctx){
     mi.innerHTML=`
       <div class="modal-tit">💧 Registrar riego</div>
       <div class="modal-sub">${esp.nom} · ${esp.tasaH} mm/h${p?' · Plan: '+p.min+' min':''}</div>
+      <div style="margin-bottom:13px">
+        <div class="ctit" style="margin-bottom:7px">Camas (${esp.ncamas} total)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px" id="m-camas"></div>
+      </div>
       <div class="mfield"><label>Fecha</label><input type="date" id="m-fecha-r" value="${ds(new Date())}"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px">
         <div class="mfield" style="margin-bottom:0"><label>Minutos</label>
@@ -679,7 +732,9 @@ function openModal(tipo, ctx){
       <div class="presets" style="margin-bottom:14px">${pre.map(n=>`<button class="pbtn" onclick="mSet(${n})">${n} min</button>`).join('')}</div>
       <button class="btn-pri" onclick="saveRiego()">Guardar</button>
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    _camasSelRiego = new Set(Array.from({length:esp.ncamas},(_,i)=>i+1));
     ov.classList.add('on');
+    renderCamasRiego(esp.ncamas);
     document.getElementById('m-min').focus();
     return;
   }
@@ -831,6 +886,7 @@ function mSet(n){
 function saveRiego(){
   const esp=spp.find(x=>x.nom===_modalCtx.ctx);
   if(!esp){ toast('Error','err'); return; }
+  if(_camasSelRiego.size===0){ toast('Seleccioná al menos una cama','err'); return; }
   const min=pNum(document.getElementById('m-min').value);
   const mmDir=pNum(document.getElementById('m-mm-direct').value);
   const fecha=document.getElementById('m-fecha-r').value||ds(new Date());
@@ -842,12 +898,16 @@ function saveRiego(){
   } else {
     toast('Ingresá minutos o mm','err'); return;
   }
+  const allCamas=_camasSelRiego.size===esp.ncamas;
+  const camasArr=allCamas?null:[..._camasSelRiego].sort((a,b)=>a-b);
+  const nota=allCamas?'':`camas ${camasArr.join(',')}`;
   eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-    fecha, especie:esp.nom, min:minSave, mm, tipo:'riego', nota:'' });
+    fecha, especie:esp.nom, min:minSave, mm, tipo:'riego', nota, camas:camasArr });
   save('pr_eventos',eventos);
   document.getElementById('ov').classList.remove('on');
   renderSem();
-  toast(`✓ ${esp.nom} · ${mm.toFixed(2)} mm`,'ok');
+  const camasLbl=allCamas?'':` · camas ${camasArr.join(',')}`;
+  toast(`✓ ${esp.nom}${camasLbl} · ${mm.toFixed(2)} mm`,'ok');
 }
 
 function saveLluvia(){
@@ -942,17 +1002,31 @@ function renderTareas(){
       <button class="tarea-del" onclick="delTarea(${i})">×</button>
     </div>`).join('');
 }
-function toggleTarea(i){ tareas[i].done=!tareas[i].done; localStorage.setItem('pr_tareas',JSON.stringify(tareas)); renderTareas(); }
-function delTarea(i){ tareas.splice(i,1); localStorage.setItem('pr_tareas',JSON.stringify(tareas)); renderTareas(); }
-function clearDone(){ tareas=tareas.filter(t=>!t.done); localStorage.setItem('pr_tareas',JSON.stringify(tareas)); renderTareas(); toast('Completadas eliminadas','ok'); }
+function toggleTarea(i){ tareas[i].done=!tareas[i].done; save('pr_tareas',tareas); renderTareas(); }
+function delTarea(i){ tareas.splice(i,1); save('pr_tareas',tareas); renderTareas(); }
+function clearDone(){ tareas=tareas.filter(t=>!t.done); save('pr_tareas',tareas); renderTareas(); toast('Completadas eliminadas','ok'); }
 function saveTarea(){
   const txt=(document.getElementById('tar-txt').value||'').trim();
   if(!txt){ toast('Ingresá una tarea','err'); return; }
   tareas.push({id:Date.now().toString(36),texto:txt,done:false});
-  localStorage.setItem('pr_tareas',JSON.stringify(tareas));
+  save('pr_tareas',tareas);
   document.getElementById('ov').classList.remove('on');
   renderTareas();
   toast('Tarea agregada','ok');
+}
+
+function renderCamasRiego(ncamas){
+  const el=document.getElementById('m-camas');
+  if(!el) return;
+  el.innerHTML=Array.from({length:ncamas},(_,i)=>{
+    const n=i+1,on=_camasSelRiego.has(n);
+    return `<div class="cama-n${on?' on-a':''}" onclick="togCamaRiego(${n})">${n}</div>`;
+  }).join('');
+}
+function togCamaRiego(n){
+  _camasSelRiego.has(n)?_camasSelRiego.delete(n):_camasSelRiego.add(n);
+  const esp=spp.find(x=>x.nom===_modalCtx.ctx);
+  if(esp) renderCamasRiego(esp.ncamas);
 }
 
 // ── FERT TOGGLE ───────────────────────────────────────────────────────────
