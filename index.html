@@ -1661,7 +1661,8 @@ function renderDash(){
   }).join('');
   if(el('d-cam-detalle')) el('d-cam-detalle').innerHTML=detalleHtml||'<div class="empty">Sin camas activas</div>';
   var reEl=el('d-ren');
-  if(reEl){reEl.textContent=fmt(ren);reEl.className='sval '+(ren>=0?'pos':'neg');}
+  var renPct=tV>0?Math.round(ren/tV*100):null;
+  if(reEl){reEl.textContent=renPct!==null?(renPct>=0?'+':'')+renPct+'%':'—';reEl.className='sval '+(ren>=0?'pos':'neg');}
 
 
   // Barras por especie
