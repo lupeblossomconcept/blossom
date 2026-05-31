@@ -239,12 +239,14 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
       <button onclick="navW(1)">›</button>
     </div>
   </div>
-  <div class="dash-grid" id="dash-grid">
-    <div class="dash-cell"><div class="dash-icon">💧</div><div class="dash-val c-riego" id="d-riego">0</div><div class="dash-lbl">Riego mm</div></div>
-    <div class="dash-cell"><div class="dash-icon">🌱</div><div class="dash-val c-fert" id="d-fert">0</div><div class="dash-lbl">Fert mm</div></div>
-    <div class="dash-cell"><div class="dash-icon">🌧</div><div class="dash-val c-lluvia" id="d-lluvia">0</div><div class="dash-lbl">Lluvia mm</div></div>
-    <div class="dash-cell"><div class="dash-icon">📊</div><div class="dash-val c-plan" id="d-plan">0</div><div class="dash-lbl">Plan mm</div></div>
+  <div class="dash-grid" id="dash-grid" style="grid-template-columns:1fr 1fr">
+    <div class="dash-cell"><div class="dash-icon">💧</div><div class="dash-val c-riego" id="d-total">0</div><div class="dash-lbl">Total aplicado</div></div>
+    <div class="dash-cell"><div class="dash-icon">📊</div><div class="dash-val c-plan" id="d-plan">0</div><div class="dash-lbl">Plan semana</div></div>
   </div>
+  <div style="margin:0 13px 3px;height:7px;background:var(--rose);border-radius:4px;overflow:hidden">
+    <div id="dash-prog-fill" style="height:100%;border-radius:4px;background:linear-gradient(90deg,var(--bordo2),var(--bordo3));transition:width .4s ease;width:0%"></div>
+  </div>
+  <div id="dash-breakdown" style="margin:0 13px 11px;font-size:10px;color:var(--tx3);line-height:1.8"></div>
   <button class="lluvia-btn" onclick="openModal('lluvia')">
     <span>🌧 Registrar lluvia</span><span style="font-size:16px">›</span>
   </button>
@@ -441,15 +443,12 @@ function parseCintas(cfg){ const m=(cfg||'').match(/(\d+)\s*cinta/); return m?pa
 function parseGoteros(cfg){ const m=(cfg||'').match(/c\/(\d+)cm/); return m?parseInt(m[1]):20; }
 function updateCfgPreview(){
   const c=parseInt(document.getElementById('ae-cintas').value)||1;
-  const g=document.getElementById('ae-goteros').value||'20';
-  const el=document.getElementById('ae-cfg-preview');
-  if(el) el.textContent=c+' cinta'+(c>1?'s':'')+' · goteros c/'+g+'cm';
-}
-function calcTasaEsp(caudal){
-  const c=parseInt(document.getElementById('ae-cintas').value)||3;
   const g=parseInt(document.getElementById('ae-goteros').value)||20;
-  const tasa=Math.round(c*(100/g)*caudal/1.7);
-  document.getElementById('ae-tasa').value=tasa;
+  const tasa=Math.round(c*100/g);
+  const el=document.getElementById('ae-cfg-preview');
+  if(el) el.textContent=c+' cinta'+(c>1?'s':'')+' · goteros c/'+g+'cm  →  '+tasa+' mm/h';
+  const tasaEl=document.getElementById('ae-tasa');
+  if(tasaEl) tasaEl.value=tasa;
 }
 
 function save(k,v){
@@ -515,10 +514,18 @@ function renderSem(){
   const allNonLluvia = wEvts.filter(e=>e.tipo!=='lluvia');
   allNonLluvia.forEach(e=>{ if(e.tipo==='riego') tRiego+=e.mm; else if(e.tipo==='fertilizacion') tFert+=e.mm; });
 
-  document.getElementById('d-riego').textContent  = tRiego.toFixed(1);
-  document.getElementById('d-fert').textContent   = tFert.toFixed(1);
-  document.getElementById('d-lluvia').textContent = lluvia.toFixed(1);
-  document.getElementById('d-plan').textContent   = tPlan.toFixed(0);
+  const tTotal=tRiego+tFert+lluvia;
+  document.getElementById('d-total').textContent = tTotal.toFixed(1);
+  document.getElementById('d-plan').textContent  = tPlan.toFixed(0);
+  const pctG=tPlan>0?Math.min(100,tTotal/tPlan*100):0;
+  const pf=document.getElementById('dash-prog-fill');
+  if(pf){ pf.style.width=pctG+'%'; pf.style.background=pctG>=100?'var(--verde)':'linear-gradient(90deg,var(--bordo2),var(--bordo3))'; }
+  const parts=[];
+  if(tRiego>0) parts.push(`💧 ${tRiego.toFixed(1)} riego`);
+  if(tFert>0)  parts.push(`🌱 ${tFert.toFixed(1)} fert.`);
+  if(lluvia>0) parts.push(`🌧 ${lluvia.toFixed(1)} lluvia`);
+  const bd=document.getElementById('dash-breakdown');
+  if(bd) bd.textContent=parts.length?parts.join(' · '):'';
 
   // Cards por especie
   const cont = document.getElementById('esp-cards');
@@ -970,12 +977,7 @@ function openModal(tipo, ctx){
       <div class="mfield">
         <label>Tasa de riego (mm/h)</label>
         <input type="number" id="ae-tasa" value="${e?e.tasaH:''}" min="1" inputmode="numeric">
-        <div style="font-size:9.5px;color:var(--tx3);margin-top:6px;line-height:1.5">
-          Calculadora: tocá el caudal de tu gotero
-          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
-            ${[1.0,1.3,1.6,2.0,3.5].map(q=>`<button type="button" class="pbtn" onclick="calcTasaEsp(${q})">${q} L/h</button>`).join('')}
-          </div>
-        </div>
+        <div style="font-size:9.5px;color:var(--tx3);margin-top:5px">Se calcula automáticamente al cambiar cintas o goteros</div>
       </div>
       <button class="btn-pri" onclick="saveEsp('${tipo}',${ctx!==undefined?ctx:'null'})">Guardar</button>
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
