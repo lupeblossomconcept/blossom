@@ -79,17 +79,22 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .esp-reg-btn{width:100%;padding:9px;background:none;border:none;border-top:1px solid var(--br);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--bordo);cursor:pointer;}
 
 /* Historial */
-.hist-item{display:flex;align-items:center;padding:8px 13px;border-bottom:1px solid var(--br);}
-.hist-item:last-child{border-bottom:none;}
-.hist-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-right:10px;}
-.dot-riego{background:var(--azul);}
-.dot-fert{background:var(--verde);}
-.dot-lluvia{background:var(--cielo);}
-.hist-body{flex:1;}
-.hist-nom{font-size:12px;font-weight:600;color:var(--tx);}
-.hist-det{font-size:9.5px;color:var(--tx3);margin-top:1px;}
-.hist-mm{font-size:12px;font-weight:700;flex-shrink:0;margin:0 8px;}
-.hist-del{background:none;border:none;color:var(--tx3);font-size:15px;cursor:pointer;padding:0;}
+.hist-date-hdr{font-size:9.5px;font-weight:700;color:var(--tx3);padding:8px 13px 3px;text-transform:capitalize;letter-spacing:.03em;}
+.hist-row{display:flex;align-items:center;padding:7px 13px;border-bottom:1px solid var(--br);gap:8px;}
+.hist-row:last-child{border-bottom:none;}
+.hist-row-ico{font-size:15px;flex-shrink:0;}
+.hist-row-nom{flex:1;font-size:12px;font-weight:600;color:var(--tx);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hist-row-sub{font-size:9.5px;color:var(--tx3);}
+.hist-row-mm{font-size:12px;font-weight:700;flex-shrink:0;}
+.hist-row-del{background:none;border:none;color:var(--tx3);font-size:16px;cursor:pointer;padding:0 0 0 6px;flex-shrink:0;line-height:1;}
+/* Historial semanal */
+.wk-row{display:flex;align-items:center;padding:11px 13px;border-bottom:1px solid var(--br);gap:10px;cursor:pointer;}
+.wk-row:last-child{border-bottom:none;}
+.wk-row:active{background:var(--gris);}
+.wk-dates{font-size:11px;font-weight:600;color:var(--tx);flex-shrink:0;width:88px;}
+.wk-bar-wrap{flex:1;height:5px;background:var(--rose);border-radius:3px;overflow:hidden;}
+.wk-bar-fill{height:100%;border-radius:3px;}
+.wk-mm{font-size:11px;color:var(--tx2);font-weight:600;flex-shrink:0;text-align:right;min-width:72px;}
 
 /* FERTILIZACIÓN INLINE */
 .fert-toggle-btn{display:flex;align-items:center;justify-content:space-between;width:calc(100% - 26px);margin:0 13px 11px;padding:11px 15px;background:var(--verde-l);border:1.5px solid rgba(26,92,46,.2);border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--verde);cursor:pointer;}
@@ -237,6 +242,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
       <button onclick="navW(-1)">‹</button>
       <button class="act" onclick="navW(0)">Hoy</button>
       <button onclick="navW(1)">›</button>
+      <button onclick="openModal('historial')" title="Historial" style="font-size:13px;padding:4px 8px">📋</button>
     </div>
   </div>
   <div class="dash-grid" id="dash-grid" style="grid-template-columns:1fr 1fr">
@@ -492,6 +498,7 @@ function planForMes(esp, mk){
 }
 
 function navW(n){ weekOff = n===0?0:weekOff+n; renderSem(); }
+function goWeek(off){ weekOff=off; document.getElementById('ov').classList.remove('on'); renderSem(); }
 
 function eventsWeek(off){
   const m=wMon(off), sun=new Date(m); sun.setDate(m.getDate()+6);
@@ -571,23 +578,29 @@ function renderSem(){
   const hc=document.getElementById('hist-card');
   if(sorted.length){
     hc.style.display='';
-    document.getElementById('hist-list').innerHTML = sorted.map(ev=>{
-      const dot = ev.tipo==='riego'?'dot-riego':ev.tipo==='fertilizacion'?'dot-fert':'dot-lluvia';
-      const color = ev.tipo==='riego'?'var(--azul)':ev.tipo==='fertilizacion'?'var(--verde)':'var(--cielo)';
-      const label = ev.tipo==='riego'?'💧 Riego':ev.tipo==='fertilizacion'?'🌱 Fertilización':'🌧 Lluvia';
-      const det = ev.tipo==='lluvia'
-        ? ev.fecha
-        : `${ev.fecha}${ev.min?` · ${ev.min} min`:''}${ev.nota?' · '+ev.nota:''}`;
-      return `<div class="hist-item">
-        <div class="hist-dot ${dot}"></div>
-        <div class="hist-body">
-          <div class="hist-nom">${ev.especie||'Todas las especies'} <span style="font-size:9px;color:${color};font-weight:600">${label}</span></div>
-          <div class="hist-det">${det}</div>
-        </div>
-        <span class="hist-mm" style="color:${color}">${ev.mm.toFixed(2)} mm</span>
-        <button class="hist-del" onclick="delEv('${ev.id}')">×</button>
-      </div>`;
-    }).join('');
+    const byDate={};
+    sorted.forEach(ev=>{ if(!byDate[ev.fecha]) byDate[ev.fecha]=[]; byDate[ev.fecha].push(ev); });
+    document.getElementById('hist-list').innerHTML = Object.keys(byDate)
+      .sort((a,b)=>b.localeCompare(a))
+      .map(d=>{
+        const lbl=new Date(d+'T12:00:00').toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'short'});
+        const rows=byDate[d].map(ev=>{
+          const ico=ev.tipo==='riego'?'💧':ev.tipo==='fertilizacion'?'🌱':'🌧';
+          const color=ev.tipo==='riego'?'var(--azul)':ev.tipo==='fertilizacion'?'var(--verde)':'var(--cielo)';
+          const nom=ev.tipo==='lluvia'?'Lluvia':(ev.especie||'—');
+          const sub=ev.min>0?`${ev.min} min`:(ev.nota||'');
+          return `<div class="hist-row">
+            <span class="hist-row-ico">${ico}</span>
+            <div style="flex:1;min-width:0">
+              <div class="hist-row-nom">${nom}</div>
+              ${sub?`<div class="hist-row-sub">${sub}</div>`:''}
+            </div>
+            <span class="hist-row-mm" style="color:${color}">${ev.mm.toFixed(1)} mm</span>
+            <button class="hist-row-del" onclick="delEv('${ev.id}')">×</button>
+          </div>`;
+        }).join('');
+        return `<div class="hist-date-hdr">${lbl}</div>${rows}`;
+      }).join('');
   } else { hc.style.display='none'; }
 }
 
@@ -914,6 +927,48 @@ function openModal(tipo, ctx){
       <div class="mfield"><label>Nota / criterio</label><textarea id="mp-nota">${p?p.nota:''}</textarea></div>
       <button class="btn-pri" onclick="savePlan('${tipo}','${ctx}')">Guardar</button>
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    return;
+  }
+
+  if(tipo==='historial'){
+    const rows=[];
+    for(let i=-1;i>=-12;i--){
+      const mon=wMon(i), sun=new Date(mon.getTime()+6*864e5);
+      const wk=mesKey(mon);
+      const evts=eventsWeek(i);
+      const lluvia=evts.filter(e=>e.tipo==='lluvia').reduce((s,e)=>s+e.mm,0);
+      const riego=evts.filter(e=>e.tipo==='riego').reduce((s,e)=>s+e.mm,0);
+      const fert=evts.filter(e=>e.tipo==='fertilizacion').reduce((s,e)=>s+e.mm,0);
+      const total=riego+fert+lluvia;
+      let plan=0; spp.forEach(e=>{ const p=planForMes(e,wk); if(p) plan+=p.mmSem; });
+      rows.push({mon,sun,total,riego,fert,lluvia,plan,off:i});
+    }
+    const hasAny=rows.some(r=>r.total>0);
+    mi.innerHTML=`
+      <div class="modal-tit">📋 Historial de semanas</div>
+      <div class="modal-sub" style="margin-bottom:8px">Últimas 12 semanas · tocá para ir a esa semana</div>
+      <div style="margin:0 -16px">
+      ${rows.map(r=>{
+        const pct=r.plan>0?Math.min(100,r.total/r.plan*100):0;
+        const color=pct>=100?'var(--verde)':r.total>0?'var(--bordo2)':'var(--br2)';
+        const dateStr=fdDate(r.mon)+' – '+fdDate(r.sun);
+        const parts=[];
+        if(r.riego>0) parts.push('💧'+r.riego.toFixed(1));
+        if(r.fert>0)  parts.push('🌱'+r.fert.toFixed(1));
+        if(r.lluvia>0)parts.push('🌧'+r.lluvia.toFixed(1));
+        const sub=parts.length?parts.join(' · '):'Sin registros';
+        return `<div class="wk-row" onclick="goWeek(${r.off})">
+          <div>
+            <div class="wk-dates">${dateStr}</div>
+            <div style="font-size:9.5px;color:var(--tx3);margin-top:2px">${sub}</div>
+          </div>
+          <div class="wk-bar-wrap"><div class="wk-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+          <div class="wk-mm">${r.total>0?r.total.toFixed(1)+' / '+r.plan.toFixed(0)+' mm':'—'}</div>
+        </div>`;
+      }).join('')}
+      </div>
+      <button class="btn-sec" style="margin-top:8px" onclick="closeOv()">Cerrar</button>`;
     ov.classList.add('on');
     return;
   }
