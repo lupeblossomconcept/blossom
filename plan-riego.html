@@ -76,7 +76,13 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .b-fert{color:var(--verde);font-weight:600;}
 .b-lluvia{color:var(--cielo);font-weight:600;}
 .esp-stat{font-size:10px;color:var(--tx3);}
-.esp-reg-btn{width:100%;padding:9px;background:none;border:none;border-top:1px solid var(--br);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--bordo);cursor:pointer;}
+.esp-bottom{display:flex;border-top:1px solid var(--br);}
+.esp-reg-btn{flex:1;padding:9px;background:none;border:none;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--bordo);cursor:pointer;}
+.esp-evts-toggle{flex-shrink:0;padding:9px 12px;background:none;border:none;border-left:1px solid var(--br);font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;font-family:'Montserrat',sans-serif;white-space:nowrap;}
+.esp-evts-body{border-top:1px solid var(--br);background:var(--gris);border-radius:0 0 var(--r) var(--r);}
+.evts-date-hdr{font-size:9px;font-weight:700;color:var(--tx3);padding:5px 13px 2px;text-transform:capitalize;letter-spacing:.03em;}
+.evts-row{display:flex;align-items:center;padding:6px 13px;gap:8px;border-bottom:1px solid var(--br);}
+.evts-row:last-child{border-bottom:none;}
 
 /* Historial */
 .hist-date-hdr{font-size:9.5px;font-weight:700;color:var(--tx3);padding:8px 13px 3px;text-transform:capitalize;letter-spacing:.03em;}
@@ -277,7 +283,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   </div>
   <div id="esp-cards"></div>
   <div class="card" id="hist-card" style="display:none">
-    <div class="ctit">Eventos esta semana</div>
+    <div class="ctit">🌧 Lluvia esta semana</div>
     <div id="hist-list"></div>
   </div>
 </div>
@@ -409,6 +415,7 @@ let estSel = new Set();
 let estSelCamas = {};
 let _camasSelRiego = new Set();
 let _huerfanosList = [];
+let _expandedEvts = new Set();
 let editIdx= null;
 let fertOpen= false;
 
@@ -477,6 +484,45 @@ async function loadAll(){
     if(d.tareas!=null) { tareas=d.tareas; localStorage.setItem('pr_tareas',JSON.stringify(tareas)); }
     else fetch(`${FB_URL}/tareas.json`,{method:'PUT',body:JSON.stringify(tareas)}).catch(()=>{});
   } catch(e){}
+}
+
+// ── EVENTOS POR ESPECIE ───────────────────────────────────────────────────
+function renderEspEvts(evE){
+  if(!evE.length) return '';
+  const byDate={};
+  [...evE].sort((a,b)=>b.fecha.localeCompare(a.fecha)).forEach(ev=>{
+    if(!byDate[ev.fecha]) byDate[ev.fecha]=[];
+    byDate[ev.fecha].push(ev);
+  });
+  return Object.keys(byDate).sort((a,b)=>b.localeCompare(a)).map(d=>{
+    const lbl=new Date(d+'T12:00:00').toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short'});
+    const rows=byDate[d].map(ev=>{
+      const ico=ev.tipo==='riego'?'💧':'🌱';
+      const color=ev.tipo==='riego'?'var(--azul)':'var(--verde)';
+      const sub=ev.min>0?ev.min+' min':(ev.nota||'');
+      return `<div class="evts-row">
+        <span style="font-size:13px">${ico}</span>
+        <span style="flex:1;font-size:11px;color:var(--tx2)">${sub}</span>
+        <span style="font-size:11px;font-weight:700;color:${color}">${ev.mm.toFixed(1)} mm</span>
+        <button style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:15px;padding:0 0 0 5px;line-height:1" onclick="delEv('${ev.id}')">×</button>
+      </div>`;
+    }).join('');
+    return `<div class="evts-date-hdr">${lbl}</div>${rows}`;
+  }).join('');
+}
+function togEspEvts(idx){
+  const body=document.getElementById('esp-evts-'+idx);
+  const btn =document.getElementById('esp-evts-btn-'+idx);
+  if(!body||!btn) return;
+  if(body.style.display==='none'){
+    body.style.display='';
+    _expandedEvts.add(idx);
+    btn.textContent='▴';
+  } else {
+    body.style.display='none';
+    _expandedEvts.delete(idx);
+    btn.textContent='▾ '+btn.dataset.cnt;
+  }
 }
 
 // ── SEMANA ────────────────────────────────────────────────────────────────
@@ -569,38 +615,31 @@ function renderSem(){
         </div>
         <div class="esp-stat">${total.toFixed(1)} / ${plan.mmSem} mm · faltan <strong>${rem.toFixed(1)} mm</strong></div>
       </div>
-      <button class="esp-reg-btn" onclick="openModal('riego',${e._idx})">💧 Registrar riego</button>
+      <div class="esp-bottom">
+        <button class="esp-reg-btn" onclick="openModal('riego',${e._idx})">💧 Registrar riego</button>
+        ${evE.length>0?`<button class="esp-evts-toggle" id="esp-evts-btn-${e._idx}" data-cnt="${evE.length}" onclick="togEspEvts(${e._idx})">${_expandedEvts.has(e._idx)?'▴':'▾ '+evE.length}</button>`:''}
+      </div>
+      ${evE.length>0?`<div class="esp-evts-body" id="esp-evts-${e._idx}" style="${_expandedEvts.has(e._idx)?'':'display:none'}">${renderEspEvts(evE)}</div>`:''}
     </div>`;
   }).join('');
 
-  // Historial
-  const sorted=[...wEvts].sort((a,b)=>b.fecha.localeCompare(a.fecha)||b.id.localeCompare(a.id));
+  // Lluvia card
+  const lluviaEvts=[...wEvts].filter(e=>e.tipo==='lluvia').sort((a,b)=>b.fecha.localeCompare(a.fecha)||b.id.localeCompare(a.id));
   const hc=document.getElementById('hist-card');
-  if(sorted.length){
+  if(lluviaEvts.length){
     hc.style.display='';
-    const byDate={};
-    sorted.forEach(ev=>{ if(!byDate[ev.fecha]) byDate[ev.fecha]=[]; byDate[ev.fecha].push(ev); });
-    document.getElementById('hist-list').innerHTML = Object.keys(byDate)
-      .sort((a,b)=>b.localeCompare(a))
-      .map(d=>{
-        const lbl=new Date(d+'T12:00:00').toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'short'});
-        const rows=byDate[d].map(ev=>{
-          const ico=ev.tipo==='riego'?'💧':ev.tipo==='fertilizacion'?'🌱':'🌧';
-          const color=ev.tipo==='riego'?'var(--azul)':ev.tipo==='fertilizacion'?'var(--verde)':'var(--cielo)';
-          const nom=ev.tipo==='lluvia'?'Lluvia':(ev.especie||'—');
-          const sub=ev.min>0?`${ev.min} min`:(ev.nota||'');
-          return `<div class="hist-row">
-            <span class="hist-row-ico">${ico}</span>
-            <div style="flex:1;min-width:0">
-              <div class="hist-row-nom">${nom}</div>
-              ${sub?`<div class="hist-row-sub">${sub}</div>`:''}
-            </div>
-            <span class="hist-row-mm" style="color:${color}">${ev.mm.toFixed(1)} mm</span>
-            <button class="hist-row-del" onclick="delEv('${ev.id}')">×</button>
-          </div>`;
-        }).join('');
-        return `<div class="hist-date-hdr">${lbl}</div>${rows}`;
-      }).join('');
+    document.getElementById('hist-list').innerHTML = lluviaEvts.map(ev=>{
+      const sub=ev.nota||'';
+      return `<div class="hist-row">
+        <span class="hist-row-ico">🌧</span>
+        <div style="flex:1;min-width:0">
+          <div class="hist-row-nom">${new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short'})}</div>
+          ${sub?`<div class="hist-row-sub">${sub}</div>`:''}
+        </div>
+        <span class="hist-row-mm" style="color:var(--cielo)">${ev.mm.toFixed(1)} mm</span>
+        <button class="hist-row-del" onclick="delEv('${ev.id}')">×</button>
+      </div>`;
+    }).join('');
   } else { hc.style.display='none'; }
 }
 
