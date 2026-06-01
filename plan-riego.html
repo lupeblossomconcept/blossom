@@ -1457,7 +1457,7 @@ function doPost(e) {
     evs.forEach(function(ev){
       var sem=semana(ev.fecha);
       if(!semMap[sem]) semMap[sem]={fecha:ev.fecha,d:{}};
-      if(ev.tipo==='riego' && ev.especie!=='*lluvia'){
+      if((ev.tipo==='riego'||ev.tipo==='fertilizacion') && ev.especie!=='*lluvia'){
         espSet[ev.especie]=true;
         semMap[sem].d[ev.especie]=(semMap[sem].d[ev.especie]||0)+Number(ev.mm||0);
       }
