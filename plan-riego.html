@@ -670,8 +670,8 @@ function renderPlan(){
         </div>
         <div style="display:flex;gap:2px;align-items:center">
           ${badgeHtml(e)}
-          ${p?`<button class="icon-btn" onclick="openModal('edit-plan','${e.nom}')">✏️</button>`
-             :`<button class="icon-btn" onclick="openModal('add-plan','${e.nom}')">➕</button>`}
+          ${p?`<button class="icon-btn" onclick="openModal('edit-plan',${e._idx})">✏️</button>`
+             :`<button class="icon-btn" onclick="openModal('add-plan',${e._idx})">➕</button>`}
         </div>
       </div>
       ${p?`
@@ -682,7 +682,7 @@ function renderPlan(){
         <div class="pn"><div class="pn-lbl">mm/sem</div><div class="pn-val" style="color:var(--bordo)">${p.mmSem}</div><div class="pn-unit">mm</div></div>
       </div>
       <div class="plan-nota${p.nota&&p.nota.startsWith('⚠')?' warn':''}">${p.nota||''}</div>`
-      :`<div class="plan-no">Sin plan para este mes — <span style="color:var(--bordo);cursor:pointer" onclick="openModal('add-plan','${e.nom}')">Agregar</span></div>`}
+      :`<div class="plan-no">Sin plan para este mes — <span style="color:var(--bordo);cursor:pointer" onclick="openModal('add-plan',${e._idx})">Agregar</span></div>`}
     </div>`;
   }).join('');
 
@@ -951,11 +951,11 @@ function openModal(tipo, ctx){
   }
 
   if(tipo==='add-plan'||tipo==='edit-plan'){
-    const esp=spp.find(e=>e.nom===ctx);
+    const esp=spp[parseInt(ctx)];
     const p=tipo==='edit-plan'&&esp?esp.planes.find(pl=>pl.mes===planMes):null;
     mi.innerHTML=`
       <div class="modal-tit">${tipo==='edit-plan'?'Editar':'Agregar'} plan</div>
-      <div class="modal-sub">${ctx}${p?' · '+planMes:''}</div>
+      <div class="modal-sub">${espId(esp)}${p?' · '+planMes:''}</div>
       ${tipo==='add-plan'?`<div class="mfield"><label>Mes</label><input type="month" id="mp-mes" value="${planMes||new Date().toISOString().slice(0,7)}"></div>`:''}
       <div class="mgrid2">
         <div class="mfield"><label>Min/evento</label><input type="number" id="mp-min" value="${p?p.min:''}" min="1" inputmode="numeric"></div>
@@ -1214,8 +1214,8 @@ function addMes(){
   toast(`Mes ${m} creado`,'ok');
 }
 
-function savePlan(tipo,espNom){
-  const esp=spp.find(e=>e.nom===espNom);
+function savePlan(tipo,espIdx){
+  const esp=spp[parseInt(espIdx)];
   if(!esp){ toast('Especie no encontrada','err'); return; }
   const mes=tipo==='add-plan'
     ?(document.getElementById('mp-mes')||{value:planMes}).value
