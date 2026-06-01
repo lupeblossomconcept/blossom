@@ -487,6 +487,8 @@ let camasVida=[
 
 let ventas=[];
 let gastos=[];
+let DELETED_HIST=new Set(JSON.parse(localStorage.getItem('blossom_del_hist')||'[]'));
+function histFP(g){return [g.tipo,g.fecha||g.mes||'',g.cama||'',g.des||'',g.monto].join('|');}
 
 // ── HISTORICO VENTAS ────────────────────────────────────────────
 const HIST_VENTAS=[
@@ -1246,10 +1248,10 @@ async function loadAllData(){
     const fbGastos=await fbGet('gastos');
     if(fbGastos){
       const gArr=Object.entries(fbGastos).map(([k,g])=>g&&g.monto!=null?{...g,_fbKey:k}:null).filter(Boolean);
-      gastos=[...HIST_GASTOS,...gArr].sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
+      gastos=[...HIST_GASTOS.filter(g=>!DELETED_HIST.has(histFP(g))),...gArr].sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
       renderGList();renderDash();
     } else {
-      gastos=[...HIST_GASTOS];
+      gastos=[...HIST_GASTOS.filter(g=>!DELETED_HIST.has(histFP(g)))];
       renderGList();renderDash();
     }
 
@@ -1331,6 +1333,7 @@ function sw(t){
   if(t==='gasto'){renderGSels();}
   if(t==='camas'){renderCamasSels();renderCamasActivas();}
 }
+function irAGasto(tipo){sw('gasto');subG(tipo||'insumo');document.getElementById('sec-gasto').scrollIntoView({behavior:'smooth',block:'start'});}
 function subV(s){['nueva','lista'].forEach(x=>{document.getElementById('vi-'+x).classList.remove('on');document.getElementById('sub-v'+x).classList.remove('on');});document.getElementById('vi-'+s).classList.add('on');document.getElementById('sub-v'+s).classList.add('on');if(s==='lista')renderVList();}
 function subG(s){['aplic','insumo','fijo','trab'].forEach(x=>{document.getElementById('gi-'+x).classList.remove('on');document.getElementById('sub-'+x).classList.remove('on');});document.getElementById('gi-'+s).classList.add('on');document.getElementById('sub-'+s).classList.add('on');}
 let gListaTipo='todos';
@@ -1701,10 +1704,10 @@ function renderDash(){
   var todasEsps=Object.keys(ing).concat(camasVida.map(function(c){return c.especie;}));
   var espsUnicas=[...new Set(todasEsps)];
 
-  var costoEspHtml=espsUnicas.map(function(e,eidx){
-    var cb=mes?0:(COSTOS_BASE[e]||0);
+  var costoEspHtml=espsUnicas.map(function(e){
+    var cbBase=mes?0:(COSTOS_BASE[e]||0);
     var cpTotal=camasVida.filter(function(c){return c.especie===e;}).reduce(function(s,c){return s+(c.costoPlantin||0);},0);
-    cb=cb+cpTotal;
+    var cb=cbBase+cpTotal;
     var aplics=gf.filter(function(g){return g.tipo==='aplic'&&(g.cama===e||(g.cama||'').includes(e));});
     var cAplic=aplics.reduce(function(s,g){return s+g.monto;},0);
     var insumos=gf.filter(function(g){return g.tipo==='insumo'&&(g.cama||'').includes(e)&&g.cama!==e;});
@@ -1712,22 +1715,76 @@ function renderDash(){
     var cFijo=mes?0:cFijoEsp(e,fijoRecs);
     var ct=cb+cAplic+cInsumo+cFijo;
     var ingE=ing[e]||0;
-    var nCamas=camasVida.filter(function(c){return c.especie===e;}).length||1;
-    var costoPorCama=Math.round(ct/nCamas);
-    var fertMap={};aplics.filter(function(g){return g.cat==='Fertilizacion';}).forEach(function(g){fertMap[g.des]=(fertMap[g.des]||0)+g.monto;});
-    var fitoMap={};aplics.filter(function(g){return g.cat==='Fitosanitario';}).forEach(function(g){fitoMap[g.des]=(fitoMap[g.des]||0)+g.monto;});
-    var insumoMap={};insumos.forEach(function(g){insumoMap[g.des]=(insumoMap[g.des]||0)+g.monto;});
-    var detFert=Object.entries(fertMap).map(function(x){return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>'+x[0]+'</span><span>'+fmt(x[1])+'</span></div>';}).join('');
-    var detFito=Object.entries(fitoMap).map(function(x){return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>'+x[0]+'</span><span>'+fmt(x[1])+'</span></div>';}).join('');
-    var detIns=Object.entries(insumoMap).map(function(x){return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>'+x[0]+'</span><span>'+fmt(x[1])+'</span></div>';}).join('');
-    var cbBase=mes?0:(COSTOS_BASE[e]||0);
-    var cbBasePorCama=Math.round(cbBase/(nCamas||1));
+    var nCamasEspT=camasVida.filter(function(c){return c.especie===e;}).length||1;
     var aplicEspNivel=aplics.filter(function(g){return g.cama===e;}).reduce(function(s,g){return s+g.monto;},0);
-    var aplicShPorCama=Math.round(aplicEspNivel/(nCamas||1));
-    var cpEsp=cpTotal;
-    var nCamasEspT=nCamas;
-    var nCamasEsp=camasVida.filter(function(c){return c.especie===e&&!c.fechaBaja;}).length;
-    var nCamasTotal=camasVida.filter(function(c){return !c.fechaBaja;}).length;
+    var aplicShPorCama=Math.round(aplicEspNivel/(nCamasEspT||1));
+    var cbBasePorCama=Math.round(cbBase/(nCamasEspT||1));
+
+    // Insumos individuales con botón eliminar
+    var detIns=insumos.map(function(g){
+      var gi=gastos.indexOf(g);
+      return '<div style="display:flex;align-items:center;font-size:11px;padding:4px 0;border-bottom:1px solid var(--br);gap:4px">'+
+        '<span style="flex:1;color:var(--tx3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+g.cama+'</span>'+
+        '<span style="color:var(--tx2);padding:0 4px;white-space:nowrap">'+g.des+'</span>'+
+        '<span style="color:var(--tx);font-weight:600;white-space:nowrap">'+fmt(g.monto)+'</span>'+
+        '<button onclick="eliminarGasto('+gi+')" style="background:none;border:none;color:var(--rojo);cursor:pointer;font-size:14px;padding:0 4px;flex-shrink:0;line-height:1">✕</button>'+
+      '</div>';
+    }).join('');
+
+    // Fertilización individual con botón eliminar
+    var fertItems=aplics.filter(function(g){return g.cat==='Fertilizacion';});
+    var detFert=fertItems.map(function(g){
+      var gi=gastos.indexOf(g);
+      return '<div style="display:flex;align-items:center;font-size:11px;padding:4px 0;border-bottom:1px solid var(--br);gap:4px">'+
+        '<span style="flex:1;color:var(--tx3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+g.cama+'</span>'+
+        '<span style="color:var(--tx2);padding:0 4px;white-space:nowrap">'+g.des+'</span>'+
+        '<span style="color:var(--tx);font-weight:600;white-space:nowrap">'+fmt(g.monto)+'</span>'+
+        '<button onclick="eliminarGasto('+gi+')" style="background:none;border:none;color:var(--rojo);cursor:pointer;font-size:14px;padding:0 4px;flex-shrink:0;line-height:1">✕</button>'+
+      '</div>';
+    }).join('');
+
+    // Fitosanitarios individual con botón eliminar
+    var fitoItems=aplics.filter(function(g){return g.cat==='Fitosanitario';});
+    var detFito=fitoItems.map(function(g){
+      var gi=gastos.indexOf(g);
+      return '<div style="display:flex;align-items:center;font-size:11px;padding:4px 0;border-bottom:1px solid var(--br);gap:4px">'+
+        '<span style="flex:1;color:var(--tx3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+g.cama+'</span>'+
+        '<span style="color:var(--tx2);padding:0 4px;white-space:nowrap">'+g.des+'</span>'+
+        '<span style="color:var(--tx);font-weight:600;white-space:nowrap">'+fmt(g.monto)+'</span>'+
+        '<button onclick="eliminarGasto('+gi+')" style="background:none;border:none;color:var(--rojo);cursor:pointer;font-size:14px;padding:0 4px;flex-shrink:0;line-height:1">✕</button>'+
+      '</div>';
+    }).join('');
+
+    // Costos fijos: tabla por mes con desglose
+    var detFijoMeses=fijoRecs.reduce(function(acc,fr){
+      var nEsp=camasVida.filter(function(c){return c.especie===e&&camaActivaEnMes(c,fr.mes);}).length;
+      if(nEsp===0) return acc;
+      var nTot=camasVida.filter(function(c){return camaActivaEnMes(c,fr.mes);}).length||(fr.ncm||1);
+      var asig=Math.round(fr.monto*nEsp/nTot);
+      if(!acc[fr.mes]) acc[fr.mes]={items:[],total:0,nEsp:nEsp,nTot:nTot};
+      acc[fr.mes].items.push({des:fr.des,monto:fr.monto,asig:asig});
+      acc[fr.mes].total+=asig;
+      return acc;
+    },{});
+    var nMesesFijo=Object.keys(detFijoMeses).length;
+    var detFijoHtml=Object.entries(detFijoMeses).sort(function(a,b){return a[0].localeCompare(b[0]);}).map(function(entry){
+      var mf=entry[0],datos=entry[1];
+      var itemsHtml=datos.items.map(function(it){
+        return '<div style="display:flex;align-items:baseline;font-size:10px;padding:2px 0 2px 10px;color:var(--tx3)">'+
+          '<span style="flex:1">'+it.des+'</span>'+
+          '<span style="margin:0 6px;white-space:nowrap">'+fmt(it.monto)+' × '+datos.nEsp+'/'+datos.nTot+' camas</span>'+
+          '<span style="color:var(--tx2);font-weight:600;min-width:52px;text-align:right">'+fmt(it.asig)+'</span>'+
+        '</div>';
+      }).join('');
+      return '<div style="padding:5px 0;border-bottom:1px solid var(--br)">'+
+        '<div style="display:flex;font-size:11px;font-weight:600;align-items:center">'+
+          '<span style="flex:1;color:var(--tx)">'+mf+'</span>'+
+          '<span style="color:var(--bordo)">'+fmt(datos.total)+'</span>'+
+        '</div>'+itemsHtml+
+      '</div>';
+    }).join('');
+
+    // Desglose por cama
     var detPorCamaHtml=camasVida.filter(function(c){return c.especie===e;}).map(function(c){
       var ck1=e+' C.'+c.num,ck2=e+' Cama '+c.num;
       var cAB=gf.filter(function(g){return g.tipo==='aplic'&&(g.cama===ck1||g.cama===ck2);}).reduce(function(s,g){return s+g.monto;},0);
@@ -1742,38 +1799,59 @@ function renderDash(){
             '<span style="font-size:9px;background:var(--verde);color:white;padding:1px 5px;border-radius:6px;margin-left:5px">activa</span>':
             '<span style="font-size:9px;background:var(--br2);color:var(--tx3);padding:1px 5px;border-radius:6px;margin-left:5px">baja</span>')+
           '<div style="font-size:10px;color:var(--tx3);margin-top:3px">'+
-            'Plantin '+fmt(c.costoPlantin||0)+' · Aplic '+fmt(cAB+aplicShPorCama)+' · Ins '+fmt(cIB)+' · Fijo '+fmt(fijoC)+
+            'Plantin: '+fmt(c.costoPlantin||0)+' · Aplic: '+fmt(cAB+aplicShPorCama)+' · Ins: '+fmt(cIB)+' · Fijo: '+fmt(fijoC)+
           '</div>'+
         '</div>'+
         '<span style="font-size:13px;font-weight:700;color:var(--bordo);flex-shrink:0;margin-left:8px">'+fmt(totC)+'</span>'+
       '</div>';
     }).join('');
+
     var mgE=ingE>0?Math.round((ingE-ct)/ingE*100):null;
     var mgEStr=mgE!==null?(mgE>=0?'+':'')+mgE+'%':'—';
     var mgECol=mgE!==null&&mgE>=0?'var(--verde)':'var(--rojo)';
+
     return '<div class="acordeon-item">'+
       '<div class="acordeon-hdr" onclick="toggleAcordeon(this)">'+
         '<div><span class="acordeon-titulo">'+e+'</span>'+
-        '<span class="acordeon-sub">Costos: '+fmt(ct)+(ingE>0?' · <span style="color:'+mgECol+';font-weight:600">Margen s/venta: '+mgEStr+'</span>':'')+'</span></div>'+
+        '<span class="acordeon-sub">Costos: '+fmt(ct)+(ingE>0?' · <span style="color:'+mgECol+';font-weight:600">Margen: '+mgEStr+'</span>':'')+'</span></div>'+
         '<span class="acordeon-chevron">▸</span>'+
       '</div>'+
       '<div class="acordeon-body" style="padding:10px 12px">'+
-        '<div class="cnums" style="margin-bottom:10px">'+
+        // Resumen en chips
+        '<div class="cnums" style="margin-bottom:12px">'+
           '<div class="cni"><div class="cnl">Plantines</div><div class="cnv">'+fmt(cb)+'</div></div>'+
-          '<div class="cni"><div class="cnl">Fertilización</div><div class="cnv">'+fmt(aplics.filter(function(g){return g.cat==='Fertilizacion';}).reduce(function(s,g){return s+g.monto;},0))+'</div></div>'+
-          '<div class="cni"><div class="cnl">Fitosanitarios</div><div class="cnv">'+fmt(aplics.filter(function(g){return g.cat==='Fitosanitario';}).reduce(function(s,g){return s+g.monto;},0))+'</div></div>'+
+          '<div class="cni"><div class="cnl">Fertilización</div><div class="cnv">'+fmt(fertItems.reduce(function(s,g){return s+g.monto;},0))+'</div></div>'+
+          '<div class="cni"><div class="cnl">Fitosanitarios</div><div class="cnv">'+fmt(fitoItems.reduce(function(s,g){return s+g.monto;},0))+'</div></div>'+
           '<div class="cni"><div class="cnl">Insumos</div><div class="cnv">'+fmt(cInsumo)+'</div></div>'+
+          '<div class="cni"><div class="cnl">Fijos</div><div class="cnv">'+fmt(cFijo)+'</div></div>'+
         '</div>'+
-        (cb>0?'<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Plantines / Semillas</div>'+
+        // Plantines / semillas
+        (cb>0?
+          '<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Plantines / Semillas</div>'+
           (cbBase>0?'<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>Estimado pre-app ('+nCamasEspT+' camas)</span><span>'+fmt(cbBase)+'</span></div>':'')+
-          (cpEsp>0?'<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>'+e+' ('+nCamasEspT+' camas)</span><span>'+fmt(cpEsp)+'</span></div>':'')+
-          '<div style="margin-bottom:8px"></div>':'')+
-        (detFert?'<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Fertilización</div>'+detFert+'<div style="margin-bottom:8px"></div>':'')+
-        (detFito?'<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;margin-top:6px">Fitosanitarios</div>'+detFito+'<div style="margin-bottom:8px"></div>':'')+
-        (detIns?'<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;margin-top:6px">Insumos</div>'+detIns+'<div style="margin-bottom:8px"></div>':'')+
-        '<div style="padding:8px;background:var(--rose2);border-radius:8px;display:flex;justify-content:space-between;margin-top:6px">'+
-          '<span style="font-size:11px;color:var(--tx2)">Fijos asignados ('+nCamasEsp+'/'+nCamasTotal+' camas)</span><span style="font-size:12px;font-weight:600;color:var(--bordo)">'+fmt(cFijo)+'</span>'+
+          (cpTotal>0?'<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--br)"><span>'+e+' — plantines registrados ('+nCamasEspT+' camas)</span><span>'+fmt(cpTotal)+'</span></div>':'')+
+          '<div style="margin-bottom:10px"></div>':'')+
+        // Fertilización
+        (detFert?
+          '<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Fertilización — '+fertItems.length+' registro'+(fertItems.length!==1?'s':'')+'</div>'+
+          detFert+'<div style="margin-bottom:10px"></div>':'')+
+        // Fitosanitarios
+        (detFito?
+          '<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;margin-top:6px">Fitosanitarios — '+fitoItems.length+' registro'+(fitoItems.length!==1?'s':'')+'</div>'+
+          detFito+'<div style="margin-bottom:10px"></div>':'')+
+        // Insumos
+        (detIns?
+          '<div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;margin-top:6px">Insumos — '+insumos.length+' registro'+(insumos.length!==1?'s':'')+'</div>'+
+          detIns+'<div style="margin-bottom:10px"></div>':'')+
+        // Costos fijos con detalle por mes
+        '<div style="background:var(--rose2);border-radius:8px;padding:8px;margin-top:4px">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;'+(nMesesFijo>0?'margin-bottom:8px':'')+'">'+
+            '<span style="font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em">Costos fijos — '+nMesesFijo+' mes'+(nMesesFijo!==1?'es incluidos':'  incluido')+'</span>'+
+            '<span style="font-size:12px;font-weight:600;color:var(--bordo)">'+fmt(cFijo)+'</span>'+
+          '</div>'+
+          (detFijoHtml||'<div style="font-size:11px;color:var(--tx3);font-style:italic">Sin costos fijos en el período</div>')+
         '</div>'+
+        // Desglose por cama
         '<div style="margin-top:14px;border-top:2px dashed var(--br2);padding-top:10px">'+
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
             '<span style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em">Costo por cama</span>'+
@@ -1785,6 +1863,8 @@ function renderDash(){
             '<span style="font-size:14px;font-weight:700;color:var(--bordo)">'+fmt(ct)+'</span>'+
           '</div>'+
         '</div>'+
+        // Botón agregar gasto
+        '<button onclick="irAGasto(\'insumo\')" style="margin-top:12px;width:100%;padding:9px;background:none;border:1.5px dashed var(--bordo);color:var(--bordo);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Agregar gasto</button>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -1845,6 +1925,10 @@ function renderVList(){
 async function eliminarGasto(idx){
   if(!confirm('¿Eliminar este gasto?')) return;
   const g=gastos[idx];
+  if(!g._fbKey){
+    DELETED_HIST.add(histFP(g));
+    localStorage.setItem('blossom_del_hist',JSON.stringify([...DELETED_HIST]));
+  }
   gastos.splice(idx,1);
   renderGList();renderDash();
   if(g._fbKey) await fbDelete('gastos/'+g._fbKey);
@@ -1960,7 +2044,7 @@ document.getElementById('gf-mes').value=today.slice(0,7);
 
 // Cargar datos históricos INMEDIATAMENTE
 ventas=HIST_VENTAS.map(r=>({fecha:r[0],cliente:r[1],especie:r[2],cama:r[3],paquetes:r[4],precio:r[5],total:r[6],b2b:'',nota:''}));
-gastos=[...HIST_GASTOS];
+gastos=[...HIST_GASTOS.filter(g=>!DELETED_HIST.has(histFP(g)))];
 
 renderVSels();renderGSels();renderCamasSels();
 renderDash();renderVList();renderGList();renderCamasActivas();
@@ -1982,7 +2066,7 @@ setInterval(async()=>{
     const fbGastos=await fbGet('gastos');
     if(fbGastos){
       const gArr=Object.entries(fbGastos).map(([k,g])=>g&&g.monto>0?{...g,_fbKey:k}:null).filter(Boolean);
-      const merged=[...HIST_GASTOS,...gArr].sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
+      const merged=[...HIST_GASTOS.filter(g=>!DELETED_HIST.has(histFP(g))),...gArr].sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
       if(merged.length>gastos.length){
         gastos=merged;
         renderGList();renderDash();
