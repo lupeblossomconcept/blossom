@@ -1422,80 +1422,112 @@ const APPS_SCRIPT_CODE = `function doGet(e) {
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
-    var evs = data.eventos || [];
-
+    var evs   = data.eventos || [];
+    var temps = data.temps   || [];
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Registro Riego');
-    if (!sheet) sheet = ss.insertSheet('Registro Riego');
 
-    sheet.clearContents();
-    sheet.clearFormats();
-
-    var header = [['Fecha','Semana','Especie','Tipo','mm Aplicados','Minutos','Nota']];
-    sheet.getRange(1,1,1,7).setValues(header);
-    var hdr = sheet.getRange(1,1,1,7);
-    hdr.setBackground('#8b1a4a');
-    hdr.setFontColor('#ffffff');
-    hdr.setFontWeight('bold');
-    hdr.setFontSize(11);
-    hdr.setHorizontalAlignment('center');
-    sheet.setFrozenRows(1);
-
-    evs.sort(function(a,b){ return a.fecha > b.fecha ? 1 : -1; });
-
+    // ── Hoja 1: Registro Riego ───────────────────────────────────
+    var s1 = ss.getSheetByName('Registro Riego');
+    if (!s1) s1 = ss.insertSheet('Registro Riego');
+    s1.clearContents(); s1.clearFormats();
+    s1.getRange(1,1,1,7).setValues([['Fecha','Semana','Especie','Tipo','mm Aplicados','Minutos','Nota']]);
+    styleHdr(s1.getRange(1,1,1,7),'#8b1a4a');
+    s1.setFrozenRows(1);
     if (evs.length > 0) {
-      var rows = evs.map(function(ev) {
-        var tipo = ev.tipo === 'riego' ? '💧 Riego'
-                 : ev.tipo === 'fertilizacion' ? '🌱 Fertilización'
-                 : '🌧 Lluvia';
-        return [
-          ev.fecha,
-          semana(ev.fecha),
-          ev.especie === '*lluvia' ? 'Todas las especies' : ev.especie,
-          tipo,
-          ev.mm,
-          ev.min || '',
-          ev.nota || ''
-        ];
+      evs.sort(function(a,b){ return a.fecha > b.fecha ? 1 : -1; });
+      var rows1 = evs.map(function(ev) {
+        var tipo = ev.tipo==='riego' ? '💧 Riego' : ev.tipo==='fertilizacion' ? '🌱 Fertilización' : '🌧 Lluvia';
+        return [ev.fecha, semana(ev.fecha), ev.especie==='*lluvia'?'Todas':ev.especie, tipo, ev.mm, ev.min||'', ev.nota||''];
       });
-
-      sheet.getRange(2,1,rows.length,7).setValues(rows);
-
-      rows.forEach(function(row, i) {
-        var color = row[3].indexOf('Riego') >= 0 ? '#e8f0ff'
-                  : row[3].indexOf('Fert') >= 0 ? '#e8f5ed'
-                  : '#e0f3ff';
-        sheet.getRange(i+2,1,1,7).setBackground(color);
+      s1.getRange(2,1,rows1.length,7).setValues(rows1);
+      rows1.forEach(function(r,i){
+        var c=r[3].indexOf('Riego')>=0?'#e8f0ff':r[3].indexOf('Fert')>=0?'#e8f5ed':'#e0f3ff';
+        s1.getRange(i+2,1,1,7).setBackground(c);
       });
+      s1.getRange(2,5,rows1.length,1).setNumberFormat('0.0');
+      s1.getRange(1,1,rows1.length+1,7).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
+    }
+    colWidths(s1,[100,150,140,130,90,75,220]);
 
-      sheet.getRange(2,5,rows.length,1).setNumberFormat('0.00');
-      sheet.getRange(1,1,rows.length+1,7).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
+    // ── Hoja 2: Riego x Semana ───────────────────────────────────
+    var s2 = ss.getSheetByName('Riego x Semana');
+    if (!s2) s2 = ss.insertSheet('Riego x Semana');
+    s2.clearContents(); s2.clearFormats();
+    var espSet={}, semMap={};
+    evs.forEach(function(ev){
+      var sem=semana(ev.fecha);
+      if(!semMap[sem]) semMap[sem]={fecha:ev.fecha,d:{}};
+      if(ev.tipo==='riego' && ev.especie!=='*lluvia'){
+        espSet[ev.especie]=true;
+        semMap[sem].d[ev.especie]=(semMap[sem].d[ev.especie]||0)+Number(ev.mm||0);
+      }
+      if(ev.tipo==='lluvia'||ev.especie==='*lluvia'){
+        semMap[sem].d['__lluvia__']=(semMap[sem].d['__lluvia__']||0)+Number(ev.mm||0);
+      }
+    });
+    var esps=Object.keys(espSet).sort();
+    var sems=Object.keys(semMap).sort(function(a,b){ return semMap[a].fecha>semMap[b].fecha?1:-1; });
+    if(sems.length>0){
+      var h2=[['Semana'].concat(esps).concat(['Lluvia','Total mm'])];
+      var nc=h2[0].length;
+      s2.getRange(1,1,1,nc).setValues(h2);
+      styleHdr(s2.getRange(1,1,1,nc),'#1a3c8b');
+      s2.setFrozenRows(1);
+      var rows2=sems.map(function(sem){
+        var row=[sem]; var tot=0;
+        esps.forEach(function(esp){ var v=Math.round((semMap[sem].d[esp]||0)*10)/10; row.push(v); tot+=v; });
+        var lluvia=Math.round((semMap[sem].d['__lluvia__']||0)*10)/10;
+        row.push(lluvia); row.push(Math.round((tot+lluvia)*10)/10);
+        return row;
+      });
+      s2.getRange(2,1,rows2.length,nc).setValues(rows2);
+      rows2.forEach(function(r,i){ s2.getRange(i+2,1,1,nc).setBackground(i%2===0?'#f0f4ff':'#ffffff'); });
+      s2.getRange(2,nc,rows2.length,1).setFontWeight('bold').setBackground('#dff5e8');
+      s2.getRange(2,nc-1,rows2.length,1).setBackground('#e0f3ff');
+      s2.getRange(1,1,rows2.length+1,nc).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
+      s2.getRange(2,2,rows2.length,nc-1).setNumberFormat('0.0');
+      s2.setColumnWidth(1,165);
+      for(var ci=2;ci<=nc;ci++) s2.setColumnWidth(ci,82);
     }
 
-    sheet.setColumnWidth(1,100);
-    sheet.setColumnWidth(2,150);
-    sheet.setColumnWidth(3,140);
-    sheet.setColumnWidth(4,130);
-    sheet.setColumnWidth(5,100);
-    sheet.setColumnWidth(6,80);
-    sheet.setColumnWidth(7,220);
+    // ── Hoja 3: Temperaturas ─────────────────────────────────────
+    var s3 = ss.getSheetByName('Temperaturas');
+    if (!s3) s3 = ss.insertSheet('Temperaturas');
+    s3.clearContents(); s3.clearFormats();
+    s3.getRange(1,1,1,5).setValues([['Fecha','Mínima (°C)','Máxima (°C)','Helada','Notas']]);
+    styleHdr(s3.getRange(1,1,1,5),'#0e6494');
+    s3.setFrozenRows(1);
+    if(temps.length>0){
+      var tempsOrd=temps.slice().sort(function(a,b){ return a.fecha>b.fecha?1:-1; });
+      var rows3=tempsOrd.map(function(t){ return [t.fecha,t.tMin,t.tMax,t.tMin<0?'❄️ Sí':'No',t.nota||'']; });
+      s3.getRange(2,1,rows3.length,5).setValues(rows3);
+      rows3.forEach(function(r,i){
+        s3.getRange(i+2,1,1,5).setBackground(r[3].indexOf('Sí')>=0?'#dff0f7':i%2===0?'#f5f8fa':'#ffffff');
+      });
+      s3.getRange(2,2,rows3.length,2).setNumberFormat('0.0');
+      s3.getRange(1,1,rows3.length+1,5).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
+    }
+    colWidths(s3,[105,105,105,80,260]);
 
-    return ContentService
-      .createTextOutput(JSON.stringify({ok:true,n:evs.length}))
+    return ContentService.createTextOutput(JSON.stringify({ok:true,n:evs.length,t:temps.length}))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch(err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({error:err.message}))
+    return ContentService.createTextOutput(JSON.stringify({error:err.message}))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
+
+function styleHdr(range, color){
+  range.setBackground(color).setFontColor('#ffffff').setFontWeight('bold').setFontSize(11).setHorizontalAlignment('center');
+}
+function colWidths(sheet, ws){ ws.forEach(function(w,i){ sheet.setColumnWidth(i+1,w); }); }
 
 function semana(fechaStr) {
   var d = new Date(fechaStr + 'T12:00:00');
   var dw = d.getDay();
   var mon = new Date(d);
-  mon.setDate(d.getDate() + (dw === 0 ? -6 : 1 - dw));
+  mon.setDate(d.getDate() + (dw===0 ? -6 : 1-dw));
   var sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
   function fmt(x){ return x.getDate() + '/' + (x.getMonth()+1); }
@@ -1518,14 +1550,14 @@ function copyCode(){
 async function syncSheets(){
   const url=(localStorage.getItem('pr_sheets_url')||'').trim();
   if(!url){ toast('Configurá la URL en Config → Google Sheets','err'); showSec('cfg'); return; }
-  toast('Sincronizando...','');
+  toast('Sincronizando 3 hojas...','');
   try {
-    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({eventos})});
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({eventos,temps})});
     const txt=await r.text();
     let d={};
     try{ d=JSON.parse(txt); }catch(e){}
     if(d.error) throw new Error(d.error);
-    toast(`✓ ${d.n!=null?d.n:eventos.length} eventos enviados a Sheets`,'ok');
+    toast(`✓ Riego (${d.n||0} reg) · Semana · Clima (${d.t||0} días)`,'ok');
   } catch(err){
     toast('Error: '+err.message,'err');
     console.error('Sheets sync:',err);
