@@ -214,6 +214,42 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .copy-code-btn{width:100%;padding:11px;background:var(--bordo);color:#fff;border:none;border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:7px;}
 .sync-hdr-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 10px;color:#fff;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;}
 
+/* CLIMA */
+.temp-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--sf);border-radius:var(--r);margin:0 13px 11px;box-shadow:var(--shadow);overflow:hidden;}
+.temp-stat{text-align:center;padding:11px 4px;border-right:1px solid var(--br);}
+.temp-stat:last-child{border-right:none;}
+.temp-stat-val{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;}
+.temp-stat-lbl{font-size:8.5px;color:var(--tx3);margin-top:2px;line-height:1.2;}
+.c-frost{color:#0e6494;}
+.c-cold{color:#5a7abf;}
+.c-minima{color:#9e2020;}
+.temp-form{background:var(--sf);border-radius:var(--r);margin:0 13px 11px;padding:13px;box-shadow:var(--shadow);}
+.temp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.temp-inp-wrap{display:flex;flex-direction:column;gap:4px;}
+.temp-inp-wrap label{font-size:9px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;}
+.temp-inp-wrap input{padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:16px;font-family:'Playfair Display',serif;font-weight:700;background:var(--gris);color:var(--tx);outline:none;-webkit-appearance:none;text-align:center;width:100%;}
+.temp-inp-wrap input:focus{border-color:var(--bordo);}
+.temp-inp-wrap input.frost-inp{border-color:rgba(14,100,148,.4);background:var(--cielo-l);color:var(--cielo);}
+.temp-nota{width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;resize:none;height:58px;margin-bottom:10px;}
+.temp-nota:focus{border-color:var(--bordo);}
+.temp-entry{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border-bottom:1px solid var(--br);}
+.temp-entry:last-child{border-bottom:none;}
+.temp-entry.helada{background:linear-gradient(90deg,rgba(14,100,148,.06),transparent);}
+.temp-date-col{min-width:46px;text-align:center;flex-shrink:0;}
+.temp-day{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--tx);line-height:1;}
+.temp-month{font-size:9px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;}
+.temp-nums{display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;}
+.temp-min{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;}
+.temp-min.frost{color:var(--cielo);}
+.temp-min.cold{color:#5a7abf;}
+.temp-min.warm{color:var(--tx2);}
+.temp-max{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--rojo);}
+.temp-sep{font-size:14px;color:var(--br2);}
+.temp-nota-disp{font-size:11px;color:var(--tx2);width:100%;margin-top:4px;line-height:1.4;}
+.frost-badge{font-size:9px;font-weight:700;background:var(--cielo-l);color:var(--cielo);padding:2px 7px;border-radius:8px;white-space:nowrap;}
+.temp-del{background:none;border:none;color:var(--br2);cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0;line-height:1;}
+.temp-del:active{color:var(--rojo);}
+
 /* CAMAS */
 .chip-group{border-radius:var(--r);overflow:hidden;border:2px solid var(--verde);}
 .chip-group .chip,.chip-group .chip.on{border-color:transparent!important;border-radius:0!important;border-bottom:1px solid rgba(26,92,46,.15)!important;}
@@ -236,6 +272,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 <div class="nav">
   <button class="ntab on" id="nt-riego" onclick="showSec('riego')"><span class="ntab-icon">📅</span>Riego</button>
   <button class="ntab" id="nt-plan" onclick="showSec('plan')"><span class="ntab-icon">📋</span>Plan</button>
+  <button class="ntab" id="nt-clima" onclick="showSec('clima')"><span class="ntab-icon">🌡️</span>Clima</button>
   <button class="ntab" id="nt-tar" onclick="showSec('tar')"><span class="ntab-icon">✅</span>Tareas</button>
   <button class="ntab" id="nt-cfg" onclick="showSec('cfg')"><span class="ntab-icon">⚙️</span>Config</button>
 </div>
@@ -285,6 +322,44 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <div class="card" id="hist-card" style="display:none">
     <div class="ctit">🌧 Lluvia esta semana</div>
     <div id="hist-list"></div>
+  </div>
+</div>
+
+<!-- CLIMA -->
+<div class="sec" id="sec-clima">
+  <div style="padding:8px 13px 4px">
+    <div class="ctit">Registro de temperaturas</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="temp-stat-grid" id="clima-stats">
+    <div class="temp-stat"><div class="temp-stat-val c-frost" id="cs-heladas">—</div><div class="temp-stat-lbl">Días helada</div></div>
+    <div class="temp-stat"><div class="temp-stat-val c-minima" id="cs-min">—</div><div class="temp-stat-lbl">Mín histórica</div></div>
+    <div class="temp-stat"><div class="temp-stat-val c-cold" id="cs-prom">—</div><div class="temp-stat-lbl">Prom mínima</div></div>
+    <div class="temp-stat"><div class="temp-stat-val" style="color:var(--tx2)" id="cs-total">—</div><div class="temp-stat-lbl">Días registrados</div></div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="temp-form">
+    <div class="ctit" style="margin-bottom:10px">Registrar día</div>
+    <div class="mfield"><label>Fecha</label><input type="date" id="cl-fecha" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;-webkit-appearance:none;"></div>
+    <div class="temp-row">
+      <div class="temp-inp-wrap">
+        <label>Mínima (°C)</label>
+        <input type="number" id="cl-min" placeholder="0" step="0.1" inputmode="decimal" oninput="checkFrost()">
+      </div>
+      <div class="temp-inp-wrap">
+        <label>Máxima (°C)</label>
+        <input type="number" id="cl-max" placeholder="0" step="0.1" inputmode="decimal">
+      </div>
+    </div>
+    <textarea class="temp-nota" id="cl-nota" placeholder="Comentario — helada, neblina, viento, daños observados..."></textarea>
+    <button class="btn-pri" onclick="addTemp()">Guardar temperatura</button>
+  </div>
+
+  <!-- Lista -->
+  <div style="background:var(--sf);border-radius:var(--r);margin:0 13px 20px;box-shadow:var(--shadow);overflow:hidden" id="temps-list">
+    <div style="padding:14px 13px;font-size:12px;color:var(--tx3)">Sin registros aún</div>
   </div>
 </div>
 
@@ -409,6 +484,7 @@ let spp    = JSON.parse(localStorage.getItem('pr_spp')    || 'null') || DEF_SPP.
 let reglas = JSON.parse(localStorage.getItem('pr_reglas') || 'null') || DEF_REGLAS.map(r=>({...r}));
 let eventos= JSON.parse(localStorage.getItem('pr_eventos')|| localStorage.getItem('plan_riego_v1') || '[]');
 let tareas = JSON.parse(localStorage.getItem('pr_tareas') || '[]');
+let temps  = JSON.parse(localStorage.getItem('pr_temps')  || '[]');
 let weekOff= 0;
 let planMes= '';
 let estSel = new Set();
@@ -466,10 +542,10 @@ function updateCfgPreview(){
 
 function save(k,v){
   localStorage.setItem(k, JSON.stringify(v));
-  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas'}[k];
+  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps'}[k];
   if(fk) fetch(`${FB_URL}/${fk}.json`,{method:'PUT',body:JSON.stringify(v)}).catch(()=>{});
 }
-function saveAll(){ save('pr_spp',spp); save('pr_reglas',reglas); save('pr_eventos',eventos); save('pr_tareas',tareas); }
+function saveAll(){ save('pr_spp',spp); save('pr_reglas',reglas); save('pr_eventos',eventos); save('pr_tareas',tareas); save('pr_temps',temps); }
 
 async function loadAll(){
   try {
@@ -483,6 +559,8 @@ async function loadAll(){
     else fetch(`${FB_URL}/eventos.json`,{method:'PUT',body:JSON.stringify(eventos)}).catch(()=>{});
     if(d.tareas!=null) { tareas=d.tareas; localStorage.setItem('pr_tareas',JSON.stringify(tareas)); }
     else fetch(`${FB_URL}/tareas.json`,{method:'PUT',body:JSON.stringify(tareas)}).catch(()=>{});
+    if(d.temps!=null)  { temps=d.temps;  localStorage.setItem('pr_temps',JSON.stringify(temps)); }
+    else fetch(`${FB_URL}/temps.json`,{method:'PUT',body:JSON.stringify(temps)}).catch(()=>{});
   } catch(e){}
 }
 
@@ -1323,9 +1401,10 @@ function showSec(id){
   document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
   document.getElementById('sec-'+id).classList.add('on');
   document.getElementById('nt-'+id).classList.add('on');
-  if(id==='plan'){ renderPlan(); }
-  if(id==='cfg'){ renderCfg(); }
-  if(id==='tar'){ renderTareas(); }
+  if(id==='plan')  { renderPlan(); }
+  if(id==='cfg')   { renderCfg(); }
+  if(id==='tar')   { renderTareas(); }
+  if(id==='clima') { renderTemps(); }
 }
 
 function toast(m,t=''){
@@ -1453,15 +1532,101 @@ async function syncSheets(){
   }
 }
 
+// ── CLIMA ─────────────────────────────────────────────────────────────────
+function checkFrost(){
+  const v=parseFloat(document.getElementById('cl-min').value);
+  document.getElementById('cl-min').classList.toggle('frost-inp', !isNaN(v) && v<0);
+}
+
+function addTemp(){
+  const fecha=document.getElementById('cl-fecha').value;
+  const minV=document.getElementById('cl-min').value;
+  const maxV=document.getElementById('cl-max').value;
+  const nota=document.getElementById('cl-nota').value.trim();
+  if(!fecha||minV===''||maxV===''){toast('Completá fecha, mínima y máxima','err');return;}
+  const tMin=parseFloat(minV), tMax=parseFloat(maxV);
+  if(isNaN(tMin)||isNaN(tMax)){toast('Ingresá temperaturas válidas','err');return;}
+  if(tMin>tMax){toast('La mínima no puede ser mayor que la máxima','err');return;}
+  if(temps.some(t=>t.fecha===fecha)){toast('Ya hay un registro para ese día','err');return;}
+  temps.push({fecha,tMin,tMax,nota});
+  temps.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  save('pr_temps',temps);
+  document.getElementById('cl-fecha').value='';
+  document.getElementById('cl-min').value='';
+  document.getElementById('cl-max').value='';
+  document.getElementById('cl-nota').value='';
+  document.getElementById('cl-min').classList.remove('frost-inp');
+  renderTemps();
+  toast('✓ Temperatura guardada','ok');
+}
+
+function deleteTemp(fecha){
+  if(!confirm('¿Eliminar el registro del '+formatFechaTemp(fecha)+'?')) return;
+  temps=temps.filter(t=>t.fecha!==fecha);
+  save('pr_temps',temps);
+  renderTemps();
+  toast('Registro eliminado','');
+}
+
+function formatFechaTemp(f){
+  const [y,m,d]=f.split('-');
+  const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return d+' '+meses[+m-1]+' '+y;
+}
+
+function renderTemps(){
+  // Stats
+  const n=temps.length;
+  const heladas=temps.filter(t=>t.tMin<0).length;
+  const minHist=n?Math.min(...temps.map(t=>t.tMin)):null;
+  const promMin=n?Math.round(temps.reduce((s,t)=>s+t.tMin,0)/n*10)/10:null;
+  document.getElementById('cs-heladas').textContent=n?heladas:'—';
+  document.getElementById('cs-min').textContent=minHist!==null?minHist+'°':'—';
+  document.getElementById('cs-prom').textContent=promMin!==null?promMin+'°':'—';
+  document.getElementById('cs-total').textContent=n||'—';
+
+  // Fecha de hoy por defecto si el input está vacío
+  const fechaInp=document.getElementById('cl-fecha');
+  if(!fechaInp.value) fechaInp.value=new Date().toISOString().slice(0,10);
+
+  // Lista
+  const el=document.getElementById('temps-list');
+  if(!n){el.innerHTML='<div style="padding:14px 13px;font-size:12px;color:var(--tx3)">Sin registros aún — empezá registrando el primer día.</div>';return;}
+  el.innerHTML=temps.map(t=>{
+    const helada=t.tMin<0;
+    const fria=t.tMin>=0&&t.tMin<=4;
+    const minClass=helada?'frost':fria?'cold':'warm';
+    const [y,m,d]=t.fecha.split('-');
+    const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    return `<div class="temp-entry${helada?' helada':''}">
+      <div class="temp-date-col">
+        <div class="temp-day">${d}</div>
+        <div class="temp-month">${meses[+m-1]} ${y.slice(2)}</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="temp-nums">
+          <span class="temp-min ${minClass}">${t.tMin>0?'+':''}${t.tMin}°</span>
+          <span class="temp-sep">/</span>
+          <span class="temp-max">${t.tMax>0?'+':''}${t.tMax}°</span>
+          ${helada?'<span class="frost-badge">❄️ Helada</span>':''}
+        </div>
+        ${t.nota?`<div class="temp-nota-disp">${t.nota}</div>`:''}
+      </div>
+      <button class="temp-del" onclick="deleteTemp('${t.fecha}')" title="Eliminar">✕</button>
+    </div>`;
+  }).join('');
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────
 renderSem();
 loadAll().then(()=>{
   renderSem();
   const act=document.querySelector('.sec.on');
   if(act){
-    if(act.id==='sec-tar')  renderTareas();
-    if(act.id==='sec-cfg')  renderCfg();
-    if(act.id==='sec-plan') renderPlan();
+    if(act.id==='sec-tar')   renderTareas();
+    if(act.id==='sec-cfg')   renderCfg();
+    if(act.id==='sec-plan')  renderPlan();
+    if(act.id==='sec-clima') renderTemps();
   }
 });
 </script>
