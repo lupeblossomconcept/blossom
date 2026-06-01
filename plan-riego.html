@@ -367,6 +367,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 <div class="sec" id="sec-plan">
   <div class="mes-bar" id="mes-bar"></div>
   <div id="plan-cards"></div>
+  <button class="add-btn" onclick="openModal('add-esp')">+ Agregar especie</button>
   <div style="margin:4px 13px 8px;font-size:9.5px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;">⚠ Reglas operacionales</div>
   <div id="reglas-list"></div>
   <div style="height:20px"></div>
@@ -750,6 +751,8 @@ function renderPlan(){
           ${badgeHtml(e)}
           ${p?`<button class="icon-btn" onclick="openModal('edit-plan',${e._idx})">✏️</button>`
              :`<button class="icon-btn" onclick="openModal('add-plan',${e._idx})">➕</button>`}
+          <button class="icon-btn" onclick="openModal('edit-esp',${e._idx})" title="Editar especie">⚙️</button>
+          <button class="icon-btn" onclick="delEsp(${e._idx})" title="Eliminar especie" style="color:var(--rojo)">🗑️</button>
         </div>
       </div>
       ${p?`
@@ -866,7 +869,7 @@ function delHuerfanos(idx){
   renderCfg(); renderSem();
   toast('Eventos eliminados','ok');
 }
-function delEsp(i){ if(!confirm('¿Eliminar '+spp[i].nom+'?')) return; spp.splice(i,1); save('pr_spp',spp); renderCfg(); toast('Especie eliminada'); }
+function delEsp(i){ if(!confirm('¿Eliminar '+spp[i].nom+'?')) return; spp.splice(i,1); save('pr_spp',spp); renderCfg(); renderPlan(); renderDash(); toast('Especie eliminada'); }
 function delRegla(i){ reglas.splice(i,1); save('pr_reglas',reglas); renderCfg(); renderPlan(); toast('Regla eliminada'); }
 
 // ── ESTANQUE ──────────────────────────────────────────────────────────────
@@ -1332,6 +1335,8 @@ function saveEsp(tipo, idx){
   document.getElementById('ov').classList.remove('on');
   renderCfg();
   renderSem();
+  renderPlan();
+  renderDash();
   toast(tipo==='edit-esp'?'Especie actualizada':'Especie agregada','ok');
 }
 
