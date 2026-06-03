@@ -346,13 +346,14 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     <div class="temp-row">
       <div class="temp-inp-wrap">
         <label>Mínima (°C)</label>
-        <input type="number" id="cl-min" placeholder="0" step="0.1" inputmode="decimal" oninput="checkFrost()">
+        <input type="text" inputmode="decimal" id="cl-min" placeholder="0" oninput="checkFrost()">
       </div>
       <div class="temp-inp-wrap">
         <label>Máxima (°C)</label>
         <input type="number" id="cl-max" placeholder="0" step="0.1" inputmode="decimal">
       </div>
     </div>
+    <button type="button" onclick="toggleMinSign()" style="width:100%;margin-bottom:10px;padding:10px;border:1.5px solid var(--br);border-radius:var(--rs);background:var(--gris);font-size:13px;font-weight:600;color:var(--bordo);cursor:pointer;font-family:'Montserrat',sans-serif">± Cambiar signo mínima</button>
     <textarea class="temp-nota" id="cl-nota" placeholder="Comentario — helada, neblina, viento, daños observados..."></textarea>
     <button class="btn-pri" onclick="addTemp()">Guardar temperatura</button>
   </div>
@@ -1570,6 +1571,12 @@ async function syncSheets(){
 }
 
 // ── CLIMA ─────────────────────────────────────────────────────────────────
+function toggleMinSign(){
+  const inp=document.getElementById('cl-min');
+  const v=inp.value.trim();
+  inp.value=v.startsWith('-')?v.slice(1):('-'+v);
+  checkFrost();
+}
 function checkFrost(){
   const v=parseFloat(document.getElementById('cl-min').value);
   document.getElementById('cl-min').classList.toggle('frost-inp', !isNaN(v) && v<0);
