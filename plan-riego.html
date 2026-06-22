@@ -274,6 +274,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <button class="ntab" id="nt-plan" onclick="showSec('plan')"><span class="ntab-icon">📋</span>Plan</button>
   <button class="ntab" id="nt-clima" onclick="showSec('clima')"><span class="ntab-icon">🌡️</span>Clima</button>
   <button class="ntab" id="nt-tar" onclick="showSec('tar')"><span class="ntab-icon">✅</span>Tareas</button>
+  <button class="ntab" id="nt-notas" onclick="showSec('notas')"><span class="ntab-icon">📝</span>Notas</button>
   <button class="ntab" id="nt-cfg" onclick="showSec('cfg')"><span class="ntab-icon">⚙️</span>Config</button>
 </div>
 
@@ -384,6 +385,20 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     <div id="tar-list"><div style="padding:14px 13px;font-size:12px;color:var(--tx3)">Sin tareas — ¡todo en orden! 🌸</div></div>
   </div>
   <button class="add-btn" onclick="openModal('add-tar')">+ Agregar tarea</button>
+  <div style="height:20px"></div>
+</div>
+
+<!-- NOTAS -->
+<div class="sec" id="sec-notas">
+  <div style="padding:4px 13px 10px">
+    <div class="ctit" style="margin-bottom:0">Comentarios</div>
+  </div>
+  <div class="card" style="margin:0 13px 14px;padding:14px">
+    <div class="mfield"><label>Fecha</label><input type="date" id="nota-fecha" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;-webkit-appearance:none;box-sizing:border-box"></div>
+    <div class="mfield" style="margin-bottom:0"><label>Comentario</label><textarea id="nota-txt" placeholder="Ej: esta semana se hicieron 2 riegos en vez de 3 porque la temperatura estuvo más baja..." style="width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:var(--gris);color:var(--tx);font-family:'Montserrat',sans-serif;outline:none;resize:none;height:90px;box-sizing:border-box"></textarea></div>
+    <button class="btn-pri" style="margin-top:12px" onclick="addNota()">Guardar comentario</button>
+  </div>
+  <div id="notas-list"></div>
   <div style="height:20px"></div>
 </div>
 
@@ -532,6 +547,7 @@ let reglas = JSON.parse(localStorage.getItem('pr_reglas') || 'null') || DEF_REGL
 let eventos= JSON.parse(localStorage.getItem('pr_eventos')|| localStorage.getItem('plan_riego_v1') || '[]');
 let tareas = JSON.parse(localStorage.getItem('pr_tareas') || '[]');
 let temps  = JSON.parse(localStorage.getItem('pr_temps')  || '[]');
+let notas  = JSON.parse(localStorage.getItem('pr_notas')  || '[]');
 let weekOff= 0;
 let planMes= '';
 let estSel = new Set();
@@ -589,14 +605,14 @@ function updateCfgPreview(){
 
 async function save(k,v){
   localStorage.setItem(k,JSON.stringify(v));
-  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps'}[k];
+  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps',pr_notas:'notas'}[k];
   if(!fk)return;
   try{
     const tok=await fbToken();
     await fetch(`${FB_URL}/${fk}.json?auth=${tok}`,{method:'PUT',body:JSON.stringify(v)});
   }catch(e){}
 }
-function saveAll(){ save('pr_spp',spp);save('pr_reglas',reglas);save('pr_eventos',eventos);save('pr_tareas',tareas);save('pr_temps',temps); }
+function saveAll(){ save('pr_spp',spp);save('pr_reglas',reglas);save('pr_eventos',eventos);save('pr_tareas',tareas);save('pr_temps',temps);save('pr_notas',notas); }
 
 async function loadAll(){
   try{
@@ -613,6 +629,8 @@ async function loadAll(){
     else{const t=await fbToken();fetch(`${FB_URL}/tareas.json?auth=${t}`,{method:'PUT',body:JSON.stringify(tareas)}).catch(()=>{});}
     if(d.temps!=null){temps=d.temps;localStorage.setItem('pr_temps',JSON.stringify(temps));}
     else{const t=await fbToken();fetch(`${FB_URL}/temps.json?auth=${t}`,{method:'PUT',body:JSON.stringify(temps)}).catch(()=>{});}
+    if(d.notas!=null){notas=d.notas;localStorage.setItem('pr_notas',JSON.stringify(notas));}
+    else{const t=await fbToken();fetch(`${FB_URL}/notas.json?auth=${t}`,{method:'PUT',body:JSON.stringify(notas)}).catch(()=>{});}
   }catch(e){}
 }
 
@@ -1406,6 +1424,37 @@ function saveRegla(tipo,idx){
 }
 
 // ── TAREAS ────────────────────────────────────────────────────────────────
+function addNota(){
+  const fecha=document.getElementById('nota-fecha').value;
+  const txt=document.getElementById('nota-txt').value.trim();
+  if(!fecha||!txt){toast('Completá fecha y comentario','err');return;}
+  notas.unshift({id:Date.now(),fecha,txt});
+  save('pr_notas',notas);
+  document.getElementById('nota-fecha').value='';
+  document.getElementById('nota-txt').value='';
+  renderNotas();
+  toast('✓ Comentario guardado','ok');
+}
+function delNota(id){
+  notas=notas.filter(n=>n.id!==id);
+  save('pr_notas',notas);
+  renderNotas();
+}
+function renderNotas(){
+  const el=document.getElementById('notas-list');if(!el)return;
+  if(!notas.length){el.innerHTML='<div style="padding:0 13px;font-size:12px;color:var(--tx3)">Sin comentarios aún</div>';return;}
+  el.innerHTML=notas.map(n=>{
+    const lbl=new Date(n.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'});
+    return `<div class="card" style="margin:0 13px 10px;padding:13px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${lbl}</div>
+        <button onclick="delNota(${n.id})" style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;padding:0">×</button>
+      </div>
+      <div style="font-size:13px;color:var(--tx);line-height:1.5">${n.txt}</div>
+    </div>`;
+  }).join('');
+}
+
 function renderTareas(){
   const el=document.getElementById('tar-list');
   if(!tareas.length){ el.innerHTML='<div style="padding:14px 13px;font-size:12px;color:var(--tx3)">Sin tareas — ¡todo en orden! 🌸</div>'; return; }
@@ -1461,6 +1510,7 @@ function showSec(id){
   if(id==='cfg')   { renderCfg(); }
   if(id==='tar')   { renderTareas(); }
   if(id==='clima') { renderTemps(); }
+  if(id==='notas') { const nf=document.getElementById('nota-fecha');if(nf&&!nf.value)nf.value=ds(new Date()); renderNotas(); }
 }
 
 function toast(m,t=''){
