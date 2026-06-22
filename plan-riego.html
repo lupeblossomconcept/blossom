@@ -274,7 +274,6 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <button class="ntab" id="nt-plan" onclick="showSec('plan')"><span class="ntab-icon">📋</span>Plan</button>
   <button class="ntab" id="nt-clima" onclick="showSec('clima')"><span class="ntab-icon">🌡️</span>Clima</button>
   <button class="ntab" id="nt-tar" onclick="showSec('tar')"><span class="ntab-icon">✅</span>Tareas</button>
-  <button class="ntab" id="nt-notas" onclick="showSec('notas')"><span class="ntab-icon">📝</span>Notas</button>
   <button class="ntab" id="nt-cfg" onclick="showSec('cfg')"><span class="ntab-icon">⚙️</span>Config</button>
 </div>
 
@@ -323,6 +322,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <div class="card" id="hist-card" style="display:none">
     <div class="ctit">🌧 Lluvia esta semana</div>
     <div id="hist-list"></div>
+  </div>
+  <div class="card" style="margin:0 13px 14px;padding:14px">
+    <div class="ctit" style="margin-bottom:8px">📝 Comentario de la semana</div>
+    <textarea id="week-nota" placeholder="Ej: se hicieron 2 riegos en vez de 3 porque la temperatura estuvo más baja..." style="width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:var(--gris);color:var(--tx);font-family:'Montserrat',sans-serif;outline:none;resize:none;height:80px;box-sizing:border-box" oninput="weekNotaDirty=true"></textarea>
+    <button class="btn-pri" style="margin-top:10px" onclick="saveWeekNota()">Guardar comentario</button>
   </div>
 </div>
 
@@ -385,20 +389,6 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     <div id="tar-list"><div style="padding:14px 13px;font-size:12px;color:var(--tx3)">Sin tareas — ¡todo en orden! 🌸</div></div>
   </div>
   <button class="add-btn" onclick="openModal('add-tar')">+ Agregar tarea</button>
-  <div style="height:20px"></div>
-</div>
-
-<!-- NOTAS -->
-<div class="sec" id="sec-notas">
-  <div style="padding:4px 13px 10px">
-    <div class="ctit" style="margin-bottom:0">Comentarios</div>
-  </div>
-  <div class="card" style="margin:0 13px 14px;padding:14px">
-    <div class="mfield"><label>Fecha</label><input type="date" id="nota-fecha" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;-webkit-appearance:none;box-sizing:border-box"></div>
-    <div class="mfield" style="margin-bottom:0"><label>Comentario</label><textarea id="nota-txt" placeholder="Ej: esta semana se hicieron 2 riegos en vez de 3 porque la temperatura estuvo más baja..." style="width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:var(--gris);color:var(--tx);font-family:'Montserrat',sans-serif;outline:none;resize:none;height:90px;box-sizing:border-box"></textarea></div>
-    <button class="btn-pri" style="margin-top:12px" onclick="addNota()">Guardar comentario</button>
-  </div>
-  <div id="notas-list"></div>
   <div style="height:20px"></div>
 </div>
 
@@ -691,6 +681,18 @@ function planForMes(esp, mk){
   return sorted.find(p=>p.mes>=mk) || sorted[sorted.length-1];
 }
 
+let weekNotaDirty=false;
+function weekKey(off){ return ds(wMon(off===undefined?weekOff:off)); }
+function getWeekNota(k){ return (notas.find(n=>n.id===k)||{}).txt||''; }
+function saveWeekNota(){
+  const k=weekKey(), txt=document.getElementById('week-nota').value.trim();
+  const idx=notas.findIndex(n=>n.id===k);
+  if(txt){ if(idx>=0)notas[idx].txt=txt; else notas.unshift({id:k,fecha:k,txt}); }
+  else if(idx>=0){ notas.splice(idx,1); }
+  save('pr_notas',notas);
+  weekNotaDirty=false;
+  toast('✓ Comentario guardado','ok');
+}
 function navW(n){ weekOff = n===0?0:weekOff+n; renderSem(); }
 function goWeek(off){ weekOff=off; document.getElementById('ov').classList.remove('on'); renderSem(); }
 
@@ -789,6 +791,11 @@ function renderSem(){
       </div>`;
     }).join('');
   } else { hc.style.display='none'; }
+
+  // Comentario de la semana
+  const wn=document.getElementById('week-nota');
+  if(wn) wn.value=getWeekNota(weekKey());
+  weekNotaDirty=false;
 }
 
 function delEv(id){ eventos=eventos.filter(e=>e.id!==id); save('pr_eventos',eventos); renderSem(); }
