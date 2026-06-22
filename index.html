@@ -379,6 +379,52 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
 
 <script>
 const FIREBASE='https://blossom-concept-default-rtdb.firebaseio.com';
+const FB_API_KEY='PEGAR_API_KEY_AQUI'; // Firebase Console → Project Settings → General → apiKey
+const FB_EMAIL='lupeblossomconcept@gmail.com';
+let _fbTok=null,_fbTokExp=0;
+async function fbToken(){
+  if(_fbTok&&Date.now()<_fbTokExp-60000)return _fbTok;
+  const rt=localStorage.getItem('fb_rtoken');
+  if(rt){
+    try{
+      const r=await fetch(`https://securetoken.googleapis.com/v1/token?key=${FB_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`grant_type=refresh_token&refresh_token=${encodeURIComponent(rt)}`});
+      const d=await r.json();
+      if(d.id_token){_fbTok=d.id_token;_fbTokExp=Date.now()+d.expires_in*1000;localStorage.setItem('fb_rtoken',d.refresh_token);return _fbTok;}
+    }catch(e){}
+  }
+  return fbLogin();
+}
+function fbLogin(){
+  return new Promise(res=>{
+    let m=document.getElementById('fb-auth-modal');
+    if(!m){
+      m=document.createElement('div');m.id='fb-auth-modal';
+      m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center';
+      m.innerHTML=`<div style="background:#fff;border-radius:14px;padding:24px 22px;width:290px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+        <div style="font-size:16px;font-weight:700;color:var(--bordo);margin-bottom:3px">Blossom</div>
+        <div style="font-size:11px;color:#999;margin-bottom:18px">${FB_EMAIL}</div>
+        <input id="fb-pwd" type="password" placeholder="Contraseña" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:12px;font-family:inherit;outline:none">
+        <button id="fb-btn" style="width:100%;padding:11px;background:var(--bordo);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Ingresar</button>
+        <div id="fb-err" style="font-size:11px;color:#e53e3e;margin-top:8px;text-align:center;min-height:16px"></div>
+      </div>`;
+      document.body.appendChild(m);
+    }
+    m.style.display='flex';
+    const pwd=document.getElementById('fb-pwd'),btn=document.getElementById('fb-btn'),err=document.getElementById('fb-err');
+    pwd.value='';setTimeout(()=>pwd.focus(),100);
+    async function doLogin(){
+      if(!pwd.value){err.textContent='Ingresa la contraseña';return;}
+      btn.disabled=true;btn.textContent='Ingresando…';err.textContent='';
+      try{
+        const r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FB_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:FB_EMAIL,password:pwd.value,returnSecureToken:true})});
+        const d=await r.json();
+        if(d.idToken){_fbTok=d.idToken;_fbTokExp=Date.now()+parseInt(d.expiresIn)*1000;localStorage.setItem('fb_rtoken',d.refreshToken);m.style.display='none';res(_fbTok);}
+        else{err.textContent='Contraseña incorrecta';btn.disabled=false;btn.textContent='Ingresar';}
+      }catch(e){err.textContent='Sin conexión';btn.disabled=false;btn.textContent='Ingresar';}
+    }
+    btn.onclick=doLogin;pwd.onkeydown=e=>{if(e.key==='Enter')doLogin();};
+  });
+}
 const METAS={Lisianthus:3978800,Antirrhinum:1909600,Cosmos:4760000,Girasol:2957500,Estatice:1827000,Zinnia:5600000};
 const META_TOTAL=21032900;
 const COSTOS_BASE={Lisianthus:0,Cosmos:0,Zinnia:0,Girasol:0,Antirrhinum:0};
@@ -1175,37 +1221,37 @@ function setSyncState(s){
 
 async function fbGet(path){
   try{
-    const r=await fetch(`${FIREBASE}/${path}.json`);
+    const tok=await fbToken();
+    const r=await fetch(`${FIREBASE}/${path}.json?auth=${tok}`);
     return await r.json();
   }catch(e){return null;}
 }
 
-async function fbPush(path, data){
+async function fbPush(path,data){
   setSyncState('syncing');
   try{
-    const r=await fetch(`${FIREBASE}/${path}.json`,{
-      method:'POST',
-      body:JSON.stringify(data)
-    });
+    const tok=await fbToken();
+    const r=await fetch(`${FIREBASE}/${path}.json?auth=${tok}`,{method:'POST',body:JSON.stringify(data)});
     const d=await r.json();
     setSyncState(d.name?'ok':'error');
     return d.name||false;
   }catch(e){setSyncState('error');return false;}
 }
 
-async function fbSet(path, data){
+async function fbSet(path,data){
   setSyncState('syncing');
   try{
-    await fetch(`${FIREBASE}/${path}.json`,{method:'PUT',body:JSON.stringify(data)});
-    setSyncState('ok');
-    return true;
+    const tok=await fbToken();
+    await fetch(`${FIREBASE}/${path}.json?auth=${tok}`,{method:'PUT',body:JSON.stringify(data)});
+    setSyncState('ok');return true;
   }catch(e){setSyncState('error');return false;}
 }
 
 async function fbDelete(path){
   setSyncState('syncing');
   try{
-    await fetch(`${FIREBASE}/${path}.json`,{method:'DELETE'});
+    const tok=await fbToken();
+    await fetch(`${FIREBASE}/${path}.json?auth=${tok}`,{method:'DELETE'});
     setSyncState('ok');return true;
   }catch(e){setSyncState('error');return false;}
 }
