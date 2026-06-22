@@ -503,7 +503,7 @@ function fbLogin(){
       m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center';
       m.innerHTML=`<div style="background:#fff;border-radius:14px;padding:24px 22px;width:290px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">
         <div style="font-size:16px;font-weight:700;color:#8b1a4a;margin-bottom:3px">Blossom · Riego</div>
-        <div style="font-size:11px;color:#999;margin-bottom:18px">${FB_EMAIL}</div>
+        <input id="fb-mail" type="email" placeholder="Email" autocomplete="email" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:10px;font-family:inherit;outline:none">
         <input id="fb-pwd" type="password" placeholder="Contraseña" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:12px;font-family:inherit;outline:none">
         <button id="fb-btn" style="width:100%;padding:11px;background:#8b1a4a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Ingresar</button>
         <div id="fb-err" style="font-size:11px;color:#e53e3e;margin-top:8px;text-align:center;min-height:16px"></div>
@@ -511,13 +511,13 @@ function fbLogin(){
       document.body.appendChild(m);
     }
     m.style.display='flex';
-    const pwd=document.getElementById('fb-pwd'),btn=document.getElementById('fb-btn'),err=document.getElementById('fb-err');
-    pwd.value='';setTimeout(()=>pwd.focus(),100);
+    const mail=document.getElementById('fb-mail'),pwd=document.getElementById('fb-pwd'),btn=document.getElementById('fb-btn'),err=document.getElementById('fb-err');
+    mail.value='';pwd.value='';setTimeout(()=>mail.focus(),100);
     async function doLogin(){
-      if(!pwd.value){err.textContent='Ingresa la contraseña';return;}
+      if(!mail.value||!pwd.value){err.textContent='Ingresa email y contraseña';return;}
       btn.disabled=true;btn.textContent='Ingresando…';err.textContent='';
       try{
-        const r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FB_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:FB_EMAIL,password:pwd.value,returnSecureToken:true})});
+        const r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FB_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:mail.value,password:pwd.value,returnSecureToken:true})});
         const d=await r.json();
         if(d.idToken){_fbTok=d.idToken;_fbTokExp=Date.now()+parseInt(d.expiresIn)*1000;localStorage.setItem('fb_rtoken',d.refreshToken);m.style.display='none';res(_fbTok);}
         else{err.textContent='Contraseña incorrecta';btn.disabled=false;btn.textContent='Ingresar';}
