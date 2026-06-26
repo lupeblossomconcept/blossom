@@ -257,6 +257,18 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .cama-n{width:28px;height:28px;border-radius:7px;border:1.5px solid var(--br2);background:var(--sf);font-size:11px;font-weight:700;color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;font-family:'Montserrat',sans-serif;}
 .cama-n.on-v{border-color:var(--verde);background:var(--verde);color:#fff;}
 .cama-n.on-a{border-color:var(--azul);background:var(--azul);color:#fff;}
+/* FERTIL */
+.fv-stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 4px;}
+.fv-stat-box{background:var(--verde-l);border-radius:var(--rs);padding:9px 12px;}
+.fv-stat-lbl{font-size:9px;color:var(--verde);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;}
+.fv-stat-val{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--verde);}
+.fv-stat-uni{font-size:10px;color:var(--verde);font-weight:600;}
+.prod-row{display:flex;align-items:center;padding:10px 13px;border-bottom:1px solid var(--br);gap:8px;}
+.prod-row:last-child{border-bottom:none;}
+.prod-dosis-inp{width:52px;padding:5px 7px;border:1.5px solid var(--br);border-radius:8px;font-size:14px;font-weight:700;font-family:'Playfair Display',serif;background:var(--gris);color:var(--tx);outline:none;text-align:center;-webkit-appearance:none;}
+.prod-result{text-align:right;font-size:12px;color:var(--verde);font-weight:700;white-space:nowrap;min-width:80px;}
+.prod-cost{font-size:10px;color:var(--tx3);font-weight:400;}
+.ntab{font-size:8px;}
 </style>
 </head>
 <body>
@@ -271,6 +283,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 </div>
 <div class="nav">
   <button class="ntab on" id="nt-riego" onclick="showSec('riego')"><span class="ntab-icon">📅</span>Riego</button>
+  <button class="ntab" id="nt-fert" onclick="showSec('fert')"><span class="ntab-icon">🌿</span>Fertil</button>
   <button class="ntab" id="nt-plan" onclick="showSec('plan')"><span class="ntab-icon">📋</span>Plan</button>
   <button class="ntab" id="nt-clima" onclick="showSec('clima')"><span class="ntab-icon">🌡️</span>Clima</button>
   <button class="ntab" id="nt-tar" onclick="showSec('tar')"><span class="ntab-icon">✅</span>Tareas</button>
@@ -327,6 +340,39 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     <div class="ctit" style="margin-bottom:8px">📝 Comentario de la semana</div>
     <textarea id="week-nota" placeholder="Ej: se hicieron 2 riegos en vez de 3 porque la temperatura estuvo más baja..." style="width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:var(--gris);color:var(--tx);font-family:'Montserrat',sans-serif;outline:none;resize:none;height:80px;box-sizing:border-box" oninput="weekNotaDirty=true"></textarea>
     <button class="btn-pri" style="margin-top:10px" onclick="saveWeekNota()">Guardar comentario</button>
+  </div>
+</div>
+
+<!-- FERTIL -->
+<div class="sec" id="sec-fert">
+  <div class="card">
+    <div class="ctit">Volumen estanque</div>
+    <div class="big-row">
+      <input class="big-inp" type="text" id="fv-l" value="500" inputmode="decimal" oninput="calcFert()">
+      <span class="big-unit">L</span>
+    </div>
+    <div class="ctit" style="margin-top:10px">Especies fertilizadas</div>
+    <div id="fv-chips" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+    <div class="fv-stat" id="fv-stat" style="display:none">
+      <div class="fv-stat-box"><div class="fv-stat-lbl">Total camas</div><div><span class="fv-stat-val" id="fv-tot-camas">0</span> <span class="fv-stat-uni">camas</span></div></div>
+      <div class="fv-stat-box"><div class="fv-stat-lbl">L / cama</div><div><span class="fv-stat-val" id="fv-lc">0</span> <span class="fv-stat-uni">L</span></div></div>
+    </div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:12px 15px 8px;display:flex;justify-content:space-between;align-items:center">
+      <div class="ctit" style="margin-bottom:0">Productos</div>
+      <button style="background:none;border:none;color:var(--bordo);font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif" onclick="openModal('add-prod')">+ Agregar</button>
+    </div>
+    <div id="fv-prods"></div>
+    <div style="padding:6px 13px 10px;font-size:10px;color:var(--tx3)">Podés ajustar la dosis para este riego. La dosis por defecto se edita en Config.</div>
+  </div>
+  <div class="card" id="fv-total-card" style="display:none">
+    <div class="ctit">Costo total estimado</div>
+    <div id="fv-total"></div>
+  </div>
+  <div style="padding:0 13px 20px">
+    <button class="btn-pri" onclick="saveFert()">🌿 Registrar fertilización</button>
+    <button class="btn-sec" onclick="_fertSel.clear();renderFertChips();calcFert()">Limpiar selección</button>
   </div>
 </div>
 
@@ -406,6 +452,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <div id="cfg-reglas"></div>
   <button class="add-btn" onclick="openModal('add-regla')">+ Agregar regla</button>
   <div style="padding:0 13px;margin-bottom:6px;margin-top:10px">
+    <div class="ctit" style="margin-bottom:6px">🧪 Insumos / Fertilizantes</div>
+  </div>
+  <div id="cfg-prods"></div>
+  <button class="add-btn" onclick="openModal('add-prod')">+ Agregar insumo</button>
+  <div style="padding:0 13px;margin-bottom:6px;margin-top:10px">
     <div class="ctit" style="margin-bottom:6px">📊 Google Sheets</div>
   </div>
   <div class="sheets-section">
@@ -483,6 +534,11 @@ const DEF_REGLAS = [
    accion:'Nunca superar 10 min/evento en invierno. 10min=5mm, excesivo para ETo invernal. Preferir 4–8min según etapa.'},
 ];
 
+const DEF_PRODS = [
+  {id:'prod_ca_f', nom:'Calcio Foliar', unidad:'L',  precio:2645, dosis:2},
+  {id:'prod_ca_r', nom:'Calcio Riego',  unidad:'kg', precio:690,  dosis:0.5},
+];
+
 // ── FIREBASE ──────────────────────────────────────────────────────────────
 const FB_URL = 'https://blossom-concept-default-rtdb.firebaseio.com/riego';
 const FB_API_KEY='AIzaSyDL7HnbFtMBCs0uBnkyDw9BEcxc2aRBMMY';
@@ -538,6 +594,8 @@ let eventos= JSON.parse(localStorage.getItem('pr_eventos')|| localStorage.getIte
 let tareas = JSON.parse(localStorage.getItem('pr_tareas') || '[]');
 let temps  = JSON.parse(localStorage.getItem('pr_temps')  || '[]');
 let notas  = JSON.parse(localStorage.getItem('pr_notas')  || '[]');
+let prods  = JSON.parse(localStorage.getItem('pr_prods')  || 'null') || DEF_PRODS.map(p=>({...p}));
+let _fertSel=new Set(), _fertDosis={};
 let weekOff= 0;
 let planMes= '';
 let estSel = new Set();
@@ -595,7 +653,7 @@ function updateCfgPreview(){
 
 async function save(k,v){
   localStorage.setItem(k,JSON.stringify(v));
-  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps',pr_notas:'notas'}[k];
+  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps',pr_notas:'notas',pr_prods:'prods'}[k];
   if(!fk)return;
   try{
     const tok=await fbToken();
@@ -621,6 +679,8 @@ async function loadAll(){
     else{const t=await fbToken();fetch(`${FB_URL}/temps.json?auth=${t}`,{method:'PUT',body:JSON.stringify(temps)}).catch(()=>{});}
     if(d.notas!=null){notas=d.notas;localStorage.setItem('pr_notas',JSON.stringify(notas));}
     else{const t=await fbToken();fetch(`${FB_URL}/notas.json?auth=${t}`,{method:'PUT',body:JSON.stringify(notas)}).catch(()=>{});}
+    if(d.prods!=null){prods=d.prods;localStorage.setItem('pr_prods',JSON.stringify(prods));}
+    else{const t=await fbToken();fetch(`${FB_URL}/prods.json?auth=${t}`,{method:'PUT',body:JSON.stringify(prods)}).catch(()=>{});}
   }catch(e){}
 }
 
@@ -900,6 +960,8 @@ function renderCfg(){
         <button class="icon-btn" onclick="delRegla(${i})">🗑️</button>
       </div>
     </div>`).join('');
+
+  renderProdsConfig();
 
   // Eventos huérfanos
   const hObj=getHuerfanos();
@@ -1237,6 +1299,36 @@ function openModal(tipo, ctx){
     return;
   }
 
+  if(tipo==='add-prod'||tipo==='edit-prod'){
+    const p=tipo==='edit-prod'?prods[ctx]:null;
+    mi.innerHTML=`
+      <div class="modal-tit">🧪 ${p?'Editar':'Nuevo'} insumo</div>
+      <div class="mfield"><label>Nombre</label><input id="ap-nom" value="${p?p.nom:''}" placeholder="ej: Nitrato de Potasio"></div>
+      <div class="mgrid2">
+        <div class="mfield"><label>Precio</label>
+          <input type="number" id="ap-precio" value="${p?p.precio:''}" min="0" inputmode="decimal" placeholder="0">
+        </div>
+        <div class="mfield"><label>Unidad</label>
+          <select id="ap-uni" onchange="document.getElementById('ap-dosis-uni').textContent=this.value==='L'?'cc/L':'g/L'">
+            <option value="kg"${p&&p.unidad==='kg'?' selected':''}>kg</option>
+            <option value="L"${p&&p.unidad==='L'?' selected':''}>L</option>
+          </select>
+        </div>
+      </div>
+      <div class="mfield"><label>Dosis por defecto</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="ap-dosis" value="${p?p.dosis:''}" min="0" step="0.1" inputmode="decimal" style="flex:1" placeholder="0">
+          <span id="ap-dosis-uni" style="font-size:12px;color:var(--tx3);white-space:nowrap;min-width:36px">${p&&p.unidad==='L'?'cc/L':'g/L'}</span>
+        </div>
+        <div style="font-size:10px;color:var(--tx3);margin-top:4px">Por cada litro de agua en el estanque.</div>
+      </div>
+      <button class="btn-pri" onclick="saveProd('${tipo}',${ctx!==undefined?ctx:'null'})">Guardar</button>
+      <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    setTimeout(()=>{const n=document.getElementById('ap-nom');if(n)n.focus();},120);
+    return;
+  }
+
   if(tipo==='add-tar'){
     mi.innerHTML=`
       <div class="modal-tit">✅ Nueva tarea</div>
@@ -1507,6 +1599,150 @@ function toggleFertSec(){
   if(fertOpen){ renderEstChips(); calcEst(); }
 }
 
+// ── FERTIL ────────────────────────────────────────────────────────────────
+function renderFertChips(){
+  const el=document.getElementById('fv-chips');
+  if(!el) return;
+  el.innerHTML=sortedSpp().map(e=>{
+    const idx=e._idx;
+    const on=_fertSel.has(idx);
+    return `<div class="chip${on?' on':''}" onclick="toggleFertChip(${idx})" style="justify-content:space-between">
+      <div class="chip-chk" style="flex-shrink:0">${on?'✓':''}</div>
+      <span style="font-size:12px;font-weight:600;flex:1;padding-left:8px">${espId(e)}</span>
+      <span style="font-size:10px;color:var(--tx3)">${e.ncamas} cam.</span>
+    </div>`;
+  }).join('');
+}
+function toggleFertChip(idx){
+  if(_fertSel.has(idx)) _fertSel.delete(idx);
+  else _fertSel.add(idx);
+  renderFertChips();
+  calcFert();
+}
+function calcFert(){
+  const L=pNum(document.getElementById('fv-l')?.value||'0');
+  const sel=[..._fertSel];
+  const tot=sel.reduce((s,idx)=>{ const e=spp[idx]; return s+(e?e.ncamas:0); },0);
+  const statEl=document.getElementById('fv-stat');
+  if(statEl){
+    if(sel.length&&L&&tot){
+      document.getElementById('fv-tot-camas').textContent=tot;
+      document.getElementById('fv-lc').textContent=(L/tot).toFixed(1);
+      statEl.style.display='grid';
+    } else { statEl.style.display='none'; }
+  }
+  renderFertProds(L);
+}
+function renderFertProds(L){
+  const el=document.getElementById('fv-prods');
+  const totCard=document.getElementById('fv-total-card');
+  const totInner=document.getElementById('fv-total');
+  if(!el) return;
+  if(!prods.length){
+    el.innerHTML=`<div style="padding:12px 15px;font-size:12px;color:var(--tx3)">Sin insumos. Agregá uno con el botón de arriba.</div>`;
+    if(totCard) totCard.style.display='none';
+    return;
+  }
+  let totalCosto=0;
+  el.innerHTML=prods.map(p=>{
+    const d=_fertDosis[p.id]!=null?_fertDosis[p.id]:(p.dosis||0);
+    const dosisUni=p.unidad==='L'?'cc/L':'g/L';
+    const dispUni=p.unidad==='L'?'cc':'g';
+    let resultHtml='';
+    if(L&&d){
+      const amt=L*d;
+      const costo=(amt/1000)*p.precio;
+      totalCosto+=costo;
+      const amtFmt=amt>=1000?`${(amt/1000).toFixed(2)} ${p.unidad}`:`${Math.round(amt)} ${dispUni}`;
+      resultHtml=`<div class="prod-result">${amtFmt}<div class="prod-cost">$${Math.round(costo).toLocaleString('es-CL')}</div></div>`;
+    }
+    return `<div class="prod-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">${p.nom}</div>
+        <div style="font-size:10px;color:var(--tx3)">$${p.precio.toLocaleString('es-CL')}/${p.unidad}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        <input class="prod-dosis-inp" type="text" inputmode="decimal" value="${d}"
+          oninput="_fertDosis['${p.id}']=parseFloat(this.value)||0;calcFert()">
+        <span style="font-size:10px;color:var(--tx3);white-space:nowrap">${dosisUni}</span>
+      </div>
+      ${resultHtml}
+    </div>`;
+  }).join('');
+  if(L&&totalCosto>0&&totCard&&totInner){
+    totInner.innerHTML=`<span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--bordo)">$${Math.round(totalCosto).toLocaleString('es-CL')}</span>`;
+    totCard.style.display='';
+  } else if(totCard) { totCard.style.display='none'; }
+}
+function saveFert(){
+  const L=pNum(document.getElementById('fv-l')?.value||'0');
+  const sel=[..._fertSel];
+  if(!sel.length){ toast('Seleccioná al menos una especie','err'); return; }
+  if(!L){ toast('Ingresá los litros','err'); return; }
+  const tot=sel.reduce((s,idx)=>{ const e=spp[idx]; return s+(e?e.ncamas:0); },0);
+  if(!tot){ toast('Sin camas','err'); return; }
+  const lC=L/tot, mmC=+(lC/17).toFixed(3);
+  const fecha=ds(new Date());
+  const prodsNota=prods.map(p=>{
+    const d=_fertDosis[p.id]!=null?_fertDosis[p.id]:(p.dosis||0);
+    if(!d) return null;
+    const amt=L*d;
+    const dispUni=p.unidad==='L'?'cc':'g';
+    const amtFmt=amt>=1000?`${(amt/1000).toFixed(2)}${p.unidad}`:`${Math.round(amt)}${dispUni}`;
+    return `${p.nom}: ${amtFmt}`;
+  }).filter(Boolean).join(' · ');
+  sel.forEach(idx=>{
+    const e=spp[idx]; if(!e) return;
+    eventos.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+      fecha, especie:espId(e), min:0, mm:mmC, tipo:'fertilizacion',
+      nota:`Estanque ${L}L ÷ ${tot} camas = ${lC.toFixed(1)} L/cama. ${prodsNota}`.trim()});
+  });
+  save('pr_eventos',eventos);
+  _fertSel.clear(); _fertDosis={};
+  renderFertChips(); calcFert(); renderSem();
+  toast(`✓ ${sel.length} especie${sel.length>1?'s':''} · ${mmC.toFixed(2)} mm c/u`,'ok');
+}
+function renderProdsConfig(){
+  const el=document.getElementById('cfg-prods');
+  if(!el) return;
+  if(!prods.length){
+    el.innerHTML=`<div style="padding:8px 13px;font-size:12px;color:var(--tx3)">Sin insumos registrados.</div>`;
+    return;
+  }
+  el.innerHTML=prods.map((p,i)=>`
+    <div class="cfg-esp-item">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">${p.nom}</div>
+        <div style="font-size:11px;color:var(--tx3)">$${p.precio.toLocaleString('es-CL')}/${p.unidad} · dosis: ${p.dosis} ${p.unidad==='L'?'cc/L':'g/L'}</div>
+      </div>
+      <button class="icon-btn" onclick="openModal('edit-prod',${i})">✏️</button>
+      <button class="icon-btn" onclick="delProd(${i})" style="color:var(--rojo)">🗑️</button>
+    </div>`).join('');
+}
+function delProd(i){
+  if(!confirm('¿Eliminar '+prods[i].nom+'?')) return;
+  prods.splice(i,1);
+  save('pr_prods',prods);
+  renderProdsConfig();
+  renderFertProds(pNum(document.getElementById('fv-l')?.value||'0'));
+  toast('Insumo eliminado');
+}
+function saveProd(tipo,ctx){
+  const nom=(document.getElementById('ap-nom').value||'').trim();
+  const precio=parseFloat(document.getElementById('ap-precio').value)||0;
+  const unidad=document.getElementById('ap-uni').value||'kg';
+  const dosis=parseFloat(document.getElementById('ap-dosis').value)||0;
+  if(!nom){ toast('Ingresá un nombre','err'); return; }
+  const prod={id:tipo==='add-prod'?('p'+Date.now()):prods[ctx].id,nom,precio,unidad,dosis};
+  if(tipo==='add-prod') prods.push(prod);
+  else prods[ctx]=prod;
+  save('pr_prods',prods);
+  closeOv();
+  renderProdsConfig();
+  renderFertProds(pNum(document.getElementById('fv-l')?.value||'0'));
+  toast(`✓ ${prod.nom} guardado`,'ok');
+}
+
 // ── NAV ───────────────────────────────────────────────────────────────────
 function showSec(id){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
@@ -1517,6 +1753,7 @@ function showSec(id){
   if(id==='cfg')   { renderCfg(); }
   if(id==='tar')   { renderTareas(); }
   if(id==='clima') { renderTemps(); }
+  if(id==='fert')  { renderFertChips(); calcFert(); }
   if(id==='notas') { const nf=document.getElementById('nota-fecha');if(nf&&!nf.value)nf.value=ds(new Date()); renderNotas(); }
 }
 
@@ -1778,6 +2015,7 @@ loadAll().then(()=>{
     if(act.id==='sec-cfg')   renderCfg();
     if(act.id==='sec-plan')  renderPlan();
     if(act.id==='sec-clima') renderTemps();
+    if(act.id==='sec-fert')  { renderFertChips(); calcFert(); }
   }
 });
 </script>
