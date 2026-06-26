@@ -1255,6 +1255,15 @@ async function fbDelete(path){
   }catch(e){setSyncState('error');return false;}
 }
 
+function mergeVentas(fbVentas){
+  const histArr=HIST_VENTAS.map(r=>({fecha:r[0],cliente:r[1],especie:r[2],cama:r[3],paquetes:r[4],precio:r[5],total:r[6],b2b:'',nota:''}));
+  if(!fbVentas) return histArr.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const fbArr=Object.entries(fbVentas).map(([k,v])=>v&&v.fecha?{...v,_fbKey:k}:null).filter(Boolean).filter(v=>v.total>0);
+  const fbKeys=new Set(fbArr.map(v=>`${v.fecha}|${v.cliente}|${v.total}`));
+  const histExtra=histArr.filter(h=>!fbKeys.has(`${h.fecha}|${h.cliente}|${h.total}`));
+  return [...fbArr,...histExtra].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+}
+
 async function loadAllData(){
   // Mostrar datos históricos INMEDIATAMENTE
   ventas=HIST_VENTAS.map(r=>({fecha:r[0],cliente:r[1],especie:r[2],cama:r[3],paquetes:r[4],precio:r[5],total:r[6],b2b:'',nota:''}));
@@ -1262,18 +1271,13 @@ async function loadAllData(){
 
   setSyncState('syncing');
   try{
-    // Cargar ventas de Firebase
+    // Cargar ventas de Firebase — siempre combinar con HIST_VENTAS
     const fbVentas=await fbGet('ventas');
-    if(fbVentas){
-      const vArr=Object.entries(fbVentas).map(([k,v])=>v&&v.fecha?{...v,_fbKey:k}:null).filter(Boolean);
-      if(vArr.length>0){
-        ventas=vArr.filter(v=>v.total>0).sort((a,b)=>b.fecha.localeCompare(a.fecha));
-        renderDash();renderVList();
-      }
-      // Si Firebase tiene datos pero están vacíos/filtrados, NO sobrescribir
-    } else {
-      uploadHistorico(); // Solo si no existe el path en Firebase todavía
-    }
+    const merged=mergeVentas(fbVentas);
+    const nuevas=merged.filter(v=>!HIST_VENTAS.some(h=>h[0]===v.fecha&&h[1]===v.cliente&&h[6]===v.total));
+    ventas=merged;
+    renderDash();renderVList();
+    if(nuevas.length) toast(`✓ ${nuevas.length} venta${nuevas.length>1?'s':''} nuevas del equipo`,'ok');
 
     // Cargar gastos
     const fbGastos=await fbGet('gastos');
@@ -2145,18 +2149,12 @@ setInterval(syncFromFirebase,30000);
 async function syncFromFirebase(){
   try{
     const fbVentas=await fbGet('ventas');
-    if(fbVentas){
-      const vArr=Object.entries(fbVentas).map(([k,v])=>v&&v.fecha?{...v,_fbKey:k}:null).filter(Boolean).filter(v=>v.total>0);
-      if(vArr.length>0){
-        ventas=vArr.sort((a,b)=>b.fecha.localeCompare(a.fecha));
-        renderDash();renderVList();
-      }
-    }
+    ventas=mergeVentas(fbVentas);
+    renderDash();renderVList();
     const fbGastos=await fbGet('gastos');
     if(fbGastos){
       const gArr=Object.entries(fbGastos).map(([k,g])=>g&&g.monto>0?{...g,_fbKey:k}:null).filter(Boolean);
-      const merged=[...HIST_GASTOS.filter(g=>!DELETED_HIST.has(histFP(g))),...gArr].sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
-      gastos=merged;
+      gastos=[...HIST_GASTOS.filter(g=>!DELETED_HIST.has(histFP(g))),...gArr].sort((a,b)=>(b.fecha||b.mes||'').localeCompare(a.fecha||a.mes||''));
       renderGList();renderDash();
     }
   }catch(e){}
