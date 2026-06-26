@@ -46,8 +46,8 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 
 /* Dashboard grid */
 .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--sf);border-radius:var(--r);margin:0 13px 11px;box-shadow:var(--shadow);overflow:hidden;}
-.dash-cell{text-align:center;padding:11px 4px;border-right:1px solid var(--br);}
-.dash-cell:last-child{border-right:none;}
+.dash-cell,.dash-item{text-align:center;padding:11px 4px;border-right:1px solid var(--br);}
+.dash-cell:last-child,.dash-item:last-child{border-right:none;}
 .dash-icon{font-size:15px;margin-bottom:3px;}
 .dash-val{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;}
 .dash-lbl{font-size:9px;color:var(--tx3);margin-top:1px;}
@@ -269,6 +269,20 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .prod-result{text-align:right;font-size:12px;color:var(--verde);font-weight:700;white-space:nowrap;min-width:80px;}
 .prod-cost{font-size:10px;color:var(--tx3);font-weight:400;}
 .ntab{font-size:8px;}
+
+/* FERTIL PLAN VIEW */
+.fp-card{background:var(--sf);border-radius:var(--r);margin:0 13px 11px;box-shadow:var(--shadow);overflow:hidden;}
+.fp-hdr{padding:12px 14px 10px;border-bottom:1px solid var(--br);}
+.fp-nom{font-size:14px;font-weight:700;color:var(--tx);}
+.fp-meta{font-size:11px;color:var(--tx3);margin-top:2px;}
+.fp-etapa{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--verde-l);}
+.fp-etapa-nom{font-size:12px;font-weight:600;color:var(--verde);flex:1;}
+.fp-body{padding:10px 14px;}
+.fp-week-stat{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.fp-dot{width:12px;height:12px;border-radius:50%;background:var(--br2);flex-shrink:0;}
+.fp-dot.done{background:var(--verde);}
+.fp-prod-mini{display:flex;justify-content:space-between;font-size:11px;color:var(--tx3);padding:2px 0;}
+.fp-prod-mini b{color:var(--tx2);}
 </style>
 </head>
 <body>
@@ -345,34 +359,15 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 
 <!-- FERTIL -->
 <div class="sec" id="sec-fert">
-  <div class="card">
-    <div class="ctit">Volumen estanque</div>
-    <div class="big-row">
-      <input class="big-inp" type="text" id="fv-l" value="500" inputmode="decimal" oninput="calcFert()">
-      <span class="big-unit">L</span>
-    </div>
-    <div class="ctit" style="margin-top:10px">Especies fertilizadas</div>
-    <div id="fv-chips" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
-    <div class="fv-stat" id="fv-stat" style="display:none">
-      <div class="fv-stat-box"><div class="fv-stat-lbl">Total camas</div><div><span class="fv-stat-val" id="fv-tot-camas">0</span> <span class="fv-stat-uni">camas</span></div></div>
-      <div class="fv-stat-box"><div class="fv-stat-lbl">L / cama</div><div><span class="fv-stat-val" id="fv-lc">0</span> <span class="fv-stat-uni">L</span></div></div>
-    </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px 6px">
+    <button onclick="fertWeekOff--;renderFertSem()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 10px;font-size:14px;cursor:pointer;color:var(--tx2)">‹</button>
+    <span id="fert-week-lbl" style="font-size:13px;font-weight:700;color:var(--tx)"></span>
+    <button onclick="fertWeekOff++;renderFertSem()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 10px;font-size:14px;cursor:pointer;color:var(--tx2)">›</button>
   </div>
-  <div class="card" style="padding:0;overflow:hidden">
-    <div style="padding:12px 15px 8px;display:flex;justify-content:space-between;align-items:center">
-      <div class="ctit" style="margin-bottom:0">Productos</div>
-      <button style="background:none;border:none;color:var(--bordo);font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif" onclick="openModal('add-prod')">+ Agregar</button>
-    </div>
-    <div id="fv-prods"></div>
-    <div style="padding:6px 13px 10px;font-size:10px;color:var(--tx3)">Podés ajustar la dosis para este riego. La dosis por defecto se edita en Config.</div>
-  </div>
-  <div class="card" id="fv-total-card" style="display:none">
-    <div class="ctit">Costo total estimado</div>
-    <div id="fv-total"></div>
-  </div>
+  <div class="dash-grid" id="fert-dash" style="margin:0 13px 11px;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)"></div>
+  <div id="fert-plan-cards"></div>
   <div style="padding:0 13px 20px">
-    <button class="btn-pri" onclick="saveFert()">🌿 Registrar fertilización</button>
-    <button class="btn-sec" onclick="_fertSel.clear();renderFertChips();calcFert()">Limpiar selección</button>
+    <button class="add-btn" onclick="openFertDosModal(null)">+ Registrar fertilización sin plan</button>
   </div>
 </div>
 
@@ -451,6 +446,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   </div>
   <div id="cfg-reglas"></div>
   <button class="add-btn" onclick="openModal('add-regla')">+ Agregar regla</button>
+  <div style="padding:0 13px;margin-bottom:6px;margin-top:10px">
+    <div class="ctit" style="margin-bottom:6px">📋 Planes de Fertilización</div>
+  </div>
+  <div id="cfg-fert-planes"></div>
+  <button class="add-btn" onclick="openFertPlanModal('add',null)">+ Agregar plan de fertilización</button>
   <div style="padding:0 13px;margin-bottom:6px;margin-top:10px">
     <div class="ctit" style="margin-bottom:6px">🧪 Insumos / Fertilizantes</div>
   </div>
@@ -535,8 +535,70 @@ const DEF_REGLAS = [
 ];
 
 const DEF_PRODS = [
-  {id:'prod_ca_f', nom:'Calcio Foliar', unidad:'L',  precio:2645, dosis:2},
-  {id:'prod_ca_r', nom:'Calcio Riego',  unidad:'kg', precio:690,  dosis:0.5},
+  {id:'prod_acidofos', nom:'Ácido Fosfórico 85%',      unidad:'L',  precio:0,    dosis:0.13},
+  {id:'prod_ultrasol', nom:'Ultrasol Special 12-6-21',  unidad:'kg', precio:0,    dosis:0.33},
+  {id:'prod_urea',     nom:'Urea',                      unidad:'kg', precio:0,    dosis:0.20},
+  {id:'prod_fulvic',   nom:'Fulvic Mix (Ferpac)',        unidad:'L',  precio:0,    dosis:0.80},
+  {id:'prod_nitcalcio',nom:'Nitrato de Calcio',          unidad:'kg', precio:0,    dosis:0.85},
+  {id:'prod_epivio',   nom:'Epivio Vigor',               unidad:'L',  precio:0,    dosis:0.25},
+  {id:'prod_mcgram',   nom:'Mc Gram',                    unidad:'L',  precio:0,    dosis:0.25},
+  {id:'prod_sulfmag',  nom:'Sulfato de Magnesio',        unidad:'kg', precio:0,    dosis:0.10},
+  {id:'prod_ca_f',     nom:'Calcio Foliar',              unidad:'L',  precio:2645, dosis:2},
+  {id:'prod_ca_r',     nom:'Calcio Riego',               unidad:'kg', precio:690,  dosis:0.5},
+];
+
+const DEF_FERT_PLANES = [
+  {
+    id:'fp_gen', nom:'General (sin Ranúnculo)',
+    ncamas:20, litros:500, frecSem:1, etapaActual:1,
+    orden:'1° Ácido Fosfórico en estanque (pH 6.0-6.5) · 2° En balde aparte: Ultrasol → Urea → Fulvic Mix · 3° Verter balde al estanque · 4° Medir pH final',
+    etapas:[
+      {nom:'Recién Transplantado (0-2 sem)', prods:[
+        {prodId:'prod_acidofos', riego:'U', dosisPorL:0.130},
+        {prodId:'prod_ultrasol', riego:'U', dosisPorL:0.200},
+        {prodId:'prod_fulvic',   riego:'U', dosisPorL:0.800},
+      ]},
+      {nom:'Crecimiento Vegetativo', prods:[
+        {prodId:'prod_acidofos', riego:'U', dosisPorL:0.130},
+        {prodId:'prod_ultrasol', riego:'U', dosisPorL:0.330},
+        {prodId:'prod_urea',     riego:'U', dosisPorL:0.200},
+        {prodId:'prod_fulvic',   riego:'U', dosisPorL:0.800},
+      ]},
+      {nom:'Botón Floral + Floración', prods:[
+        {prodId:'prod_acidofos', riego:'U', dosisPorL:0.100},
+        {prodId:'prod_ultrasol', riego:'U', dosisPorL:0.430},
+        {prodId:'prod_urea',     riego:'U', dosisPorL:0.050},
+        {prodId:'prod_fulvic',   riego:'U', dosisPorL:0.800},
+      ]},
+    ]
+  },
+  {
+    id:'fp_ran', nom:'Ranúnculo',
+    ncamas:7, litros:175, frecSem:1, etapaActual:1,
+    orden:'R1: SOLO Nitrato de Calcio (+ 10-15cc ácido fosfórico para pH) · R2: Ácido Fosfórico → Ultrasol → Urea → Bioestimulante · NUNCA mezclar Ca con fosfatos en el mismo estanque',
+    etapas:[
+      {nom:'Crecimiento Vegetativo (sin calcio)', prods:[
+        {prodId:'prod_acidofos', riego:'R2', dosisPorL:0.103},
+        {prodId:'prod_ultrasol', riego:'R2', dosisPorL:0.303},
+        {prodId:'prod_urea',     riego:'R2', dosisPorL:0.029},
+        {prodId:'prod_epivio',   riego:'R2', dosisPorL:0.251, nota:'Alternar con Mc Gram sem a sem'},
+      ]},
+      {nom:'Crec. Vegetativo + Calcio (desde 19 jun)', prods:[
+        {prodId:'prod_nitcalcio',riego:'R1', dosisPorL:0.846, nota:'SOLO en R1 · Sin Ultrasol ni Urea'},
+        {prodId:'prod_acidofos', riego:'R2', dosisPorL:0.103},
+        {prodId:'prod_ultrasol', riego:'R2', dosisPorL:0.303},
+        {prodId:'prod_urea',     riego:'R2', dosisPorL:0.029},
+        {prodId:'prod_epivio',   riego:'R2', dosisPorL:0.251, nota:'Alternar con Mc Gram'},
+      ]},
+      {nom:'Botón Floral + Floración', prods:[
+        {prodId:'prod_nitcalcio',riego:'R1', dosisPorL:0.846, nota:'Mantener dosis constante'},
+        {prodId:'prod_acidofos', riego:'R2', dosisPorL:0.091},
+        {prodId:'prod_ultrasol', riego:'R2', dosisPorL:0.263},
+        {prodId:'prod_urea',     riego:'R2', dosisPorL:0.040},
+        {prodId:'prod_mcgram',   riego:'R2', dosisPorL:0.251, nota:'Preferir Mc Gram en floración'},
+      ]},
+    ]
+  }
 ];
 
 // ── FIREBASE ──────────────────────────────────────────────────────────────
@@ -595,6 +657,8 @@ let tareas = JSON.parse(localStorage.getItem('pr_tareas') || '[]');
 let temps  = JSON.parse(localStorage.getItem('pr_temps')  || '[]');
 let notas  = JSON.parse(localStorage.getItem('pr_notas')  || '[]');
 let prods  = JSON.parse(localStorage.getItem('pr_prods')  || 'null') || DEF_PRODS.map(p=>({...p}));
+let fert_planes = JSON.parse(localStorage.getItem('pr_fert_planes')||'null') || DEF_FERT_PLANES.map(p=>JSON.parse(JSON.stringify(p)));
+let fertWeekOff = 0;
 let _fertSel=new Set(), _fertDosis={};
 let weekOff= 0;
 let planMes= '';
@@ -653,7 +717,7 @@ function updateCfgPreview(){
 
 async function save(k,v){
   localStorage.setItem(k,JSON.stringify(v));
-  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps',pr_notas:'notas',pr_prods:'prods'}[k];
+  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps',pr_notas:'notas',pr_prods:'prods',pr_fert_planes:'fert_planes'}[k];
   if(!fk)return;
   try{
     const tok=await fbToken();
@@ -681,6 +745,8 @@ async function loadAll(){
     else{const t=await fbToken();fetch(`${FB_URL}/notas.json?auth=${t}`,{method:'PUT',body:JSON.stringify(notas)}).catch(()=>{});}
     if(d.prods!=null){prods=d.prods;localStorage.setItem('pr_prods',JSON.stringify(prods));}
     else{const t=await fbToken();fetch(`${FB_URL}/prods.json?auth=${t}`,{method:'PUT',body:JSON.stringify(prods)}).catch(()=>{});}
+    if(d.fert_planes!=null){fert_planes=d.fert_planes;localStorage.setItem('pr_fert_planes',JSON.stringify(fert_planes));}
+    else{const t=await fbToken();fetch(`${FB_URL}/fert_planes.json?auth=${t}`,{method:'PUT',body:JSON.stringify(fert_planes)}).catch(()=>{});}
   }catch(e){}
 }
 
@@ -962,6 +1028,7 @@ function renderCfg(){
     </div>`).join('');
 
   renderProdsConfig();
+  renderFertPlanesConfig();
 
   // Eventos huérfanos
   const hObj=getHuerfanos();
@@ -1600,108 +1667,362 @@ function toggleFertSec(){
 }
 
 // ── FERTIL ────────────────────────────────────────────────────────────────
-function renderFertChips(){
-  const el=document.getElementById('fv-chips');
-  if(!el) return;
-  el.innerHTML=sortedSpp().map(e=>{
-    const idx=e._idx;
-    const on=_fertSel.has(idx);
-    return `<div class="chip${on?' on':''}" onclick="toggleFertChip(${idx})" style="justify-content:space-between">
-      <div class="chip-chk" style="flex-shrink:0">${on?'✓':''}</div>
-      <span style="font-size:12px;font-weight:600;flex:1;padding-left:8px">${espId(e)}</span>
-      <span style="font-size:10px;color:var(--tx3)">${e.ncamas} cam.</span>
-    </div>`;
-  }).join('');
+
+// Migration: add any missing default products
+function mergeDefaultProds(){
+  let changed=false;
+  DEF_PRODS.forEach(dp=>{
+    if(!prods.find(p=>p.id===dp.id)){prods.push({...dp});changed=true;}
+  });
+  if(changed) save('pr_prods',prods);
 }
-function toggleFertChip(idx){
-  if(_fertSel.has(idx)) _fertSel.delete(idx);
-  else _fertSel.add(idx);
-  renderFertChips();
-  calcFert();
+
+// helpers
+function fpMon(off){
+  const d=new Date(); d.setHours(12,0,0,0);
+  const day=d.getDay(); const diff=day===0?-6:1-day;
+  d.setDate(d.getDate()+diff+off*7); return d;
 }
-function calcFert(){
-  const L=pNum(document.getElementById('fv-l')?.value||'0');
-  const sel=[..._fertSel];
-  const tot=sel.reduce((s,idx)=>{ const e=spp[idx]; return s+(e?e.ncamas:0); },0);
-  const statEl=document.getElementById('fv-stat');
-  if(statEl){
-    if(sel.length&&L&&tot){
-      document.getElementById('fv-tot-camas').textContent=tot;
-      document.getElementById('fv-lc').textContent=(L/tot).toFixed(1);
-      statEl.style.display='grid';
-    } else { statEl.style.display='none'; }
+function fpDs(d){return d.toISOString().split('T')[0];}
+function fpFmtWeek(mon){
+  const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+  const opts={day:'numeric',month:'short'};
+  if(mon.getMonth()===sun.getMonth()) return mon.toLocaleDateString('es-CL',opts)+' – '+sun.getDate();
+  return mon.toLocaleDateString('es-CL',opts)+' – '+sun.toLocaleDateString('es-CL',opts);
+}
+function fpEventsForPlan(planId, monStr, sunStr){
+  return eventos.filter(e=>e.tipo==='fertilizacion'&&e.planId===planId&&e.fecha>=monStr&&e.fecha<=sunStr);
+}
+function getProd(id){return prods.find(p=>p.id===id)||null;}
+function calcProdAmt(dosisPorL, L){return dosisPorL*L;}
+function calcProdCosto(amt, prod){
+  if(!prod||!prod.precio) return 0;
+  return (amt/1000)*prod.precio;
+}
+function fmtAmt(amt, unidad){
+  const dispUni=unidad==='L'?'cc':'g';
+  if(amt>=1000) return `${(amt/1000).toFixed(2)} ${unidad}`;
+  return `${Math.round(amt)} ${dispUni}`;
+}
+
+function renderFertSem(){
+  const mon=fpMon(fertWeekOff);
+  const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+  const monStr=fpDs(mon), sunStr=fpDs(sun);
+
+  const lblEl=document.getElementById('fert-week-lbl');
+  if(lblEl){
+    const isNow=fertWeekOff===0;
+    lblEl.textContent=(isNow?'Esta semana · ':'')+fpFmtWeek(mon);
   }
-  renderFertProds(L);
-}
-function renderFertProds(L){
-  const el=document.getElementById('fv-prods');
-  const totCard=document.getElementById('fv-total-card');
-  const totInner=document.getElementById('fv-total');
-  if(!el) return;
-  if(!prods.length){
-    el.innerHTML=`<div style="padding:12px 15px;font-size:12px;color:var(--tx3)">Sin insumos. Agregá uno con el botón de arriba.</div>`;
-    if(totCard) totCard.style.display='none';
+
+  // Dash summary
+  let totalPlanned=0, totalDone=0, totalCosto=0;
+  fert_planes.forEach(pl=>{
+    totalPlanned+=pl.frecSem||1;
+    const evs=fpEventsForPlan(pl.id, monStr, sunStr);
+    totalDone+=evs.length;
+    evs.forEach(ev=>{totalCosto+=(ev.costo||0);});
+  });
+  const dashEl=document.getElementById('fert-dash');
+  if(dashEl) dashEl.innerHTML=`
+    <div class="dash-item"><div class="dash-val">${totalDone}</div><div class="dash-lbl">Realizadas</div></div>
+    <div class="dash-item"><div class="dash-val">${totalPlanned}</div><div class="dash-lbl">Planificadas</div></div>
+    <div class="dash-item" style="grid-column:span 2"><div class="dash-val" style="font-size:18px">$${Math.round(totalCosto).toLocaleString('es-CL')}</div><div class="dash-lbl">Costo semana</div></div>`;
+
+  // Plan cards
+  const cardsEl=document.getElementById('fert-plan-cards');
+  if(!cardsEl) return;
+  if(!fert_planes.length){
+    cardsEl.innerHTML=`<div class="card" style="text-align:center;color:var(--tx3);font-size:12px">Sin planes. Agregá uno en Config.</div>`;
     return;
   }
+  cardsEl.innerHTML=fert_planes.map((pl,i)=>renderFertPlanCard(pl,i,monStr,sunStr)).join('');
+}
+
+function renderFertPlanCard(pl, idx, monStr, sunStr){
+  const evs=fpEventsForPlan(pl.id, monStr, sunStr);
+  const done=evs.length;
+  const planned=pl.frecSem||1;
+  const etapa=pl.etapas&&pl.etapas[pl.etapaActual||0];
+  const costaSem=evs.reduce((s,e)=>s+(e.costo||0),0);
+  const lastEv=[...eventos].filter(e=>e.tipo==='fertilizacion'&&e.planId===pl.id).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];
+  const lastDate=lastEv?`Última: ${new Date(lastEv.fecha+'T12:00:00').toLocaleDateString('es-CL',{day:'numeric',month:'short'})}`:'Sin registros aún';
+
+  // week dots
+  const dots=Array.from({length:planned},(_,i)=>`<div class="fp-dot${i<done?' done':''}"></div>`).join('');
+
+  // product preview (first 3)
+  const prodPreview=etapa?etapa.prods.slice(0,3).map(pp=>{
+    const p=getProd(pp.prodId);
+    const amt=calcProdAmt(pp.dosisPorL, pl.litros);
+    return `<div class="fp-prod-mini"><b>${p?p.nom:pp.prodId}</b><span>${fmtAmt(amt,p?p.unidad:'g')} ${pp.riego!=='U'?`(${pp.riego})`:''}</span></div>`;
+  }).join(''):'';
+
+  const etapaIdx=pl.etapaActual||0;
+  const nEtapas=(pl.etapas||[]).length;
+
+  return `<div class="fp-card">
+    <div class="fp-hdr">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="fp-nom">${pl.nom}</div>
+          <div class="fp-meta">${pl.ncamas} camas · ${pl.litros}L · ${planned}×/sem</div>
+        </div>
+        <button class="icon-btn" onclick="openFertPlanModal('edit',${idx})" style="margin-top:-4px">✏️</button>
+      </div>
+    </div>
+    <div class="fp-etapa">
+      <button onclick="changeFertEtapa(${idx},-1)" style="background:none;border:none;color:var(--verde);font-size:16px;cursor:pointer;padding:0;opacity:${etapaIdx>0?1:0.3}" ${etapaIdx===0?'disabled':''}>‹</button>
+      <div class="fp-etapa-nom">Etapa ${etapaIdx+1}/${nEtapas}: ${etapa?etapa.nom:'—'}</div>
+      <button onclick="changeFertEtapa(${idx},1)" style="background:none;border:none;color:var(--verde);font-size:16px;cursor:pointer;padding:0;opacity:${etapaIdx<nEtapas-1?1:0.3}" ${etapaIdx===nEtapas-1?'disabled':''}>›</button>
+    </div>
+    <div class="fp-body">
+      <div class="fp-week-stat">
+        ${dots}
+        <span style="font-size:12px;color:${done>=planned?'var(--verde)':'var(--tx3)'};font-weight:600">${done}/${planned} esta semana</span>
+        ${costaSem>0?`<span style="font-size:11px;color:var(--tx3);margin-left:auto">$${Math.round(costaSem).toLocaleString('es-CL')}</span>`:''}
+      </div>
+      <div style="font-size:10px;color:var(--tx3);margin-bottom:10px">${lastDate}</div>
+      ${prodPreview}
+    </div>
+    <div style="padding:0 14px 12px">
+      <button class="btn-pri" onclick="openFertDosModal(${idx})" style="font-size:13px;padding:11px">🧪 Dosificar y registrar</button>
+    </div>
+  </div>`;
+}
+
+function changeFertEtapa(idx, delta){
+  const pl=fert_planes[idx];
+  if(!pl) return;
+  const n=(pl.etapas||[]).length;
+  pl.etapaActual=Math.max(0,Math.min(n-1,(pl.etapaActual||0)+delta));
+  save('pr_fert_planes',fert_planes);
+  renderFertSem();
+}
+
+// ── DOSAGE MODAL ──────────────────────────────────────────────────────────
+let _fdCtx=null; // {planIdx, litros, dosiOverrides:{prodId:dosis}}
+
+function openFertDosModal(planIdx){
+  const pl=planIdx!=null?fert_planes[planIdx]:null;
+  _fdCtx={planIdx, litros:pl?pl.litros:500, dosiOverrides:{}};
+  renderFertDosModal();
+  document.getElementById('ov').classList.add('on');
+}
+
+function renderFertDosModal(){
+  const pl=_fdCtx.planIdx!=null?fert_planes[_fdCtx.planIdx]:null;
+  const etapa=pl&&pl.etapas?pl.etapas[pl.etapaActual||0]:null;
+  const L=_fdCtx.litros;
+  const mi=document.getElementById('modal-inner');
+
+  let prodsHtml='';
   let totalCosto=0;
-  el.innerHTML=prods.map(p=>{
-    const d=_fertDosis[p.id]!=null?_fertDosis[p.id]:(p.dosis||0);
-    const dosisUni=p.unidad==='L'?'cc/L':'g/L';
-    const dispUni=p.unidad==='L'?'cc':'g';
-    let resultHtml='';
-    if(L&&d){
-      const amt=L*d;
-      const costo=(amt/1000)*p.precio;
+
+  if(pl&&etapa){
+    // group by riego
+    const riegos=[...new Set(etapa.prods.map(pp=>pp.riego))];
+    prodsHtml=riegos.map(r=>{
+      const rProds=etapa.prods.filter(pp=>pp.riego===r);
+      const rLbl=r==='U'?'Mezcla única':r==='R1'?'Riego 1 – Calcio (estanque separado)':r==='R2'?'Riego 2 – Fertilización':'Riego '+r;
+      const rows=rProds.map(pp=>{
+        const prod=getProd(pp.prodId);
+        const dosisActual=_fdCtx.dosiOverrides[pp.prodId]!=null?_fdCtx.dosiOverrides[pp.prodId]:pp.dosisPorL;
+        const amt=dosisActual*L;
+        const costo=calcProdCosto(amt,prod);
+        totalCosto+=costo;
+        const dispUni=prod&&prod.unidad==='L'?'cc/L':'g/L';
+        return `<div class="prod-row" style="padding:8px 0;border-bottom:1px solid var(--br)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600">${prod?prod.nom:pp.prodId}</div>
+            ${pp.nota?`<div style="font-size:10px;color:var(--verde);margin-top:1px">⚠ ${pp.nota}</div>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:8px">
+            <input class="prod-dosis-inp" type="text" inputmode="decimal" value="${dosisActual.toFixed(3).replace(/\.?0+$/,'')}"
+              oninput="_fdCtx.dosiOverrides['${pp.prodId}']=parseFloat(this.value)||0;renderFertDosModal()"
+              style="width:58px">
+            <span style="font-size:9px;color:var(--tx3);white-space:nowrap">${dispUni}</span>
+          </div>
+          <div style="text-align:right;min-width:72px;margin-left:8px">
+            <div style="font-size:13px;font-weight:700;color:var(--verde)">${fmtAmt(amt,prod?prod.unidad:'g')}</div>
+            ${costo>0?`<div style="font-size:10px;color:var(--tx3)">$${Math.round(costo).toLocaleString('es-CL')}</div>`:''}
+          </div>
+        </div>`;
+      }).join('');
+      return `<div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 4px">${rLbl}</div>${rows}`;
+    }).join('');
+  } else {
+    // no plan: show all products with dose input
+    prodsHtml=prods.map(p=>{
+      const dosisActual=_fdCtx.dosiOverrides[p.id]!=null?_fdCtx.dosiOverrides[p.id]:(p.dosis||0);
+      const amt=dosisActual*L;
+      const costo=calcProdCosto(amt,p);
       totalCosto+=costo;
-      const amtFmt=amt>=1000?`${(amt/1000).toFixed(2)} ${p.unidad}`:`${Math.round(amt)} ${dispUni}`;
-      resultHtml=`<div class="prod-result">${amtFmt}<div class="prod-cost">$${Math.round(costo).toLocaleString('es-CL')}</div></div>`;
-    }
-    return `<div class="prod-row">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600">${p.nom}</div>
-        <div style="font-size:10px;color:var(--tx3)">$${p.precio.toLocaleString('es-CL')}/${p.unidad}</div>
+      const dispUni=p.unidad==='L'?'cc/L':'g/L';
+      return `<div class="prod-row" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div style="flex:1;min-width:0;font-size:13px;font-weight:600">${p.nom}</div>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:8px">
+          <input class="prod-dosis-inp" type="text" inputmode="decimal" value="${dosisActual}"
+            oninput="_fdCtx.dosiOverrides['${p.id}']=parseFloat(this.value)||0;renderFertDosModal()"
+            style="width:58px">
+          <span style="font-size:9px;color:var(--tx3);white-space:nowrap">${dispUni}</span>
+        </div>
+        <div style="text-align:right;min-width:72px;margin-left:8px">
+          <div style="font-size:13px;font-weight:700;color:var(--verde)">${fmtAmt(amt,p.unidad)}</div>
+          ${costo>0?`<div style="font-size:10px;color:var(--tx3)">$${Math.round(costo).toLocaleString('es-CL')}</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const ordenHtml=pl&&pl.orden?`<div style="background:var(--am-l);border-radius:var(--rs);padding:8px 11px;font-size:11px;color:var(--am);margin-bottom:8px;line-height:1.5">${pl.orden}</div>`:'';
+
+  mi.innerHTML=`
+    <div class="modal-tit">🧪 ${pl?pl.nom:'Fertilización libre'}</div>
+    ${etapa?`<div style="font-size:12px;font-weight:600;color:var(--verde);margin-bottom:10px">${etapa.nom}</div>`:''}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="flex:1">
+        <label style="font-size:11px;color:var(--tx3);font-weight:600;display:block;margin-bottom:4px">Litros estanque</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="text" inputmode="decimal" value="${L}"
+            oninput="_fdCtx.litros=parseFloat(this.value)||500;renderFertDosModal()"
+            style="flex:1;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-family:'Playfair Display',serif;font-size:20px;font-weight:700;background:var(--gris);color:var(--tx);outline:none;text-align:center">
+          <span style="font-size:13px;font-weight:700;color:var(--tx2)">L</span>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-        <input class="prod-dosis-inp" type="text" inputmode="decimal" value="${d}"
-          oninput="_fertDosis['${p.id}']=parseFloat(this.value)||0;calcFert()">
-        <span style="font-size:10px;color:var(--tx3);white-space:nowrap">${dosisUni}</span>
-      </div>
-      ${resultHtml}
-    </div>`;
-  }).join('');
-  if(L&&totalCosto>0&&totCard&&totInner){
-    totInner.innerHTML=`<span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--bordo)">$${Math.round(totalCosto).toLocaleString('es-CL')}</span>`;
-    totCard.style.display='';
-  } else if(totCard) { totCard.style.display='none'; }
+      ${pl?`<div style="text-align:center">
+        <div style="font-size:11px;color:var(--tx3);font-weight:600;margin-bottom:4px">Camas</div>
+        <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--tx)">${pl.ncamas}</div>
+      </div>`:''}
+    </div>
+    ${ordenHtml}
+    <div>${prodsHtml}</div>
+    ${totalCosto>0?`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:2px solid var(--br);margin-top:8px">
+      <span style="font-size:13px;font-weight:700">Costo total estimado</span>
+      <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--bordo)">$${Math.round(totalCosto).toLocaleString('es-CL')}</span>
+    </div>`:''}
+    <div class="mfield" style="margin-top:10px"><label>Nota (opcional)</label><textarea id="fd-nota" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;resize:none;height:52px"></textarea></div>
+    <button class="btn-pri" style="margin-top:8px" onclick="saveFertApp()">✓ Registrar aplicación · $${Math.round(totalCosto).toLocaleString('es-CL')}</button>
+    <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
 }
-function saveFert(){
-  const L=pNum(document.getElementById('fv-l')?.value||'0');
-  const sel=[..._fertSel];
-  if(!sel.length){ toast('Seleccioná al menos una especie','err'); return; }
-  if(!L){ toast('Ingresá los litros','err'); return; }
-  const tot=sel.reduce((s,idx)=>{ const e=spp[idx]; return s+(e?e.ncamas:0); },0);
-  if(!tot){ toast('Sin camas','err'); return; }
-  const lC=L/tot, mmC=+(lC/17).toFixed(3);
-  const fecha=ds(new Date());
-  const prodsNota=prods.map(p=>{
-    const d=_fertDosis[p.id]!=null?_fertDosis[p.id]:(p.dosis||0);
-    if(!d) return null;
-    const amt=L*d;
-    const dispUni=p.unidad==='L'?'cc':'g';
-    const amtFmt=amt>=1000?`${(amt/1000).toFixed(2)}${p.unidad}`:`${Math.round(amt)}${dispUni}`;
-    return `${p.nom}: ${amtFmt}`;
-  }).filter(Boolean).join(' · ');
-  sel.forEach(idx=>{
-    const e=spp[idx]; if(!e) return;
-    eventos.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-      fecha, especie:espId(e), min:0, mm:mmC, tipo:'fertilizacion',
-      nota:`Estanque ${L}L ÷ ${tot} camas = ${lC.toFixed(1)} L/cama. ${prodsNota}`.trim()});
+
+function saveFertApp(){
+  const pl=_fdCtx.planIdx!=null?fert_planes[_fdCtx.planIdx]:null;
+  const etapa=pl&&pl.etapas?pl.etapas[pl.etapaActual||0]:null;
+  const L=_fdCtx.litros||500;
+  const fecha=fpDs(new Date());
+  const nota=(document.getElementById('fd-nota')||{}).value||'';
+
+  // build prods list
+  let prodsList=[];
+  let totalCosto=0;
+  const sourceProds=etapa?etapa.prods:prods.filter(p=>{const d=_fdCtx.dosiOverrides[p.id]; return d&&d>0;}).map(p=>({prodId:p.id,riego:'U',dosisPorL:_fdCtx.dosiOverrides[p.id]||p.dosis}));
+
+  sourceProds.forEach(pp=>{
+    const prod=getProd(pp.prodId);
+    const dosisActual=_fdCtx.dosiOverrides[pp.prodId]!=null?_fdCtx.dosiOverrides[pp.prodId]:pp.dosisPorL;
+    if(!dosisActual) return;
+    const amt=dosisActual*L;
+    const costo=calcProdCosto(amt,prod);
+    totalCosto+=costo;
+    prodsList.push({prodId:pp.prodId,nom:prod?prod.nom:pp.prodId,riego:pp.riego,dosis:dosisActual,amt:Math.round(amt),uni:prod?(prod.unidad==='L'?'cc':'g'):'g',costo:Math.round(costo)});
   });
+
+  const prodNota=prodsList.map(p=>`${p.nom}: ${p.amt}${p.uni}`).join(' · ');
+  const ev={
+    id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    fecha, tipo:'fertilizacion',
+    especie:pl?pl.nom:'Libre',
+    planId:pl?pl.id:null,
+    etapa:etapa?etapa.nom:null,
+    litros:L,
+    mm:0,
+    prods:prodsList,
+    costo:Math.round(totalCosto),
+    nota:(nota+' '+prodNota).trim()
+  };
+  eventos.push(ev);
   save('pr_eventos',eventos);
-  _fertSel.clear(); _fertDosis={};
-  renderFertChips(); calcFert(); renderSem();
-  toast(`✓ ${sel.length} especie${sel.length>1?'s':''} · ${mmC.toFixed(2)} mm c/u`,'ok');
+  closeOv();
+  renderFertSem();
+  renderSem();
+  toast(`✓ Registrado · $${Math.round(totalCosto).toLocaleString('es-CL')}`,'ok');
 }
+
+// ── FERT PLAN CONFIG ──────────────────────────────────────────────────────
+function renderFertPlanesConfig(){
+  const el=document.getElementById('cfg-fert-planes');
+  if(!el) return;
+  if(!fert_planes.length){
+    el.innerHTML=`<div style="padding:8px 13px;font-size:12px;color:var(--tx3)">Sin planes de fertilización.</div>`;
+    return;
+  }
+  el.innerHTML=fert_planes.map((pl,i)=>`
+    <div class="cfg-esp-item">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">${pl.nom}</div>
+        <div style="font-size:11px;color:var(--tx3)">${pl.ncamas} camas · ${pl.litros}L · ${pl.frecSem||1}×/sem · ${(pl.etapas||[]).length} etapas</div>
+      </div>
+      <button class="icon-btn" onclick="openFertPlanModal('edit',${i})">✏️</button>
+      <button class="icon-btn" onclick="delFertPlan(${i})" style="color:var(--rojo)">🗑️</button>
+    </div>`).join('');
+}
+function delFertPlan(i){
+  if(!confirm('¿Eliminar plan '+fert_planes[i].nom+'?')) return;
+  fert_planes.splice(i,1);
+  save('pr_fert_planes',fert_planes);
+  renderFertPlanesConfig();
+  renderFertSem();
+  toast('Plan eliminado');
+}
+function openFertPlanModal(tipo,idx){
+  const pl=tipo==='edit'?fert_planes[idx]:null;
+  const mi=document.getElementById('modal-inner');
+  mi.innerHTML=`
+    <div class="modal-tit">📋 ${pl?'Editar':'Nuevo'} plan de fertilización</div>
+    <div class="mfield"><label>Nombre</label><input id="fp-nom" value="${pl?pl.nom:''}" placeholder="ej: General, Ranúnculo"></div>
+    <div class="mgrid2">
+      <div class="mfield"><label>N° camas</label><input type="number" id="fp-nc" value="${pl?pl.ncamas:20}" min="1" inputmode="numeric"></div>
+      <div class="mfield"><label>Litros estanque</label><input type="number" id="fp-l" value="${pl?pl.litros:500}" min="1" inputmode="numeric"></div>
+    </div>
+    <div class="mfield"><label>Frecuencia (aplicaciones/semana)</label>
+      <select id="fp-frec">
+        ${[1,2,3].map(n=>`<option value="${n}"${pl&&pl.frecSem===n?' selected':''}>${n}×/semana</option>`).join('')}
+      </select>
+    </div>
+    <div class="mfield"><label>Orden de mezcla / Notas</label>
+      <textarea id="fp-orden" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:12px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;resize:none;height:64px">${pl?pl.orden||'':''}</textarea>
+    </div>
+    <div style="font-size:11px;color:var(--tx3);margin-bottom:12px">Las etapas y productos se editan desde el botón ✏️ en la tarjeta del plan (tab Fertil).</div>
+    <button class="btn-pri" onclick="saveFertPlan('${tipo}',${idx!=null?idx:'null'})">Guardar</button>
+    <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+  document.getElementById('ov').classList.add('on');
+  setTimeout(()=>{const n=document.getElementById('fp-nom');if(n)n.focus();},120);
+}
+function saveFertPlan(tipo,idx){
+  const nom=(document.getElementById('fp-nom').value||'').trim();
+  if(!nom){toast('Ingresá un nombre','err');return;}
+  const ncamas=parseInt(document.getElementById('fp-nc').value)||20;
+  const litros=parseInt(document.getElementById('fp-l').value)||500;
+  const frecSem=parseInt(document.getElementById('fp-frec').value)||1;
+  const orden=document.getElementById('fp-orden').value||'';
+  if(tipo==='add'){
+    fert_planes.push({id:'fp_'+Date.now(),nom,ncamas,litros,frecSem,orden,etapaActual:0,etapas:[
+      {nom:'Etapa 1',prods:[]}
+    ]});
+  } else {
+    const pl=fert_planes[idx];
+    pl.nom=nom; pl.ncamas=ncamas; pl.litros=litros; pl.frecSem=frecSem; pl.orden=orden;
+  }
+  save('pr_fert_planes',fert_planes);
+  closeOv();
+  renderFertPlanesConfig();
+  renderFertSem();
+  toast('Plan guardado','ok');
+}
+
+// ── PRODS CONFIG ──────────────────────────────────────────────────────────
 function renderProdsConfig(){
   const el=document.getElementById('cfg-prods');
   if(!el) return;
@@ -1724,7 +2045,6 @@ function delProd(i){
   prods.splice(i,1);
   save('pr_prods',prods);
   renderProdsConfig();
-  renderFertProds(pNum(document.getElementById('fv-l')?.value||'0'));
   toast('Insumo eliminado');
 }
 function saveProd(tipo,ctx){
@@ -1732,14 +2052,13 @@ function saveProd(tipo,ctx){
   const precio=parseFloat(document.getElementById('ap-precio').value)||0;
   const unidad=document.getElementById('ap-uni').value||'kg';
   const dosis=parseFloat(document.getElementById('ap-dosis').value)||0;
-  if(!nom){ toast('Ingresá un nombre','err'); return; }
+  if(!nom){toast('Ingresá un nombre','err');return;}
   const prod={id:tipo==='add-prod'?('p'+Date.now()):prods[ctx].id,nom,precio,unidad,dosis};
   if(tipo==='add-prod') prods.push(prod);
   else prods[ctx]=prod;
   save('pr_prods',prods);
   closeOv();
   renderProdsConfig();
-  renderFertProds(pNum(document.getElementById('fv-l')?.value||'0'));
   toast(`✓ ${prod.nom} guardado`,'ok');
 }
 
@@ -1753,7 +2072,7 @@ function showSec(id){
   if(id==='cfg')   { renderCfg(); }
   if(id==='tar')   { renderTareas(); }
   if(id==='clima') { renderTemps(); }
-  if(id==='fert')  { renderFertChips(); calcFert(); }
+  if(id==='fert')  { renderFertSem(); }
   if(id==='notas') { const nf=document.getElementById('nota-fecha');if(nf&&!nf.value)nf.value=ds(new Date()); renderNotas(); }
 }
 
@@ -2006,6 +2325,7 @@ function renderTemps(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
+mergeDefaultProds();
 renderSem();
 loadAll().then(()=>{
   renderSem();
@@ -2015,7 +2335,7 @@ loadAll().then(()=>{
     if(act.id==='sec-cfg')   renderCfg();
     if(act.id==='sec-plan')  renderPlan();
     if(act.id==='sec-clima') renderTemps();
-    if(act.id==='sec-fert')  { renderFertChips(); calcFert(); }
+    if(act.id==='sec-fert')  renderFertSem();
   }
 });
 </script>
