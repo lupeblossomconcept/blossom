@@ -345,7 +345,6 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     <button class="btn-pri" style="margin-bottom:8px;margin-top:4px" onclick="saveEst()">🌱 Registrar fertilización</button>
     <button class="btn-sec" onclick="clearEst()">Limpiar selección</button>
   </div>
-  <div id="fert-log-card"></div>
   <div id="esp-cards"></div>
   <div class="card" id="hist-card" style="display:none">
     <div class="ctit">🌧 Lluvia esta semana</div>
@@ -360,10 +359,9 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 
 <!-- FERTIL -->
 <div class="sec" id="sec-fert">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px 6px">
-    <button onclick="fertWeekOff--;renderFertSem()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 10px;font-size:14px;cursor:pointer;color:var(--tx2)">‹</button>
-    <span id="fert-week-lbl" style="font-size:13px;font-weight:700;color:var(--tx)"></span>
-    <button onclick="fertWeekOff++;renderFertSem()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 10px;font-size:14px;cursor:pointer;color:var(--tx2)">›</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px 8px">
+    <div class="ctit" style="margin-bottom:0">Planes de fertilización</div>
+    <button class="add-btn" style="margin:0" onclick="openFertPlanModal('add',null)">+ Plan</button>
   </div>
   <div id="fert-plan-cards"></div>
 </div>
@@ -446,12 +444,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <div id="cfg-reglas"></div>
   <button class="add-btn" onclick="openModal('add-regla')">+ Agregar regla</button>
   <div style="padding:0 13px;margin-bottom:6px;margin-top:10px">
-    <div class="ctit" style="margin-bottom:6px">📋 Planes de Fertilización</div>
-  </div>
-  <div id="cfg-fert-planes"></div>
-  <button class="add-btn" onclick="openFertPlanModal('add',null)">+ Agregar plan de fertilización</button>
-  <div style="padding:0 13px;margin-bottom:6px;margin-top:10px">
-    <div class="ctit" style="margin-bottom:6px">🧪 Insumos / Fertilizantes</div>
+    <div class="ctit" style="margin-bottom:6px">🧪 Fertilizantes</div>
   </div>
   <div id="cfg-prods"></div>
   <button class="add-btn" onclick="openModal('add-prod')">+ Agregar insumo</button>
@@ -762,17 +755,12 @@ function renderEspEvts(evE){
     const rows=byDate[d].map(ev=>{
       const ico=ev.tipo==='riego'?'💧':'🌱';
       const color=ev.tipo==='riego'?'var(--azul)':'var(--verde)';
-      const sub=ev.min>0?ev.min+' min':(ev.tipo==='fertilizacion'&&ev.etapa?ev.etapa:(ev.nota||''));
-      const prodsHtml=ev.tipo==='fertilizacion'&&ev.prods?.length
-        ?`<div style="margin:4px 0 2px;padding:5px 8px;background:var(--verde-l);border-radius:6px">`
-          +ev.prods.map(p=>`<span style="font-size:9.5px;color:var(--verde);font-weight:600">${p.nom} ${p.amt}${p.uni}</span>`).join(' · ')
-          +`</div>`:'';
-      return `<div class="evts-row" style="flex-wrap:wrap">
+      const sub=ev.min>0?ev.min+' min':(ev.nota||'');
+      return `<div class="evts-row">
         <span style="font-size:13px">${ico}</span>
         <span style="flex:1;font-size:11px;color:var(--tx2)">${sub}</span>
-        <span style="font-size:11px;font-weight:700;color:${color}">${ev.mm>0?ev.mm.toFixed(1)+' mm':(ev.litros?ev.litros+'L':'')}</span>
+        <span style="font-size:11px;font-weight:700;color:${color}">${ev.mm.toFixed(1)} mm</span>
         <button style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:15px;padding:0 0 0 5px;line-height:1" onclick="delEv('${ev.id}')">×</button>
-        ${prodsHtml?`<div style="width:100%;padding-left:21px">${prodsHtml}</div>`:''}
       </div>`;
     }).join('');
     return `<div class="evts-date-hdr">${lbl}</div>${rows}`;
@@ -860,47 +848,13 @@ function renderSem(){
   const bd=document.getElementById('dash-breakdown');
   if(bd) bd.textContent=parts.length?parts.join(' · '):'';
 
-  // Log fertilizaciones esta semana
-  const fertEvts=wEvts.filter(e=>e.tipo==='fertilizacion').sort((a,b)=>b.fecha.localeCompare(a.fecha));
-  const logEl=document.getElementById('fert-log-card');
-  if(logEl){
-    if(fertEvts.length){
-      logEl.innerHTML=`<div class="card" style="margin:0 13px 14px;padding:0;overflow:hidden">
-        <div style="padding:11px 13px 8px;font-size:9.5px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.07em">🌱 Fertilizaciones esta semana</div>
-        ${fertEvts.map(ev=>{
-          const dateStr=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short'});
-          const especiesStr=(ev.especies&&ev.especies.length?ev.especies.join(', '):ev.especie)||'';
-          const prodsHtml=(ev.prods||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="font-size:10.5px;color:var(--tx2)">${p.nom}${p.riego&&p.riego!=='U'?' ('+p.riego+')':''}</span><span style="font-size:10.5px;font-weight:700;color:var(--verde)">${p.amt}${p.uni}</span></div>`).join('');
-          const hasDetail=ev.etapa||ev.prods?.length||ev.costo>0;
-          return `<div style="padding:10px 13px;border-top:1px solid var(--br)">
-            <div style="display:flex;align-items:flex-start;gap:8px">
-              <div style="flex:1;min-width:0">
-                <div style="font-size:11px;font-weight:700;color:var(--tx)">${dateStr}${ev.etapa?` · <span style="color:var(--verde)">${ev.etapa}</span>`:''}</div>
-                ${especiesStr?`<div style="font-size:12px;font-weight:600;color:var(--tx);margin-top:3px">${especiesStr}</div>`:''}
-                ${ev.litros?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">${ev.litros}L · ${ev.camas} camas</div>`:''}
-                ${ev.mm>0?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">${ev.mm.toFixed(2)} mm</div>`:''}
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-                ${ev.costo>0?`<span style="font-size:11px;font-weight:700;color:var(--bordo)">$${Math.round(ev.costo).toLocaleString('es-CL')}</span>`:''}
-                <button style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:16px;padding:0;line-height:1" onclick="delEv('${ev.id}')">×</button>
-              </div>
-            </div>
-            ${prodsHtml?`<div style="background:var(--gris);border-radius:var(--rs);padding:7px 10px;margin-top:8px">${prodsHtml}</div>`:''}
-          </div>`;
-        }).join('')}
-      </div>`;
-    } else {
-      logEl.innerHTML='';
-    }
-  }
-
   // Cards por especie
   const cont = document.getElementById('esp-cards');
   let _le='';
   cont.innerHTML = sortedSpp().map(e=>{
     const plan = planForMes(e, mk);
     if(!plan) return '';
-    const evE   = wEvts.filter(v=>v.especie===espId(e)||(v.especies&&v.especies.includes(e.nom)));
+    const evE   = wEvts.filter(v=>v.especie===espId(e));
     const mmR   = evE.filter(v=>v.tipo==='riego').reduce((s,v)=>s+v.mm,0);
     const mmF   = evE.filter(v=>v.tipo==='fertilizacion').reduce((s,v)=>s+v.mm,0);
     const mmL   = lluvia;
@@ -962,7 +916,7 @@ function renderSem(){
   weekNotaDirty=false;
 }
 
-function delEv(id){ eventos=eventos.filter(e=>e.id!==id); save('pr_eventos',eventos); renderSem(); }
+function delEv(id){ eventos=eventos.filter(e=>e.id!==id); save('pr_eventos',eventos); renderSem(); renderFertSem(); }
 
 // ── PLAN ──────────────────────────────────────────────────────────────────
 function allMeses(){
@@ -1117,7 +1071,6 @@ function renderCfg(){
     </div>`).join('');
 
   renderProdsConfig();
-  renderFertPlanesConfig();
 
   // Eventos huérfanos
   const hObj=getHuerfanos();
@@ -1458,25 +1411,21 @@ function openModal(tipo, ctx){
   if(tipo==='add-prod'||tipo==='edit-prod'){
     const p=tipo==='edit-prod'?prods[ctx]:null;
     mi.innerHTML=`
-      <div class="modal-tit">🧪 ${p?'Editar':'Nuevo'} insumo</div>
+      <div class="modal-tit">🧪 ${p?'Editar':'Nuevo'} fertilizante</div>
       <div class="mfield"><label>Nombre</label><input id="ap-nom" value="${p?p.nom:''}" placeholder="ej: Nitrato de Potasio"></div>
       <div class="mgrid2">
-        <div class="mfield"><label>Precio</label>
-          <input type="number" id="ap-precio" value="${p?p.precio:''}" min="0" inputmode="decimal" placeholder="0">
-        </div>
         <div class="mfield"><label>Unidad</label>
           <select id="ap-uni" onchange="document.getElementById('ap-dosis-uni').textContent=this.value==='L'?'cc/L':'g/L'">
-            <option value="kg"${p&&p.unidad==='kg'?' selected':''}>kg</option>
+            <option value="kg"${!p||p.unidad==='kg'?' selected':''}>kg</option>
             <option value="L"${p&&p.unidad==='L'?' selected':''}>L</option>
           </select>
         </div>
-      </div>
-      <div class="mfield"><label>Dosis por defecto</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="number" id="ap-dosis" value="${p?p.dosis:''}" min="0" step="0.1" inputmode="decimal" style="flex:1" placeholder="0">
-          <span id="ap-dosis-uni" style="font-size:12px;color:var(--tx3);white-space:nowrap;min-width:36px">${p&&p.unidad==='L'?'cc/L':'g/L'}</span>
+        <div class="mfield"><label>Dosis base</label>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="ap-dosis" value="${p?p.dosis:''}" min="0" step="0.01" inputmode="decimal" style="flex:1" placeholder="0">
+            <span id="ap-dosis-uni" style="font-size:11px;color:var(--tx3);white-space:nowrap">${p&&p.unidad==='L'?'cc/L':'g/L'}</span>
+          </div>
         </div>
-        <div style="font-size:10px;color:var(--tx3);margin-top:4px">Por cada litro de agua en el estanque.</div>
       </div>
       <button class="btn-pri" onclick="saveProd('${tipo}',${ctx!==undefined?ctx:'null'})">Guardar</button>
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
@@ -1795,53 +1744,53 @@ function fmtAmt(amt, unidad){
 }
 
 function renderFertSem(){
-  const mon=fpMon(fertWeekOff);
-  const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-  const monStr=fpDs(mon), sunStr=fpDs(sun);
-
-  const lblEl=document.getElementById('fert-week-lbl');
-  if(lblEl) lblEl.textContent=(fertWeekOff===0?'Esta semana · ':'')+fpFmtWeek(mon);
-
   const cardsEl=document.getElementById('fert-plan-cards');
   if(!cardsEl) return;
   if(!fert_planes.length){
-    cardsEl.innerHTML=`<div class="card" style="text-align:center;color:var(--tx3);font-size:12px">Sin planes. Agregá uno en Config ⚙️</div>`;
+    cardsEl.innerHTML=`<div class="card" style="text-align:center;color:var(--tx3);font-size:12px;padding:20px">Sin planes — tocá "+ Plan" para agregar uno.</div>`;
     return;
   }
   cardsEl.innerHTML=fert_planes.map((pl,i)=>{
-    const evs=fpEventsForPlan(pl.id, monStr, sunStr);
-    const done=evs.length;
-    const planned=pl.frecSem||1;
     const etapaIdx=pl.etapaActual||0;
-    const etapa=pl.etapas&&pl.etapas[etapaIdx];
+    const etapa=(pl.etapas||[])[etapaIdx];
     const nEtapas=(pl.etapas||[]).length;
-    const pct=planned>0?Math.min(100,done/planned*100):0;
-    const dots=Array.from({length:planned},(_,j)=>`<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${j<done?'var(--verde)':'var(--br2)'};margin-right:4px;flex-shrink:0"></span>`).join('');
-    const lastEv=[...eventos].filter(e=>e.tipo==='fertilizacion'&&e.planId===pl.id).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];
-    const lastDate=lastEv?`Última: ${new Date(lastEv.fecha+'T12:00:00').toLocaleDateString('es-CL',{day:'numeric',month:'short'})}`:'Sin registros aún';
+    const stageEvts=etapa
+      ?[...eventos].filter(e=>e.tipo==='fertilizacion'&&e.planId===pl.id&&e.etapa===etapa.nom)
+         .sort((a,b)=>b.fecha.localeCompare(a.fecha))
+      :[];
+    const evtsHtml=stageEvts.length
+      ?stageEvts.map(ev=>{
+          const dateStr=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short'});
+          const especiesStr=(ev.especies&&ev.especies.length?ev.especies:ev.especie?[ev.especie]:[]).join(', ');
+          const prodsStr=(ev.prods||[]).map(p=>`${p.nom} ${p.amt}${p.uni}`).join(' · ');
+          return `<div style="padding:9px 13px;border-top:1px solid var(--br);display:flex;align-items:flex-start;gap:8px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:700;color:var(--tx)">${dateStr}${ev.litros?` · ${ev.litros}L`:''}</div>
+              ${especiesStr?`<div style="font-size:12px;font-weight:600;color:var(--verde);margin-top:3px">${especiesStr}</div>`:''}
+              ${prodsStr?`<div style="font-size:10px;color:var(--tx3);margin-top:3px;line-height:1.5">${prodsStr}</div>`:''}
+            </div>
+            <button style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:20px;padding:0;flex-shrink:0;line-height:1" onclick="delEv('${ev.id}')">×</button>
+          </div>`;
+        }).join('')
+      :`<div style="padding:10px 13px;font-size:11px;color:var(--tx3)">Sin aplicaciones en esta etapa</div>`;
     return `<div class="esp-card">
       <div class="esp-top">
-        <div>
-          <div class="esp-nom">${pl.nom}</div>
-          <div class="esp-cfg">${pl.ncamas} camas · ${pl.litros}L · ${planned}×/sem</div>
+        <div><div class="esp-nom">${pl.nom}</div><div class="esp-cfg">${pl.ncamas} camas · ${pl.litros}L</div></div>
+        <div style="display:flex;gap:2px">
+          <button class="icon-btn" onclick="addEtapaAlPlan(${i})" title="Nueva etapa">＋</button>
+          <button class="icon-btn" onclick="openFertPlanModal('edit',${i})">✏️</button>
         </div>
-        <button class="icon-btn" onclick="openFertPlanModal('edit',${i})" style="margin-top:-2px">✏️</button>
       </div>
-      <div style="display:flex;align-items:center;gap:4px;padding:6px 13px 8px;background:var(--verde-l)">
-        <button onclick="changeFertEtapa(${i},-1)" style="background:none;border:none;color:var(--verde);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;opacity:${etapaIdx>0?1:0.3}" ${etapaIdx===0?'disabled':''}>‹</button>
+      <div style="display:flex;align-items:center;gap:2px;padding:6px 8px;background:var(--verde-l)">
+        <button onclick="changeFertEtapa(${i},-1)" style="background:none;border:none;color:var(--verde);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;opacity:${etapaIdx>0?1:0.3}" ${etapaIdx===0?'disabled':''}>‹</button>
         <div style="flex:1;font-size:11px;font-weight:600;color:var(--verde);text-align:center">E${etapaIdx+1}/${nEtapas}: ${etapa?etapa.nom:'—'}</div>
-        <button onclick="changeFertEtapa(${i},1)" style="background:none;border:none;color:var(--verde);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;opacity:${etapaIdx<nEtapas-1?1:0.3}" ${etapaIdx===nEtapas-1?'disabled':''}>›</button>
+        <button onclick="openStageEditModal(${i},${etapaIdx})" style="background:none;border:none;color:var(--verde);font-size:14px;cursor:pointer;padding:2px 6px;line-height:1" title="Editar etapa">✏️</button>
+        <button onclick="changeFertEtapa(${i},1)" style="background:none;border:none;color:var(--verde);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;opacity:${etapaIdx<nEtapas-1?1:0.3}" ${etapaIdx===nEtapas-1?'disabled':''}>›</button>
       </div>
-      <div class="esp-prog">
-        <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:var(--verde)"></div></div>
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:5px;margin-bottom:2px">
-          ${dots}
-          <span style="font-size:11px;color:${done>=planned?'var(--verde)':'var(--tx3)'};font-weight:600">${done}/${planned} esta semana</span>
-        </div>
-        <div class="esp-stat">${lastDate}</div>
-      </div>
+      ${evtsHtml}
       <div class="esp-bottom">
-        <button class="esp-reg-btn" onclick="openFertRegModal(${i})">🧪 Registrar fertilización</button>
+        <button class="esp-reg-btn" onclick="openFertRegModal(${i})">🧪 Registrar</button>
+        ${nEtapas>1?`<button class="esp-reg-btn" style="color:var(--rojo);border-left:1px solid var(--br)" onclick="delEtapaDelPlan(${i},${etapaIdx})">🗑 Etapa</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1855,6 +1804,112 @@ function changeFertEtapa(idx, delta){
   save('pr_fert_planes',fert_planes);
   renderFertSem();
   renderFertPlanRef();
+}
+
+// ── STAGE EDIT ────────────────────────────────────────────────────────────
+function addEtapaAlPlan(planIdx){
+  const pl=fert_planes[planIdx];
+  if(!pl) return;
+  const nom=prompt('Nombre de la nueva etapa:','Etapa '+(pl.etapas.length+1));
+  if(!nom||!nom.trim()) return;
+  pl.etapas.push({nom:nom.trim(),prods:[]});
+  pl.etapaActual=pl.etapas.length-1;
+  save('pr_fert_planes',fert_planes);
+  renderFertSem();
+  toast('Etapa agregada');
+}
+
+function delEtapaDelPlan(planIdx, stageIdx){
+  const pl=fert_planes[planIdx];
+  if(!pl||!pl.etapas[stageIdx]) return;
+  if(!confirm('¿Eliminar la etapa "'+pl.etapas[stageIdx].nom+'" y todos sus registros?')) return;
+  pl.etapas.splice(stageIdx,1);
+  pl.etapaActual=Math.max(0,Math.min(pl.etapas.length-1,pl.etapaActual||0));
+  save('pr_fert_planes',fert_planes);
+  renderFertSem();
+  toast('Etapa eliminada');
+}
+
+let _stageCtx=null; // {planIdx, stageIdx, nom, prods:[{prodId,riego,dosisPorL,nota}]}
+
+function openStageEditModal(planIdx, stageIdx){
+  const pl=fert_planes[planIdx];
+  if(!pl) return;
+  const et=pl.etapas[stageIdx];
+  if(!et) return;
+  _stageCtx={planIdx, stageIdx, nom:et.nom, prods:et.prods.map(p=>({...p}))};
+  const mi=document.getElementById('modal-inner');
+  mi.innerHTML=`
+    <div class="modal-tit">✏️ Editar etapa</div>
+    <div class="mfield"><label>Nombre de la etapa</label><input id="se-nom" value="${et.nom}"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px">Productos</div>
+    <div id="se-prods-list"></div>
+    <button class="btn-sec" style="width:100%;margin-top:6px;font-size:12px" onclick="addStageProdRow()">+ Agregar producto</button>
+    <button class="btn-pri" style="margin-top:12px" onclick="saveStageEdit()">Guardar</button>
+    <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+  renderStageProdsList();
+  document.getElementById('ov').classList.add('on');
+  setTimeout(()=>{const n=document.getElementById('se-nom');if(n)n.focus();},120);
+}
+
+function renderStageProdsList(){
+  const el=document.getElementById('se-prods-list');
+  if(!el||!_stageCtx) return;
+  if(!_stageCtx.prods.length){
+    el.innerHTML=`<div style="font-size:12px;color:var(--tx3);padding:6px 0 4px">Sin productos. Tocá "+ Agregar producto".</div>`;
+    return;
+  }
+  el.innerHTML=_stageCtx.prods.map((pp,i)=>{
+    const prodOpts=prods.map(p=>`<option value="${p.id}"${p.id===pp.prodId?' selected':''}>${p.nom} (${p.unidad==='L'?'cc/L':'g/L'})</option>`).join('');
+    const rOpts=['U','R1','R2'].map(r=>`<option value="${r}"${r===pp.riego?' selected':''}>${r==='U'?'Único':r}</option>`).join('');
+    return `<div style="background:var(--gris);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <select id="se-prod-${i}" style="flex:1;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:12px;background:#fff;color:var(--tx)">${prodOpts}</select>
+        <select id="se-riego-${i}" style="width:68px;padding:7px 6px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:12px;background:#fff;color:var(--tx)">${rOpts}</select>
+        <button onclick="delStageProdRow(${i})" style="background:none;border:none;color:var(--tx3);font-size:20px;cursor:pointer;padding:0;line-height:1">×</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="flex:1"><label style="font-size:10px;color:var(--tx3);display:block;margin-bottom:3px">Dosis (por litro)</label>
+          <input type="number" id="se-dosis-${i}" value="${pp.dosisPorL}" step="0.001" min="0" inputmode="decimal" style="width:100%;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:#fff;color:var(--tx);box-sizing:border-box"></div>
+        <div style="flex:1"><label style="font-size:10px;color:var(--tx3);display:block;margin-bottom:3px">Nota (opcional)</label>
+          <input id="se-nota-${i}" value="${pp.nota||''}" placeholder="" style="width:100%;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:12px;background:#fff;color:var(--tx);box-sizing:border-box"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addStageProdRow(){
+  if(!_stageCtx) return;
+  const defProd=prods[0];
+  _stageCtx.prods.push({prodId:defProd?defProd.id:'',riego:'R2',dosisPorL:0,nota:''});
+  renderStageProdsList();
+}
+
+function delStageProdRow(i){
+  if(!_stageCtx) return;
+  _stageCtx.prods.splice(i,1);
+  renderStageProdsList();
+}
+
+function saveStageEdit(){
+  if(!_stageCtx) return;
+  const nom=(document.getElementById('se-nom').value||'').trim();
+  if(!nom){toast('Ingresá un nombre para la etapa','err');return;}
+  const updatedProds=_stageCtx.prods.map((pp,i)=>({
+    prodId:document.getElementById('se-prod-'+i)?.value||pp.prodId,
+    riego:document.getElementById('se-riego-'+i)?.value||pp.riego,
+    dosisPorL:parseFloat(document.getElementById('se-dosis-'+i)?.value)||0,
+    nota:(document.getElementById('se-nota-'+i)?.value||'').trim()
+  })).filter(pp=>pp.prodId&&pp.dosisPorL>0);
+  const pl=fert_planes[_stageCtx.planIdx];
+  const et=pl&&pl.etapas[_stageCtx.stageIdx];
+  if(!et) return;
+  et.nom=nom;
+  et.prods=updatedProds;
+  save('pr_fert_planes',fert_planes);
+  closeOv();
+  renderFertSem();
+  toast('Etapa guardada');
 }
 
 // ── DOSAGE MODAL ──────────────────────────────────────────────────────────
@@ -1886,7 +1941,6 @@ function renderFertRegModal(){
   const litros=camas>0?+(litrosBase*(camas/ncamasBase)).toFixed(1):0;
 
   let prodsHtml='';
-  let totalCosto=0;
 
   if(camas>0&&etapa&&etapa.prods.length){
     const riegos=[...new Set(etapa.prods.map(pp=>pp.riego))];
@@ -1896,8 +1950,6 @@ function renderFertRegModal(){
       const rows=rProds.map(pp=>{
         const prod=getProd(pp.prodId);
         const amt=calcProdAmt(pp.dosisPorL, litros);
-        const costo=calcProdCosto(amt,prod);
-        totalCosto+=costo;
         return `<div style="display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--br)">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600">${prod?prod.nom:pp.prodId}</div>
@@ -1905,7 +1957,6 @@ function renderFertRegModal(){
           </div>
           <div style="text-align:right;flex-shrink:0;margin-left:12px">
             <div style="font-size:15px;font-weight:700;color:var(--verde)">${fmtAmt(amt,prod?prod.unidad:'g')}</div>
-            ${costo>0?`<div style="font-size:10px;color:var(--tx3)">$${Math.round(costo).toLocaleString('es-CL')}</div>`:''}
           </div>
         </div>`;
       }).join('');
@@ -1937,10 +1988,6 @@ function renderFertRegModal(){
     </div>`:`<div style="font-size:11px;color:var(--tx3);padding:6px 0 14px">Seleccioná al menos una especie para ver las dosis</div>`}
     ${ordenHtml}
     ${prodsHtml?`<div>${prodsHtml}</div>`:''}
-    ${totalCosto>0?`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:2px solid var(--br);margin-top:6px">
-      <span style="font-size:13px;font-weight:700">Costo estimado</span>
-      <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--bordo)">$${Math.round(totalCosto).toLocaleString('es-CL')}</span>
-    </div>`:''}
     ${camas>0?`
     <div class="mfield" style="margin-top:10px"><label>Fecha</label><input type="date" id="fr-fecha" value="${fpDs(new Date())}"></div>
     <div class="mfield"><label>Nota (opcional)</label><textarea id="fr-nota" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;resize:none;height:52px"></textarea></div>
@@ -1965,14 +2012,11 @@ function saveFertReg(){
   const nota=(document.getElementById('fr-nota')||{}).value||'';
 
   let prodsList=[];
-  let totalCosto=0;
   if(etapa){
     etapa.prods.forEach(pp=>{
       const prod=getProd(pp.prodId);
       const amt=calcProdAmt(pp.dosisPorL, L);
-      const costo=calcProdCosto(amt,prod);
-      totalCosto+=costo;
-      prodsList.push({prodId:pp.prodId,nom:prod?prod.nom:pp.prodId,riego:pp.riego,dosis:pp.dosisPorL,amt:Math.round(amt),uni:prod?(prod.unidad==='L'?'cc':'g'):'g',costo:Math.round(costo)});
+      prodsList.push({prodId:pp.prodId,nom:prod?prod.nom:pp.prodId,riego:pp.riego,dosis:pp.dosisPorL,amt:Math.round(amt),uni:prod?(prod.unidad==='L'?'cc':'g'):'g'});
     });
   }
 
@@ -1988,7 +2032,6 @@ function saveFertReg(){
     especies:especiesList,
     mm:0,
     prods:prodsList,
-    costo:Math.round(totalCosto),
     nota:(nota+(nota&&prodNota?' · ':'')+prodNota).trim()
   };
   eventos.push(ev);
@@ -1996,7 +2039,7 @@ function saveFertReg(){
   closeOv();
   renderFertSem();
   renderSem();
-  toast(`✓ ${especiesList.join(', ')} · ${L}L${totalCosto>0?' · $'+Math.round(totalCosto).toLocaleString('es-CL'):''}`, 'ok');
+  toast(`✓ ${especiesList.join(', ')} · ${L}L`, 'ok');
 }
 
 // ── FERT PLAN CONFIG ──────────────────────────────────────────────────────
@@ -2083,7 +2126,7 @@ function renderProdsConfig(){
     <div class="cfg-esp-item">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700">${p.nom}</div>
-        <div style="font-size:11px;color:var(--tx3)">$${p.precio.toLocaleString('es-CL')}/${p.unidad} · dosis: ${p.dosis} ${p.unidad==='L'?'cc/L':'g/L'}</div>
+        <div style="font-size:11px;color:var(--tx3)">${p.unidad} · dosis base: ${p.dosis} ${p.unidad==='L'?'cc/L':'g/L'}</div>
       </div>
       <button class="icon-btn" onclick="openModal('edit-prod',${i})">✏️</button>
       <button class="icon-btn" onclick="delProd(${i})" style="color:var(--rojo)">🗑️</button>
@@ -2098,11 +2141,10 @@ function delProd(i){
 }
 function saveProd(tipo,ctx){
   const nom=(document.getElementById('ap-nom').value||'').trim();
-  const precio=parseFloat(document.getElementById('ap-precio').value)||0;
   const unidad=document.getElementById('ap-uni').value||'kg';
   const dosis=parseFloat(document.getElementById('ap-dosis').value)||0;
   if(!nom){toast('Ingresá un nombre','err');return;}
-  const prod={id:tipo==='add-prod'?('p'+Date.now()):prods[ctx].id,nom,precio,unidad,dosis};
+  const prod={id:tipo==='add-prod'?('p'+Date.now()):prods[ctx].id,nom,precio:0,unidad,dosis};
   if(tipo==='add-prod') prods.push(prod);
   else prods[ctx]=prod;
   save('pr_prods',prods);
