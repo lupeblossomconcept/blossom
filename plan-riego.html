@@ -2372,18 +2372,19 @@ async function syncSheets(){
       const especiesList=(ev.especies&&ev.especies.length)?ev.especies:(ev.especie?[ev.especie]:[]);
       const totalCamas=ev.camas||1;
       const totalLitros=ev.litros||0;
-      (ev.prods||[]).forEach(prod=>{
+      const prodsList=ev.prods&&ev.prods.length?ev.prods:[{nom:'',riego:'',dosis:0,amt:0,uni:''}];
+      prodsList.forEach(prod=>{
         especiesList.forEach(espNom=>{
           const espObj=spp.find(s=>s.nom===espNom);
           const espCamas=espObj?.ncamas||Math.round(totalCamas/Math.max(especiesList.length,1));
           const espLitros=totalCamas>0?+(totalLitros*espCamas/totalCamas).toFixed(1):0;
-          const espAmt=+(prod.dosis*espLitros).toFixed(1);
+          const espAmt=prod.dosis?+(prod.dosis*espLitros).toFixed(1):'';
           fertRows.push([
             ev.fecha, _fertSemLbl(ev.fecha),
             planNom, ev.etapa||'',
             espNom, espCamas, espLitros,
-            prod.nom, prod.riego||'',
-            espAmt, prod.uni||'g'
+            prod.nom||'', prod.riego||'',
+            espAmt, prod.uni||''
           ]);
         });
       });
