@@ -345,6 +345,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     <button class="btn-pri" style="margin-bottom:8px;margin-top:4px" onclick="saveEst()">🌱 Registrar fertilización</button>
     <button class="btn-sec" onclick="clearEst()">Limpiar selección</button>
   </div>
+  <div id="fert-log-card"></div>
   <div id="esp-cards"></div>
   <div class="card" id="hist-card" style="display:none">
     <div class="ctit">🌧 Lluvia esta semana</div>
@@ -761,12 +762,17 @@ function renderEspEvts(evE){
     const rows=byDate[d].map(ev=>{
       const ico=ev.tipo==='riego'?'💧':'🌱';
       const color=ev.tipo==='riego'?'var(--azul)':'var(--verde)';
-      const sub=ev.min>0?ev.min+' min':(ev.nota||'');
-      return `<div class="evts-row">
+      const sub=ev.min>0?ev.min+' min':(ev.tipo==='fertilizacion'&&ev.etapa?ev.etapa:(ev.nota||''));
+      const prodsHtml=ev.tipo==='fertilizacion'&&ev.prods?.length
+        ?`<div style="margin:4px 0 2px;padding:5px 8px;background:var(--verde-l);border-radius:6px">`
+          +ev.prods.map(p=>`<span style="font-size:9.5px;color:var(--verde);font-weight:600">${p.nom} ${p.amt}${p.uni}</span>`).join(' · ')
+          +`</div>`:'';
+      return `<div class="evts-row" style="flex-wrap:wrap">
         <span style="font-size:13px">${ico}</span>
         <span style="flex:1;font-size:11px;color:var(--tx2)">${sub}</span>
-        <span style="font-size:11px;font-weight:700;color:${color}">${ev.mm.toFixed(1)} mm</span>
+        <span style="font-size:11px;font-weight:700;color:${color}">${ev.mm>0?ev.mm.toFixed(1)+' mm':(ev.litros?ev.litros+'L':'')}</span>
         <button style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:15px;padding:0 0 0 5px;line-height:1" onclick="delEv('${ev.id}')">×</button>
+        ${prodsHtml?`<div style="width:100%;padding-left:21px">${prodsHtml}</div>`:''}
       </div>`;
     }).join('');
     return `<div class="evts-date-hdr">${lbl}</div>${rows}`;
@@ -854,13 +860,47 @@ function renderSem(){
   const bd=document.getElementById('dash-breakdown');
   if(bd) bd.textContent=parts.length?parts.join(' · '):'';
 
+  // Log fertilizaciones esta semana
+  const fertEvts=wEvts.filter(e=>e.tipo==='fertilizacion').sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const logEl=document.getElementById('fert-log-card');
+  if(logEl){
+    if(fertEvts.length){
+      logEl.innerHTML=`<div class="card" style="margin:0 13px 14px;padding:0;overflow:hidden">
+        <div style="padding:11px 13px 8px;font-size:9.5px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.07em">🌱 Fertilizaciones esta semana</div>
+        ${fertEvts.map(ev=>{
+          const dateStr=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short'});
+          const especiesStr=(ev.especies&&ev.especies.length?ev.especies.join(', '):ev.especie)||'';
+          const prodsHtml=(ev.prods||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="font-size:10.5px;color:var(--tx2)">${p.nom}${p.riego&&p.riego!=='U'?' ('+p.riego+')':''}</span><span style="font-size:10.5px;font-weight:700;color:var(--verde)">${p.amt}${p.uni}</span></div>`).join('');
+          const hasDetail=ev.etapa||ev.prods?.length||ev.costo>0;
+          return `<div style="padding:10px 13px;border-top:1px solid var(--br)">
+            <div style="display:flex;align-items:flex-start;gap:8px">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;font-weight:700;color:var(--tx)">${dateStr}${ev.etapa?` · <span style="color:var(--verde)">${ev.etapa}</span>`:''}</div>
+                ${especiesStr?`<div style="font-size:12px;font-weight:600;color:var(--tx);margin-top:3px">${especiesStr}</div>`:''}
+                ${ev.litros?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">${ev.litros}L · ${ev.camas} camas</div>`:''}
+                ${ev.mm>0?`<div style="font-size:10px;color:var(--tx3);margin-top:2px">${ev.mm.toFixed(2)} mm</div>`:''}
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                ${ev.costo>0?`<span style="font-size:11px;font-weight:700;color:var(--bordo)">$${Math.round(ev.costo).toLocaleString('es-CL')}</span>`:''}
+                <button style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:16px;padding:0;line-height:1" onclick="delEv('${ev.id}')">×</button>
+              </div>
+            </div>
+            ${prodsHtml?`<div style="background:var(--gris);border-radius:var(--rs);padding:7px 10px;margin-top:8px">${prodsHtml}</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>`;
+    } else {
+      logEl.innerHTML='';
+    }
+  }
+
   // Cards por especie
   const cont = document.getElementById('esp-cards');
   let _le='';
   cont.innerHTML = sortedSpp().map(e=>{
     const plan = planForMes(e, mk);
     if(!plan) return '';
-    const evE   = wEvts.filter(v=>v.especie===espId(e));
+    const evE   = wEvts.filter(v=>v.especie===espId(e)||(v.especies&&v.especies.includes(e.nom)));
     const mmR   = evE.filter(v=>v.tipo==='riego').reduce((s,v)=>s+v.mm,0);
     const mmF   = evE.filter(v=>v.tipo==='fertilizacion').reduce((s,v)=>s+v.mm,0);
     const mmL   = lluvia;
