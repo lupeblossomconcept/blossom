@@ -359,9 +359,8 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 
 <!-- FERTIL -->
 <div class="sec" id="sec-fert">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px 8px">
-    <div class="ctit" style="margin-bottom:0">Planes de fertilización</div>
-    <button class="add-btn" style="margin:0" onclick="openFertPlanModal('add',null)">+ Plan</button>
+  <div style="padding:10px 13px 8px">
+    <div class="ctit" style="margin-bottom:0">Fertilización aplicada</div>
   </div>
   <div id="fert-plan-cards"></div>
 </div>
@@ -410,7 +409,10 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <div class="mes-bar" id="mes-bar"></div>
   <div id="plan-cards"></div>
   <button class="add-btn" onclick="openModal('add-esp')">+ Agregar especie</button>
-  <div style="margin:12px 13px 6px;font-size:9.5px;font-weight:600;color:var(--verde);text-transform:uppercase;letter-spacing:.07em;">🌱 Plan de Fertilización</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 13px 6px">
+    <div style="font-size:9.5px;font-weight:600;color:var(--verde);text-transform:uppercase;letter-spacing:.07em;">🌱 Plan de Fertilización</div>
+    <button class="add-btn" style="margin:0" onclick="openFertPlanModal('add',null)">+ Plan</button>
+  </div>
   <div id="fert-plan-ref"></div>
   <div style="margin:12px 13px 6px;font-size:9.5px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;">⚠ Reglas operacionales</div>
   <div id="reglas-list"></div>
