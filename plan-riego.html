@@ -875,7 +875,7 @@ function renderSem(){
     return hdr+`<div class="esp-card">
       <div class="esp-top">
         <div>
-          <div class="esp-nom">${e.nom}</div>
+          <div class="esp-nom">${e.nom}${e.etapa?`<span style="font-size:10px;font-weight:500;color:var(--tx3);margin-left:5px">· ${e.etapa}</span>`:''}</div>
           <div class="esp-cfg">${e.tasaH} mm/h · ${plan.evts} evts/sem · ${plan.mmEvt} mm/evt</div>
         </div>
         ${badgeHtml(e)}
@@ -945,7 +945,7 @@ function renderPlan(){
     return hdr+`<div class="plan-card">
       <div class="plan-hdr">
         <div>
-          <div class="plan-nom">${e.nom}</div>
+          <div class="plan-nom">${e.nom}${e.etapa?`<span style="font-size:10px;font-weight:500;color:var(--tx3);margin-left:5px">· ${e.etapa}</span>`:''}</div>
           <div class="plan-cfg">${e.config} · ${e.ncamas} camas</div>
         </div>
         <div style="display:flex;gap:2px;align-items:center">
@@ -1149,6 +1149,7 @@ function renderEstChips(){
       <div class="chip-chk">${on?'✓':''}</div>
       <div style="flex:1;min-width:0">
         <div class="chip-nom">${e.nom}</div>
+        ${e.etapa?`<div style="font-size:10px;color:var(--tx3);margin-top:1px">${e.etapa}</div>`:''}
       </div>
       <span class="chip-n">${lbl} camas</span>
     </div>`;
@@ -1983,7 +1984,10 @@ function renderFertRegModal(){
     const on=_frCtx.espSel.has(e._idx);
     return `<div class="chip${on?' on':''}" onclick="togFertEsp(${e._idx})" style="margin-bottom:6px">
       <div class="chip-chk">${on?'✓':''}</div>
-      <div style="flex:1;min-width:0"><div class="chip-nom">${e.nom}</div></div>
+      <div style="flex:1;min-width:0">
+        <div class="chip-nom">${e.nom}</div>
+        ${e.etapa?`<div style="font-size:10px;color:${on?'var(--verde)':'var(--tx3)'};margin-top:1px">${e.etapa}</div>`:''}
+      </div>
       <span class="chip-n">${e.ncamas} camas</span>
     </div>`;
   }).join('');
