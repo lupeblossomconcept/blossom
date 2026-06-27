@@ -193,6 +193,10 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 8V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2"/><line x1="12" y1="8" x2="12" y2="21"/></svg>
     Camas
   </button>
+  <button class="ntab" onclick="sw('config')" id="nt-config">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Config
+  </button>
 
 </nav>
 
@@ -374,6 +378,20 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
   <div id="sub-chist" class="sub"><div id="camas-hist-list"></div></div>
 </div>
 
+<!-- CONFIG -->
+<div id="sec-config" class="sec">
+  <div class="stit">Productos</div>
+  <div id="cfg-prod-list"></div>
+  <button class="btn" style="background:none;border:1.5px solid var(--bordo);color:var(--bordo);font-size:13px;padding:9px 16px;margin-top:6px;margin-bottom:24px" onclick="openCfgModal('add-prod',null)">+ Agregar producto</button>
+  <div class="stit">Especies</div>
+  <div id="cfg-esp-list"></div>
+  <button class="btn" style="background:none;border:1.5px solid var(--bordo);color:var(--bordo);font-size:13px;padding:9px 16px;margin-top:6px" onclick="openCfgModal('add-esp',null)">+ Agregar especie</button>
+</div>
+
+<!-- MODAL CONFIG -->
+<div id="cfg-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center" onclick="event.target===this&&closeCfgModal()">
+  <div id="cfg-modal-inner" style="background:#fff;border-radius:14px;padding:24px 22px;width:320px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.18)"></div>
+</div>
 
 <div id="toast"<div id="toast" class="toast"></div>
 
@@ -442,6 +460,16 @@ let productos=[
 ];
 
 let especies=['Aleli','Antirrhinum','Cosmos','Delphinium','Echinacea Magnus','Escabiosa','Estatice','Girasol','Lisianthus','Ranúnculo','Zinnia'];
+
+// Cargar desde localStorage si existen versiones editadas
+(function(){
+  const ps=localStorage.getItem('bl_productos');
+  if(ps) try{const p=JSON.parse(ps);if(Array.isArray(p)&&p.length)productos=p;}catch(e){}
+  const es=localStorage.getItem('bl_especies');
+  if(es) try{const v=JSON.parse(es);if(Array.isArray(v)&&v.length)especies=v;}catch(e){}
+})();
+function saveProductos(){localStorage.setItem('bl_productos',JSON.stringify(productos));}
+function saveEspecies(){localStorage.setItem('bl_especies',JSON.stringify(especies));}
 
 // Camas activas precargadas
 let camasVida=[
@@ -1367,6 +1395,7 @@ function sw(t){
   if(t==='venta'){renderVSels();renderVList();}
   if(t==='gasto'){renderGSels();}
   if(t==='camas'){renderCamasSels();renderCamasActivas();}
+  if(t==='config')renderConfigSec();
 }
 function irAGasto(tipo){sw('gasto');subG(tipo||'insumo');document.getElementById('sec-gasto').scrollIntoView({behavior:'smooth',block:'start'});}
 function subV(s){['nueva','lista'].forEach(x=>{document.getElementById('vi-'+x).classList.remove('on');document.getElementById('sub-v'+x).classList.remove('on');});document.getElementById('vi-'+s).classList.add('on');document.getElementById('sub-v'+s).classList.add('on');if(s==='lista')renderVList();}
@@ -2125,6 +2154,109 @@ function renderCamasHist(){
 }
 
 
+
+// ── CONFIG ──────────────────────────────────────────────────────
+function renderConfigSec(){
+  const pl=document.getElementById('cfg-prod-list');
+  if(pl) pl.innerHTML=productos.map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--br)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">${p.nom}</div>
+        <div style="font-size:11px;color:var(--tx2)">${p.cat} · ${p.uni}${p.precio?` · $${p.precio.toLocaleString('es-CL')}/${p.uni}`:''}${p.nota?' · '+p.nota:''}</div>
+      </div>
+      <button onclick="openCfgModal('edit-prod',${i})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px">✏️</button>
+      <button onclick="delCfgProd(${i})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px">🗑️</button>
+    </div>`).join('');
+  const el=document.getElementById('cfg-esp-list');
+  if(el) el.innerHTML=especies.map((e,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--br)">
+      <div style="flex:1;font-size:13px;font-weight:600">${e}</div>
+      <button onclick="delCfgEsp(${i})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px">🗑️</button>
+    </div>`).join('');
+}
+
+let _cfgCtx={};
+function openCfgModal(tipo,idx){
+  _cfgCtx={tipo,idx};
+  const p=tipo==='edit-prod'?productos[idx]:null;
+  const e=tipo==='edit-esp'?especies[idx]:null;
+  const m=document.getElementById('cfg-modal');
+  const mi=document.getElementById('cfg-modal-inner');
+  if(tipo==='add-prod'||tipo==='edit-prod'){
+    mi.innerHTML=`
+      <div style="font-size:15px;font-weight:700;color:var(--bordo);margin-bottom:16px">${p?'Editar':'Nuevo'} producto</div>
+      <div class="field"><label>Nombre</label><input id="cp-nom" value="${p?p.nom:''}" placeholder="ej: Sulfato de Magnesio" autocomplete="off"></div>
+      <div class="r2">
+        <div class="field"><label>Precio ($/kg o $/L)</label><input type="number" id="cp-pre" value="${p?p.precio:''}" min="0" inputmode="numeric" placeholder="0"></div>
+        <div class="field"><label>Unidad</label><select id="cp-uni"><option value="kg"${p&&p.uni==='kg'?' selected':''}>kg</option><option value="L"${p&&p.uni==='L'?' selected':''}>L</option></select></div>
+      </div>
+      <div class="field"><label>Categoría</label><select id="cp-cat"><option value="Fertilizacion"${!p||p.cat==='Fertilizacion'?' selected':''}>Fertilización</option><option value="Fitosanitario"${p&&p.cat==='Fitosanitario'?' selected':''}>Fitosanitario</option></select></div>
+      <div class="field"><label>Nota (opcional, ej: Botritis)</label><input id="cp-nota" value="${p?p.nota||'':''}" placeholder="Target, plaga, aclaración..." autocomplete="off"></div>
+      <button class="btn" style="margin-bottom:8px" onclick="saveCfgProd()">Guardar</button>
+      <button class="btn" style="background:none;border:1.5px solid var(--br);color:var(--tx2)" onclick="closeCfgModal()">Cancelar</button>`;
+  } else if(tipo==='add-esp'){
+    mi.innerHTML=`
+      <div style="font-size:15px;font-weight:700;color:var(--bordo);margin-bottom:16px">Nueva especie</div>
+      <div class="field"><label>Nombre</label><input id="ce-nom" placeholder="ej: Delphinium" autocomplete="off"></div>
+      <button class="btn" style="margin-bottom:8px" onclick="saveCfgEsp()">Agregar</button>
+      <button class="btn" style="background:none;border:1.5px solid var(--br);color:var(--tx2)" onclick="closeCfgModal()">Cancelar</button>`;
+    setTimeout(()=>{const n=document.getElementById('ce-nom');if(n)n.focus();},80);
+  }
+  m.style.display='flex';
+  setTimeout(()=>{const n=document.getElementById('cp-nom');if(n)n.focus();},80);
+}
+
+function closeCfgModal(){
+  document.getElementById('cfg-modal').style.display='none';
+}
+
+function saveCfgProd(){
+  const nom=(document.getElementById('cp-nom').value||'').trim();
+  if(!nom){toast('Ingresá un nombre','err');return;}
+  const precio=parseFloat(document.getElementById('cp-pre').value)||0;
+  const uni=document.getElementById('cp-uni').value;
+  const cat=document.getElementById('cp-cat').value;
+  const nota=(document.getElementById('cp-nota').value||'').trim();
+  const prod={nom,precio,cat,uni,nota};
+  if(_cfgCtx.tipo==='add-prod') productos.push(prod);
+  else productos[_cfgCtx.idx]=prod;
+  saveProductos();
+  closeCfgModal();
+  renderConfigSec();
+  renderGSels();
+  toast(`✓ ${nom} guardado`,'ok');
+}
+
+function delCfgProd(i){
+  if(!confirm('¿Eliminar '+productos[i].nom+'?')) return;
+  productos.splice(i,1);
+  saveProductos();
+  renderConfigSec();
+  renderGSels();
+  toast('Producto eliminado');
+}
+
+function saveCfgEsp(){
+  const nom=(document.getElementById('ce-nom').value||'').trim();
+  if(!nom){toast('Ingresá un nombre','err');return;}
+  if(especies.includes(nom)){toast('Ya existe','err');return;}
+  especies.push(nom);
+  especies.sort();
+  saveEspecies();
+  closeCfgModal();
+  renderConfigSec();
+  renderCamasSels();
+  toast(`✓ ${nom} agregada`,'ok');
+}
+
+function delCfgEsp(i){
+  if(!confirm('¿Eliminar especie '+especies[i]+'?')) return;
+  especies.splice(i,1);
+  saveEspecies();
+  renderConfigSec();
+  renderCamasSels();
+  toast('Especie eliminada');
+}
 
 // ── INIT ────────────────────────────────────────────────────────
 // Esperar que el DOM esté listo
