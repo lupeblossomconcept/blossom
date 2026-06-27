@@ -359,8 +359,13 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 
 <!-- FERTIL -->
 <div class="sec" id="sec-fert">
-  <div style="padding:10px 13px 8px">
-    <div class="ctit" style="margin-bottom:0">Fertilización aplicada</div>
+  <div class="week-nav">
+    <div class="week-lbl" id="week-lbl-fert">—</div>
+    <div class="week-btns">
+      <button onclick="navW(-1)">‹</button>
+      <button class="act" onclick="navW(0)">Hoy</button>
+      <button onclick="navW(1)">›</button>
+    </div>
   </div>
   <div id="fert-plan-cards"></div>
 </div>
@@ -813,7 +818,7 @@ function saveWeekNota(){
   weekNotaDirty=false;
   toast('✓ Comentario guardado','ok');
 }
-function navW(n){ weekOff = n===0?0:weekOff+n; renderSem(); }
+function navW(n){ weekOff = n===0?0:weekOff+n; renderSem(); renderFertSem(); }
 function goWeek(off){ weekOff=off; document.getElementById('ov').classList.remove('on'); renderSem(); }
 
 function eventsWeek(off){
@@ -1754,14 +1759,19 @@ function fmtAmt(amt, unidad){
 function renderFertSem(){
   const cardsEl=document.getElementById('fert-plan-cards');
   if(!cardsEl) return;
+  const mon=wMon(weekOff);
+  const lbl=fdDate(mon)+' – '+fdDate(new Date(mon.getTime()+6*864e5));
+  const lblEl=document.getElementById('week-lbl-fert');
+  if(lblEl) lblEl.textContent=lbl;
   if(!fert_planes.length){
-    cardsEl.innerHTML=`<div class="card" style="text-align:center;color:var(--tx3);font-size:12px;padding:20px">Sin planes — tocá "+ Plan" para agregar uno.</div>`;
+    cardsEl.innerHTML=`<div class="card" style="text-align:center;color:var(--tx3);font-size:12px;padding:20px">Sin planes — tocá "+ Plan" en el tab Plan para agregar uno.</div>`;
     return;
   }
+  const wEvts=eventsWeek(weekOff);
   cardsEl.innerHTML=fert_planes.map((pl,i)=>{
     const etapas=pl.etapas||[];
     const etapasHtml=etapas.map((et,ei)=>{
-      const stageEvts=[...eventos]
+      const stageEvts=wEvts
         .filter(e=>e.tipo==='fertilizacion'&&e.planId===pl.id&&e.etapa===et.nom)
         .sort((a,b)=>b.fecha.localeCompare(a.fecha));
       const evtsHtml=stageEvts.map(ev=>{
@@ -1782,7 +1792,7 @@ function renderFertSem(){
           <div style="font-size:11px;font-weight:700;color:var(--verde)">E${ei+1} · ${et.nom}</div>
           <span style="font-size:10px;color:var(--tx3)">${stageEvts.length} aplicación${stageEvts.length!==1?'es':''}</span>
         </div>
-        ${evtsHtml||`<div style="padding:8px 13px;font-size:11px;color:var(--tx3)">Sin aplicaciones</div>`}
+        ${evtsHtml||`<div style="padding:8px 13px;font-size:11px;color:var(--tx3)">Sin aplicaciones esta semana</div>`}
         <div style="border-top:1px solid var(--br)">
           <button class="esp-reg-btn" onclick="openFertRegModal(${i},${ei})">🧪 Registrar en esta etapa</button>
         </div>
