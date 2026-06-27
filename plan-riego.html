@@ -2278,16 +2278,14 @@ function doPost(e) {
     s3.setFrozenRows(1);
     if(fertRows.length>0){
       s3.getRange(2,1,fertRows.length,11).setValues(fertRows);
-      fertRows.forEach(function(r,i){
-        s3.getRange(i+2,1,1,11).setBackground(i%2===0?'#e8f5ed':'#ffffff');
-      });
+      var bgRows=fertRows.map(function(r,i){ return Array(11).fill(i%2===0?'#e8f5ed':'#ffffff'); });
+      s3.getRange(2,1,fertRows.length,11).setBackgrounds(bgRows);
       s3.getRange(2,6,fertRows.length,2).setNumberFormat('0.0');
       s3.getRange(2,10,fertRows.length,1).setNumberFormat('0.00');
-      for(var ri=2;ri<=fertRows.length+1;ri++){
-        s3.getRange(ri,13).setFormula('=IF(L'+ri+'="","",J'+ri+'*L'+ri+')');
-        s3.getRange(ri,12).setBackground('#fef9e7');
-        s3.getRange(ri,13).setBackground('#fef9e7').setNumberFormat('$ #,##0');
-      }
+      var costoFormulas=fertRows.map(function(r,i){ return ['=IFERROR(J'+(i+2)+'*L'+(i+2)+',"")'];});
+      s3.getRange(2,13,fertRows.length,1).setFormulas(costoFormulas).setNumberFormat('$ #,##0');
+      s3.getRange(2,12,fertRows.length,1).setBackground('#fef9e7');
+      s3.getRange(2,13,fertRows.length,1).setBackground('#fef9e7');
       s3.getRange(1,1,fertRows.length+1,13).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
     }
     colWidths(s3,[100,140,120,130,140,65,65,140,60,80,60,105,90]);
