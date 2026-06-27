@@ -979,47 +979,53 @@ function renderFertPlanRef(){
   const el=document.getElementById('fert-plan-ref');
   if(!el) return;
   if(!fert_planes.length){
-    el.innerHTML=`<div style="padding:8px 13px;font-size:12px;color:var(--tx3)">Sin planes de fertilización. Agregá uno en Config ⚙️</div>`;
+    el.innerHTML=`<div style="padding:8px 13px;font-size:12px;color:var(--tx3)">Sin planes de fertilización. Agregá uno en la hoja Fertil.</div>`;
     return;
   }
   el.innerHTML=fert_planes.map((pl,i)=>{
-    const etapaIdx=pl.etapaActual||0;
-    const etapa=pl.etapas&&pl.etapas[etapaIdx];
-    const nEtapas=(pl.etapas||[]).length;
-
-    const prodsHtml=etapa&&etapa.prods.length?etapa.prods.map(pp=>{
-      const prod=getProd(pp.prodId);
-      const amtBase=calcProdAmt(pp.dosisPorL, pl.litros);
-      const riLabel=pp.riego!=='U'?` <span style="font-size:9px;background:var(--azul-l);color:var(--azul);padding:1px 6px;border-radius:6px;font-weight:700">${pp.riego}</span>`:'';
-      return `<div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--br)">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:600">${prod?prod.nom:pp.prodId}${riLabel}</div>
-          ${pp.nota?`<div style="font-size:10px;color:var(--verde);margin-top:1px">⚠ ${pp.nota}</div>`:''}
+    const etapas=pl.etapas||[];
+    const nEtapas=etapas.length;
+    const ordenHtml=pl.orden?`<div style="background:var(--am-l);border-radius:var(--rs);padding:8px 11px;font-size:11px;color:var(--am);margin:0 13px 8px;line-height:1.5">${pl.orden}</div>`:'';
+    const etapasHtml=etapas.map((et,ei)=>{
+      const prodsHtml=et.prods.length?et.prods.map(pp=>{
+        const prod=getProd(pp.prodId);
+        const amtBase=calcProdAmt(pp.dosisPorL, pl.litros);
+        const riLabel=pp.riego!=='U'?` <span style="font-size:9px;background:var(--azul-l);color:var(--azul);padding:1px 6px;border-radius:6px;font-weight:700">${pp.riego}</span>`:'';
+        return `<div style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--br)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600">${prod?prod.nom:pp.prodId}${riLabel}</div>
+            ${pp.nota?`<div style="font-size:10px;color:var(--verde);margin-top:1px">⚠ ${pp.nota}</div>`:''}
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:8px">
+            <div style="font-size:13px;font-weight:700;color:var(--verde)">${fmtAmt(amtBase,prod?prod.unidad:'g')}</div>
+            <div style="font-size:9px;color:var(--tx3)">${pp.dosisPorL} ${prod&&prod.unidad==='L'?'cc/L':'g/L'}</div>
+          </div>
+        </div>`;
+      }).join(''):`<div style="padding:7px 0;font-size:11px;color:var(--tx3)">Sin productos.</div>`;
+      return `<div${ei>0?' style="border-top:2px solid var(--br)"':''}>
+        <div style="padding:6px 13px;background:var(--verde-l);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:11px;font-weight:700;color:var(--verde)">E${ei+1} · ${et.nom}</div>
+          <div style="display:flex;gap:2px">
+            <button class="icon-btn" onclick="openStageEditModal(${i},${ei})" title="Editar etapa">✏️</button>
+            ${nEtapas>1?`<button class="icon-btn" onclick="delEtapaDelPlan(${i},${ei})" title="Eliminar etapa">🗑️</button>`:''}
+          </div>
         </div>
-        <div style="text-align:right;flex-shrink:0;margin-left:8px">
-          <div style="font-size:13px;font-weight:700;color:var(--verde)">${fmtAmt(amtBase,prod?prod.unidad:'g')}</div>
-          <div style="font-size:9px;color:var(--tx3)">${pp.dosisPorL} ${prod&&prod.unidad==='L'?'cc/L':'g/L'}</div>
-        </div>
+        <div style="padding:0 13px 8px">${prodsHtml}</div>
       </div>`;
-    }).join(''):`<div style="padding:8px 0;font-size:12px;color:var(--tx3)">Sin productos en esta etapa.</div>`;
-
-    const ordenHtml=pl.orden?`<div style="background:var(--am-l);border-radius:var(--rs);padding:8px 11px;font-size:11px;color:var(--am);margin:8px 0;line-height:1.5">${pl.orden}</div>`:'';
-
+    }).join('');
     return `<div class="plan-card">
       <div class="plan-hdr">
         <div>
           <div class="plan-nom">${pl.nom}</div>
           <div class="plan-cfg">${pl.ncamas} camas · ${pl.litros}L · ${pl.frecSem||1}×/sem</div>
         </div>
-        <button class="icon-btn" onclick="openFertPlanModal('edit',${i})">✏️</button>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;padding:6px 13px 8px;background:var(--verde-l)">
-        <button onclick="changeFertEtapa(${i},-1)" style="background:none;border:none;color:var(--verde);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;opacity:${etapaIdx>0?1:0.3}" ${etapaIdx===0?'disabled':''}>‹</button>
-        <div style="flex:1;font-size:12px;font-weight:600;color:var(--verde);text-align:center">E${etapaIdx+1}/${nEtapas}: ${etapa?etapa.nom:'—'}</div>
-        <button onclick="changeFertEtapa(${i},1)" style="background:none;border:none;color:var(--verde);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;opacity:${etapaIdx<nEtapas-1?1:0.3}" ${etapaIdx===nEtapas-1?'disabled':''}>›</button>
+        <div style="display:flex;gap:2px">
+          <button class="icon-btn" onclick="addEtapaAlPlan(${i})" title="Nueva etapa">＋</button>
+          <button class="icon-btn" onclick="openFertPlanModal('edit',${i})" title="Editar plan">✏️</button>
+        </div>
       </div>
       ${ordenHtml}
-      <div style="padding:0 13px 10px">${prodsHtml}</div>
+      ${etapasHtml||`<div style="padding:10px 13px;font-size:12px;color:var(--tx3)">Sin etapas</div>`}
     </div>`;
   }).join('');
 }
@@ -1035,7 +1041,7 @@ function getHuerfanos(){
   const ids=new Set(spp.map(e=>espId(e)));
   const groups={};
   eventos.forEach(ev=>{
-    if(ev.tipo==='lluvia'||!ev.especie||ev.especie==='*lluvia') return;
+    if(ev.tipo==='lluvia'||ev.tipo==='fertilizacion'||!ev.especie||ev.especie==='*lluvia') return;
     if(!ids.has(ev.especie)){ groups[ev.especie]=(groups[ev.especie]||0)+1; }
   });
   return groups;
@@ -1751,47 +1757,40 @@ function renderFertSem(){
     return;
   }
   cardsEl.innerHTML=fert_planes.map((pl,i)=>{
-    const etapaIdx=pl.etapaActual||0;
-    const etapa=(pl.etapas||[])[etapaIdx];
-    const nEtapas=(pl.etapas||[]).length;
-    const stageEvts=etapa
-      ?[...eventos].filter(e=>e.tipo==='fertilizacion'&&e.planId===pl.id&&e.etapa===etapa.nom)
-         .sort((a,b)=>b.fecha.localeCompare(a.fecha))
-      :[];
-    const evtsHtml=stageEvts.length
-      ?stageEvts.map(ev=>{
-          const dateStr=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short'});
-          const especiesStr=(ev.especies&&ev.especies.length?ev.especies:ev.especie?[ev.especie]:[]).join(', ');
-          const prodsStr=(ev.prods||[]).map(p=>`${p.nom} ${p.amt}${p.uni}`).join(' · ');
-          return `<div style="padding:9px 13px;border-top:1px solid var(--br);display:flex;align-items:flex-start;gap:8px">
-            <div style="flex:1;min-width:0">
-              <div style="font-size:11px;font-weight:700;color:var(--tx)">${dateStr}${ev.litros?` · ${ev.litros}L`:''}</div>
-              ${especiesStr?`<div style="font-size:12px;font-weight:600;color:var(--verde);margin-top:3px">${especiesStr}</div>`:''}
-              ${prodsStr?`<div style="font-size:10px;color:var(--tx3);margin-top:3px;line-height:1.5">${prodsStr}</div>`:''}
-            </div>
-            <button style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:20px;padding:0;flex-shrink:0;line-height:1" onclick="delEv('${ev.id}')">×</button>
-          </div>`;
-        }).join('')
-      :`<div style="padding:10px 13px;font-size:11px;color:var(--tx3)">Sin aplicaciones en esta etapa</div>`;
+    const etapas=pl.etapas||[];
+    const etapasHtml=etapas.map((et,ei)=>{
+      const stageEvts=[...eventos]
+        .filter(e=>e.tipo==='fertilizacion'&&e.planId===pl.id&&e.etapa===et.nom)
+        .sort((a,b)=>b.fecha.localeCompare(a.fecha));
+      const evtsHtml=stageEvts.map(ev=>{
+        const dateStr=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short'});
+        const especiesStr=(ev.especies&&ev.especies.length?ev.especies:ev.especie?[ev.especie]:[]).join(', ');
+        const prodsStr=(ev.prods||[]).map(p=>`${p.nom} ${p.amt}${p.uni}`).join(' · ');
+        return `<div style="padding:9px 13px;border-top:1px solid var(--br);display:flex;align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:700;color:var(--tx)">${dateStr}${ev.litros?` · ${ev.litros}L`:''}</div>
+            ${especiesStr?`<div style="font-size:12px;font-weight:600;color:var(--verde);margin-top:3px">${especiesStr}</div>`:''}
+            ${prodsStr?`<div style="font-size:10px;color:var(--tx3);margin-top:3px;line-height:1.5">${prodsStr}</div>`:''}
+          </div>
+          <button style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:20px;padding:0;flex-shrink:0;line-height:1" onclick="delEv('${ev.id}')">×</button>
+        </div>`;
+      }).join('');
+      return `<div${ei>0?' style="border-top:2px solid var(--br)"':''}>
+        <div style="padding:6px 13px;background:var(--verde-l);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:11px;font-weight:700;color:var(--verde)">E${ei+1} · ${et.nom}</div>
+          <span style="font-size:10px;color:var(--tx3)">${stageEvts.length} aplicación${stageEvts.length!==1?'es':''}</span>
+        </div>
+        ${evtsHtml||`<div style="padding:8px 13px;font-size:11px;color:var(--tx3)">Sin aplicaciones</div>`}
+        <div style="border-top:1px solid var(--br)">
+          <button class="esp-reg-btn" onclick="openFertRegModal(${i},${ei})">🧪 Registrar en esta etapa</button>
+        </div>
+      </div>`;
+    }).join('');
     return `<div class="esp-card">
       <div class="esp-top">
         <div><div class="esp-nom">${pl.nom}</div><div class="esp-cfg">${pl.ncamas} camas · ${pl.litros}L</div></div>
-        <div style="display:flex;gap:2px">
-          <button class="icon-btn" onclick="addEtapaAlPlan(${i})" title="Nueva etapa">＋</button>
-          <button class="icon-btn" onclick="openFertPlanModal('edit',${i})">✏️</button>
-        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:2px;padding:6px 8px;background:var(--verde-l)">
-        <button onclick="changeFertEtapa(${i},-1)" style="background:none;border:none;color:var(--verde);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;opacity:${etapaIdx>0?1:0.3}" ${etapaIdx===0?'disabled':''}>‹</button>
-        <div style="flex:1;font-size:11px;font-weight:600;color:var(--verde);text-align:center">E${etapaIdx+1}/${nEtapas}: ${etapa?etapa.nom:'—'}</div>
-        <button onclick="openStageEditModal(${i},${etapaIdx})" style="background:none;border:none;color:var(--verde);font-size:14px;cursor:pointer;padding:2px 6px;line-height:1" title="Editar etapa">✏️</button>
-        <button onclick="changeFertEtapa(${i},1)" style="background:none;border:none;color:var(--verde);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;opacity:${etapaIdx<nEtapas-1?1:0.3}" ${etapaIdx===nEtapas-1?'disabled':''}>›</button>
-      </div>
-      ${evtsHtml}
-      <div class="esp-bottom">
-        <button class="esp-reg-btn" onclick="openFertRegModal(${i})">🧪 Registrar</button>
-        ${nEtapas>1?`<button class="esp-reg-btn" style="color:var(--rojo);border-left:1px solid var(--br)" onclick="delEtapaDelPlan(${i},${etapaIdx})">🗑 Etapa</button>`:''}
-      </div>
+      ${etapasHtml||`<div style="padding:10px 13px;font-size:12px;color:var(--tx3)">Sin etapas</div>`}
     </div>`;
   }).join('');
 }
@@ -1909,16 +1908,17 @@ function saveStageEdit(){
   save('pr_fert_planes',fert_planes);
   closeOv();
   renderFertSem();
+  renderFertPlanRef();
   toast('Etapa guardada');
 }
 
 // ── DOSAGE MODAL ──────────────────────────────────────────────────────────
-let _frCtx=null; // {planIdx, espSel:Set}
+let _frCtx=null; // {planIdx, stageIdx, espSel:Set}
 
-function openFertRegModal(planIdx){
+function openFertRegModal(planIdx, stageIdx){
   const pl=fert_planes[planIdx];
   if(!pl) return;
-  _frCtx={planIdx, espSel:new Set()};
+  _frCtx={planIdx, stageIdx, espSel:new Set()};
   renderFertRegModal();
   document.getElementById('ov').classList.add('on');
 }
@@ -1932,7 +1932,7 @@ function togFertEsp(idx){
 function renderFertRegModal(){
   const pl=fert_planes[_frCtx.planIdx];
   if(!pl) return;
-  const etapaIdx=pl.etapaActual||0;
+  const etapaIdx=_frCtx.stageIdx;
   const etapa=pl.etapas&&pl.etapas[etapaIdx];
   const ncamasBase=pl.ncamas;
   const litrosBase=pl.litros;
@@ -1999,7 +1999,7 @@ function renderFertRegModal(){
 function saveFertReg(){
   const pl=fert_planes[_frCtx.planIdx];
   if(!pl) return;
-  const etapaIdx=pl.etapaActual||0;
+  const etapaIdx=_frCtx.stageIdx;
   const etapa=pl.etapas&&pl.etapas[etapaIdx];
   const ncamasBase=pl.ncamas;
   const litrosBase=pl.litros;
