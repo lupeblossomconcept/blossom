@@ -257,6 +257,7 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
     <div class="frow"><select id="fv-esp" onchange="renderVList()"><option value="">Todas las especies</option></select></div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <input type="month" id="exp-v-mes" style="flex:1;min-width:0;padding:5px 8px;border:1px solid var(--br);border-radius:var(--r);font-size:12px;background:transparent;color:var(--tx2)">
+      <button onclick="reloadVentas()" style="background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;white-space:nowrap;padding:4px 0">↺ sincronizar</button>
       <button onclick="exportarCSV('ventas')" style="background:none;border:none;color:var(--bordo);font-size:12px;cursor:pointer;white-space:nowrap;padding:4px 0">↓ exportar</button>
     </div>
     <div id="v-lst" class="vlist"></div>
@@ -1250,7 +1251,9 @@ async function fbGet(path){
   try{
     const tok=await fbToken();
     const r=await fetch(`${FIREBASE}/${path}.json?auth=${tok}`);
-    return await r.json();
+    const d=await r.json();
+    if(d&&d.error){setSyncState('error');return null;}
+    return d;
   }catch(e){return null;}
 }
 
@@ -1260,9 +1263,11 @@ async function fbPush(path,data){
     const tok=await fbToken();
     const r=await fetch(`${FIREBASE}/${path}.json?auth=${tok}`,{method:'POST',body:JSON.stringify(data)});
     const d=await r.json();
-    setSyncState(d.name?'ok':'error');
-    return d.name||false;
-  }catch(e){setSyncState('error');return false;}
+    if(d.name){setSyncState('ok');return d.name;}
+    setSyncState('error');
+    toast('⚠️ No se guardó en Firebase — revisa conexión','err');
+    return false;
+  }catch(e){setSyncState('error');toast('⚠️ Sin conexión — venta no guardada','err');return false;}
 }
 
 async function fbSet(path,data){
@@ -1301,11 +1306,14 @@ async function loadAllData(){
   try{
     // Cargar ventas de Firebase — siempre combinar con HIST_VENTAS
     const fbVentas=await fbGet('ventas');
+    if(!fbVentas){
+      toast('⚠️ Sin conexión Firebase — mostrando solo historial local','err');
+    }
     const merged=mergeVentas(fbVentas);
     const nuevas=merged.filter(v=>!HIST_VENTAS.some(h=>h[0]===v.fecha&&h[1]===v.cliente&&h[6]===v.total));
     ventas=merged;
     renderDash();renderVList();
-    if(nuevas.length) toast(`✓ ${nuevas.length} venta${nuevas.length>1?'s':''} nuevas del equipo`,'ok');
+    if(fbVentas&&nuevas.length) toast(`✓ ${nuevas.length} venta${nuevas.length>1?'s':''} nuevas del equipo`,'ok');
 
     // Cargar gastos
     const fbGastos=await fbGet('gastos');
@@ -1338,6 +1346,18 @@ async function loadAllData(){
     setSyncState('error');
     toast('Sin conexión — datos locales','err');
   }
+}
+
+async function reloadVentas(){
+  setSyncState('syncing');
+  try{
+    const fbVentas=await fbGet('ventas');
+    if(!fbVentas){toast('⚠️ No se pudo conectar a Firebase','err');return;}
+    ventas=mergeVentas(fbVentas);
+    renderDash();renderVList();
+    toast(`✓ ${ventas.length} ventas cargadas`,'ok');
+    setSyncState('ok');
+  }catch(e){setSyncState('error');toast('Error al sincronizar ventas','err');}
 }
 
 async function uploadHistorico(){
