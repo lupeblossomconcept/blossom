@@ -298,6 +298,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 <div class="nav">
   <button class="ntab on" id="nt-riego" onclick="showSec('riego')"><span class="ntab-icon">📅</span>Riego</button>
   <button class="ntab" id="nt-fert" onclick="showSec('fert')"><span class="ntab-icon">🌿</span>Fertil</button>
+  <button class="ntab" id="nt-fito" onclick="showSec('fito')"><span class="ntab-icon">💊</span>Fito</button>
   <button class="ntab" id="nt-plan" onclick="showSec('plan')"><span class="ntab-icon">📋</span>Plan</button>
   <button class="ntab" id="nt-clima" onclick="showSec('clima')"><span class="ntab-icon">🌡️</span>Clima</button>
   <button class="ntab" id="nt-tar" onclick="showSec('tar')"><span class="ntab-icon">✅</span>Tareas</button>
@@ -368,6 +369,22 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     </div>
   </div>
   <div id="fert-plan-cards"></div>
+</div>
+
+<!-- FITO -->
+<div class="sec" id="sec-fito">
+  <div class="week-nav">
+    <div class="week-lbl" id="week-lbl-fito">—</div>
+    <div class="week-btns">
+      <button onclick="navW(-1)">‹</button>
+      <button class="act" onclick="navW(0)">Hoy</button>
+      <button onclick="navW(1)">›</button>
+    </div>
+  </div>
+  <div style="padding:0 13px 11px">
+    <button class="btn-pri" style="width:100%" onclick="openFitoModal()">+ Registrar aplicación</button>
+  </div>
+  <div id="fito-list"></div>
 </div>
 
 <!-- CLIMA -->
@@ -546,6 +563,14 @@ const DEF_PRODS = [
   {id:'prod_ca_r',     nom:'Calcio Riego',               unidad:'kg', precio:690,  dosis:0.5},
 ];
 
+const FITO_PRODS = [
+  {nom:'Captan',           uni:'g',  nota:'Botritis'},
+  {nom:'Goldazim',         uni:'ml', nota:'Fusarium'},
+  {nom:'Azufre',           uni:'ml', nota:'Arañita/Oidio'},
+  {nom:'Mainspring Flora', uni:'g',  nota:'Trips'},
+  {nom:'Actara',           uni:'g',  nota:'Áfidos'},
+];
+
 const DEF_FERT_PLANES = [
   {
     id:'fp_gen', nom:'General (sin Ranúnculo)',
@@ -657,6 +682,7 @@ let temps  = JSON.parse(localStorage.getItem('pr_temps')  || '[]');
 let notas  = JSON.parse(localStorage.getItem('pr_notas')  || '[]');
 let prods  = JSON.parse(localStorage.getItem('pr_prods')  || 'null') || DEF_PRODS.map(p=>({...p}));
 let fert_planes = JSON.parse(localStorage.getItem('pr_fert_planes')||'null') || DEF_FERT_PLANES.map(p=>JSON.parse(JSON.stringify(p)));
+let fito_eventos = JSON.parse(localStorage.getItem('pr_fito_eventos') || '[]');
 let fertWeekOff = 0;
 let _fertSel=new Set(), _fertDosis={};
 let weekOff= 0;
@@ -716,7 +742,7 @@ function updateCfgPreview(){
 
 async function save(k,v){
   localStorage.setItem(k,JSON.stringify(v));
-  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps',pr_notas:'notas',pr_prods:'prods',pr_fert_planes:'fert_planes'}[k];
+  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps',pr_notas:'notas',pr_prods:'prods',pr_fert_planes:'fert_planes',pr_fito_eventos:'fito_eventos'}[k];
   if(!fk)return;
   try{
     const tok=await fbToken();
@@ -746,6 +772,7 @@ async function loadAll(){
     else{const t=await fbToken();fetch(`${FB_URL}/prods.json?auth=${t}`,{method:'PUT',body:JSON.stringify(prods)}).catch(()=>{});}
     if(d.fert_planes!=null){fert_planes=d.fert_planes;localStorage.setItem('pr_fert_planes',JSON.stringify(fert_planes));}
     else{const t=await fbToken();fetch(`${FB_URL}/fert_planes.json?auth=${t}`,{method:'PUT',body:JSON.stringify(fert_planes)}).catch(()=>{});}
+    if(d.fito_eventos!=null){fito_eventos=d.fito_eventos;localStorage.setItem('pr_fito_eventos',JSON.stringify(fito_eventos));}
   }catch(e){}
 }
 
@@ -818,7 +845,7 @@ function saveWeekNota(){
   weekNotaDirty=false;
   toast('✓ Comentario guardado','ok');
 }
-function navW(n){ weekOff = n===0?0:weekOff+n; renderSem(); renderFertSem(); }
+function navW(n){ weekOff = n===0?0:weekOff+n; renderSem(); renderFertSem(); renderFitoSem(); }
 function goWeek(off){ weekOff=off; document.getElementById('ov').classList.remove('on'); renderSem(); }
 
 function eventsWeek(off){
@@ -2181,6 +2208,7 @@ function showSec(id){
   if(id==='tar')   { renderTareas(); }
   if(id==='clima') { renderTemps(); }
   if(id==='fert')  { renderFertSem(); }
+  if(id==='fito')  { renderFitoSem(); }
   if(id==='notas') { const nf=document.getElementById('nota-fecha');if(nf&&!nf.value)nf.value=ds(new Date()); renderNotas(); }
 }
 
@@ -2477,6 +2505,159 @@ function renderTemps(){
   }).join('');
 }
 
+// ── FITOSANITARIOS ────────────────────────────────────────────────────────
+function renderFitoSem(){
+  const el=document.getElementById('fito-list');
+  if(!el) return;
+  const mon=wMon(weekOff);
+  const sun=new Date(mon.getTime()+6*864e5);
+  const lbl=fdDate(mon)+' – '+fdDate(sun);
+  const lblEl=document.getElementById('week-lbl-fito');
+  if(lblEl) lblEl.textContent=lbl;
+  const a=ds(mon), b=ds(sun);
+  const wEvts=fito_eventos.filter(e=>e.fecha>=a&&e.fecha<=b).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  if(!wEvts.length){
+    el.innerHTML=`<div class="card" style="text-align:center;color:var(--tx3);font-size:12px;padding:20px 16px">Sin aplicaciones esta semana</div>`;
+    return;
+  }
+  el.innerHTML=wEvts.map(ev=>{
+    const dateStr=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'short'});
+    const especiesHtml=(ev.especies||[]).map(n=>`<span style="display:inline-block;background:var(--rose);color:var(--bordo);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;margin:2px 3px 2px 0">${n}</span>`).join('');
+    const prodsHtml=(ev.prods||[]).filter(p=>p.nom).map(p=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--br)">
+      <div style="flex:1;min-width:0">
+        <span style="font-size:12px;font-weight:600;color:var(--tx)">${p.nom}</span>
+        ${FITO_PRODS.find(f=>f.nom===p.nom)?.nota?`<span style="font-size:10px;color:var(--tx3);margin-left:5px">${FITO_PRODS.find(f=>f.nom===p.nom).nota}</span>`:''}
+      </div>
+      ${p.qty?`<span style="font-size:12px;font-weight:700;color:var(--verde);flex-shrink:0">${p.qty} ${p.uni||'g'}</span>`:''}
+    </div>`).join('');
+    return `<div class="esp-card" style="margin:0 13px 11px">
+      <div style="padding:10px 13px 8px;display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--tx);text-transform:capitalize">${dateStr}</div>
+          <div style="margin-top:5px">${especiesHtml||'<span style="font-size:10px;color:var(--tx3)">Sin especie</span>'}</div>
+        </div>
+        <button style="background:none;border:none;color:var(--tx3);cursor:pointer;font-size:20px;padding:0;flex-shrink:0;line-height:1" onclick="delFitoEv('${ev.id}')">×</button>
+      </div>
+      ${prodsHtml?`<div style="padding:0 13px 8px">${prodsHtml}</div>`:''}
+      ${ev.nota?`<div style="padding:4px 13px 10px;font-size:11px;color:var(--tx3);font-style:italic">${ev.nota}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+let _fitoEspSel=new Set();
+let _fitoChecked={}; // {nom: true/false}
+
+function openFitoModal(){
+  _fitoEspSel=new Set();
+  _fitoChecked={};
+  renderFitoModal();
+  document.getElementById('ov').classList.add('on');
+}
+
+function renderFitoModal(){
+  const chipsHtml=sortedSpp().map(e=>{
+    const on=_fitoEspSel.has(e._idx);
+    return `<div class="chip${on?' on':''}" onclick="togFitoEsp(${e._idx})" style="margin-bottom:6px">
+      <div class="chip-chk">${on?'✓':''}</div>
+      <div style="flex:1;min-width:0">
+        <div class="chip-nom">${e.nom}</div>
+        ${e.etapa?`<div style="font-size:10px;color:${on?'var(--verde)':'var(--tx3)'};margin-top:1px">${e.etapa}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  const prodsHtml=FITO_PRODS.map(p=>{
+    const on=!!_fitoChecked[p.nom];
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--br)">
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="togFitoProd('${p.nom}')">
+        <div style="font-size:13px;font-weight:600;color:${on?'var(--tx)':'var(--tx3)'}">${p.nom}</div>
+        <div style="font-size:10px;color:var(--tx3);margin-top:1px">${p.nota}</div>
+      </div>
+      ${on?`<input type="text" inputmode="decimal" placeholder="cant." id="fito-qty-${p.nom.replace(/\s/g,'_')}" style="width:60px;padding:5px 7px;border:1.5px solid var(--verde);border-radius:var(--rs);font-size:13px;font-weight:700;color:var(--verde);text-align:right;background:var(--gris);outline:none" oninput="">
+             <span style="font-size:11px;color:var(--tx3);flex-shrink:0">${p.uni}</span>`
+           :`<button style="background:none;border:1.5px solid var(--br);border-radius:20px;padding:3px 12px;font-size:11px;color:var(--tx3);cursor:pointer" onclick="togFitoProd('${p.nom}')">+ agregar</button>`}
+    </div>`;
+  }).join('');
+  document.getElementById('modal-inner').innerHTML=`
+    <div class="modal-tit">💊 Aplicación fitosanitaria</div>
+    <div class="mfield"><label>Fecha</label><input type="date" id="fito-fecha" value="${ds(new Date())}"></div>
+    <div style="font-size:9.5px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Especies tratadas</div>
+    ${chipsHtml}
+    <div style="font-size:9.5px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">Productos aplicados</div>
+    ${prodsHtml}
+    <div class="mfield" style="margin-top:12px"><label>Nota (opcional)</label><textarea id="fito-nota" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;resize:none;height:48px"></textarea></div>
+    <button class="btn-pri" style="margin-top:8px" onclick="saveFitoReg()">✓ Guardar</button>
+    <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+}
+
+function _fitoSaveInputs(){
+  const f=document.getElementById('fito-fecha');
+  const n=document.getElementById('fito-nota');
+  _fitoTmpFecha=f?f.value:'';
+  _fitoTmpNota=n?n.value:'';
+  FITO_PRODS.forEach(p=>{
+    if(_fitoChecked[p.nom]){
+      const inp=document.getElementById('fito-qty-'+p.nom.replace(/\s/g,'_'));
+      if(inp) _fitoQtyTmp[p.nom]=inp.value;
+    }
+  });
+}
+let _fitoTmpFecha='', _fitoTmpNota='', _fitoQtyTmp={};
+
+function _fitoRestoreInputs(){
+  const f=document.getElementById('fito-fecha');
+  const n=document.getElementById('fito-nota');
+  if(f&&_fitoTmpFecha) f.value=_fitoTmpFecha;
+  if(n&&_fitoTmpNota)  n.value=_fitoTmpNota;
+  FITO_PRODS.forEach(p=>{
+    if(_fitoChecked[p.nom]&&_fitoQtyTmp[p.nom]){
+      const inp=document.getElementById('fito-qty-'+p.nom.replace(/\s/g,'_'));
+      if(inp) inp.value=_fitoQtyTmp[p.nom];
+    }
+  });
+}
+
+function togFitoEsp(idx){
+  _fitoSaveInputs();
+  if(_fitoEspSel.has(idx)) _fitoEspSel.delete(idx); else _fitoEspSel.add(idx);
+  renderFitoModal();
+  _fitoRestoreInputs();
+}
+
+function togFitoProd(nom){
+  _fitoSaveInputs();
+  _fitoChecked[nom]=!_fitoChecked[nom];
+  renderFitoModal();
+  _fitoRestoreInputs();
+}
+
+function saveFitoReg(){
+  _fitoSaveInputs();
+  const fecha=_fitoTmpFecha||ds(new Date());
+  const nota=_fitoTmpNota||'';
+  const especies=[..._fitoEspSel].map(i=>spp[i]?.nom).filter(Boolean);
+  const prods=FITO_PRODS.filter(p=>_fitoChecked[p.nom]).map(p=>{
+    const qty=(_fitoQtyTmp[p.nom]||'').replace(',','.').trim();
+    return {nom:p.nom, qty, uni:p.uni};
+  });
+  if(!prods.length){ toast('Seleccioná al menos un producto','err'); return; }
+  const ev={
+    id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    fecha, especies, prods, nota
+  };
+  fito_eventos.push(ev);
+  save('pr_fito_eventos', fito_eventos);
+  document.getElementById('ov').classList.remove('on');
+  renderFitoSem();
+  toast('✓ Aplicación registrada','ok');
+}
+
+function delFitoEv(id){
+  fito_eventos=fito_eventos.filter(e=>e.id!==id);
+  save('pr_fito_eventos', fito_eventos);
+  renderFitoSem();
+  toast('Registro eliminado');
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────
 mergeDefaultProds();
 renderSem();
@@ -2489,6 +2670,7 @@ loadAll().then(()=>{
     if(act.id==='sec-plan')  renderPlan();
     if(act.id==='sec-clima') renderTemps();
     if(act.id==='sec-fert')  renderFertSem();
+    if(act.id==='sec-fito')  renderFitoSem();
   }
 });
 </script>
