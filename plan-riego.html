@@ -1300,10 +1300,10 @@ function openModal(tipo, ctx){
       <div class="modal-sub">${espId(esp)}${p?' · '+planMes:''}</div>
       ${tipo==='add-plan'?`<div class="mfield"><label>Mes</label><input type="month" id="mp-mes" value="${planMes||new Date().toISOString().slice(0,7)}"></div>`:''}
       <div class="mgrid2">
-        <div class="mfield"><label>Min/evento</label><input type="number" id="mp-min" value="${p?p.min:''}" min="1" inputmode="numeric"></div>
+        <div class="mfield"><label>Min/evento</label><input type="text" id="mp-min" value="${p?p.min:''}" inputmode="decimal" placeholder="0"></div>
         <div class="mfield"><label>Eventos/sem</label><input type="number" id="mp-evts" value="${p?p.evts:''}" min="1" inputmode="numeric"></div>
-        <div class="mfield"><label>mm/evento</label><input type="number" id="mp-mme" value="${p?p.mmEvt:''}" min="0.1" step="0.1" inputmode="decimal"></div>
-        <div class="mfield"><label>mm/semana</label><input type="number" id="mp-mms" value="${p?p.mmSem:''}" min="0" step="0.1" inputmode="decimal"></div>
+        <div class="mfield"><label>mm/evento</label><input type="text" id="mp-mme" value="${p?p.mmEvt:''}" inputmode="decimal" placeholder="0"></div>
+        <div class="mfield"><label>mm/semana</label><input type="text" id="mp-mms" value="${p?p.mmSem:''}" inputmode="decimal" placeholder="0"></div>
       </div>
       <div class="mfield"><label>Nota / criterio</label><textarea id="mp-nota">${p?p.nota:''}</textarea></div>
       <button class="btn-pri" onclick="savePlan('${tipo}','${ctx}')">Guardar</button>
@@ -1588,10 +1588,11 @@ function savePlan(tipo,espIdx){
   const mes=tipo==='add-plan'
     ?(document.getElementById('mp-mes')||{value:planMes}).value
     :planMes;
-  const min=+document.getElementById('mp-min').value;
+  const pDec=s=>parseFloat((s||'').replace(',','.'))||0;
+  const min=pDec(document.getElementById('mp-min').value);
   const evts=+document.getElementById('mp-evts').value;
-  const mmEvt=+document.getElementById('mp-mme').value;
-  const mmSem=+document.getElementById('mp-mms').value;
+  const mmEvt=pDec(document.getElementById('mp-mme').value);
+  const mmSem=pDec(document.getElementById('mp-mms').value);
   const nota=document.getElementById('mp-nota').value.trim();
   if(!mes||!min||!evts){ toast('Completa min, eventos y mes','err'); return; }
   if(!esp.planes) esp.planes=[];
