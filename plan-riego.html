@@ -2249,8 +2249,11 @@ function doPost(e) {
       var nc=h2[0].length;
       s2.getRange(1,1,1,nc).setValues(h2);
       styleHdr(s2.getRange(1,1,1,nc),'#1a3c8b');
-      if(nc>3) s2.getRange(1,2,1,nc-2).setFontSize(8).setWrap(true);
-      s2.setRowHeight(1,52);
+      if(nc>3){
+        s2.getRange(1,2,1,nc-2).setTextRotation(90).setFontSize(9).setHorizontalAlignment('center').setVerticalAlignment('bottom');
+        for(var ci=2;ci<=nc-2;ci++) s2.setColumnWidth(ci,52);
+      }
+      s2.setRowHeight(1,110);
       s2.setFrozenRows(1);
       var rows2=sems.map(function(sem){
         var row=[sem]; var tot=0;
