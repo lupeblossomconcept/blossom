@@ -2192,49 +2192,31 @@ function toast(m,t=''){
 
 // ── GOOGLE SHEETS ─────────────────────────────────────────────────────────
 const APPS_SCRIPT_CODE = `function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({ok:true,msg:'Blossom Riego API activa'}))
+  return ContentService.createTextOutput(JSON.stringify({ok:true,msg:'Blossom API activa'}))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
-    var evs   = data.eventos || [];
-    var temps = data.temps   || [];
+    var evs      = data.eventos  || [];
+    var temps    = data.temps    || [];
+    var fertRows = data.fertRows || [];
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // ── Hoja 1: Registro Riego ───────────────────────────────────
-    var s1 = ss.getSheetByName('Registro Riego');
-    if (!s1) s1 = ss.insertSheet('Registro Riego');
-    s1.clearContents(); s1.clearFormats();
-    s1.getRange(1,1,1,7).setValues([['Fecha','Semana','Especie','Tipo','mm Aplicados','Minutos','Nota']]);
-    styleHdr(s1.getRange(1,1,1,7),'#8b1a4a');
-    s1.setFrozenRows(1);
-    if (evs.length > 0) {
-      evs.sort(function(a,b){ return a.fecha > b.fecha ? 1 : -1; });
-      var rows1 = evs.map(function(ev) {
-        var tipo = ev.tipo==='riego' ? '💧 Riego' : ev.tipo==='fertilizacion' ? '🌱 Fertilización' : '🌧 Lluvia';
-        return [ev.fecha, semana(ev.fecha), ev.especie==='*lluvia'?'Todas':ev.especie, tipo, ev.mm, ev.min||'', ev.nota||''];
-      });
-      s1.getRange(2,1,rows1.length,7).setValues(rows1);
-      rows1.forEach(function(r,i){
-        var c=r[3].indexOf('Riego')>=0?'#e8f0ff':r[3].indexOf('Fert')>=0?'#e8f5ed':'#e0f3ff';
-        s1.getRange(i+2,1,1,7).setBackground(c);
-      });
-      s1.getRange(2,5,rows1.length,1).setNumberFormat('0.0');
-      s1.getRange(1,1,rows1.length+1,7).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
-    }
-    colWidths(s1,[100,150,140,130,90,75,220]);
+    // Eliminar hoja antigua si existe
+    var oldRiego = ss.getSheetByName('Registro Riego');
+    if(oldRiego && ss.getSheets().length > 1) ss.deleteSheet(oldRiego);
 
-    // ── Hoja 2: Riego x Semana ───────────────────────────────────
-    var s2 = ss.getSheetByName('Riego x Semana');
-    if (!s2) s2 = ss.insertSheet('Riego x Semana');
-    s2.clearContents(); s2.clearFormats();
+    // ── Hoja 1: Riego x Semana ───────────────────────────────────
+    var s1 = ss.getSheetByName('Riego x Semana');
+    if (!s1) s1 = ss.insertSheet('Riego x Semana');
+    s1.clearContents(); s1.clearFormats();
     var espSet={}, semMap={};
     evs.forEach(function(ev){
       var sem=semana(ev.fecha);
       if(!semMap[sem]) semMap[sem]={fecha:ev.fecha,d:{}};
-      if((ev.tipo==='riego'||ev.tipo==='fertilizacion') && ev.especie!=='*lluvia'){
+      if(ev.tipo==='riego' && ev.especie!=='*lluvia'){
         espSet[ev.especie]=true;
         semMap[sem].d[ev.especie]=(semMap[sem].d[ev.especie]||0)+Number(ev.mm||0);
       }
@@ -2245,100 +2227,73 @@ function doPost(e) {
     var esps=Object.keys(espSet).sort();
     var sems=Object.keys(semMap).sort(function(a,b){ return semMap[a].fecha>semMap[b].fecha?1:-1; });
     if(sems.length>0){
-      var h2=[['Semana'].concat(esps).concat(['Lluvia','Total mm'])];
-      var nc=h2[0].length;
-      s2.getRange(1,1,1,nc).setValues(h2);
-      styleHdr(s2.getRange(1,1,1,nc),'#1a3c8b');
+      var h1=[['Semana'].concat(esps).concat(['Lluvia','Total mm'])];
+      var nc=h1[0].length;
+      s1.getRange(1,1,1,nc).setValues(h1);
+      styleHdr(s1.getRange(1,1,1,nc),'#1a3c8b');
       if(nc>3){
-        s2.getRange(1,2,1,nc-2).setTextRotation(90).setFontSize(9).setHorizontalAlignment('center').setVerticalAlignment('bottom');
-        for(var ci=2;ci<=nc-2;ci++) s2.setColumnWidth(ci,52);
+        s1.getRange(1,2,1,nc-2).setTextRotation(90).setFontSize(9).setHorizontalAlignment('center').setVerticalAlignment('bottom');
+        for(var ci=2;ci<=nc-2;ci++) s1.setColumnWidth(ci,52);
       }
-      s2.setRowHeight(1,110);
-      s2.setFrozenRows(1);
-      var rows2=sems.map(function(sem){
+      s1.setRowHeight(1,110);
+      s1.setFrozenRows(1);
+      var rows1=sems.map(function(sem){
         var row=[sem]; var tot=0;
         esps.forEach(function(esp){ var v=Math.round((semMap[sem].d[esp]||0)*10)/10; row.push(v); tot+=v; });
         var lluvia=Math.round((semMap[sem].d['__lluvia__']||0)*10)/10;
         row.push(lluvia); row.push(Math.round((tot+lluvia)*10)/10);
         return row;
       });
-      s2.getRange(2,1,rows2.length,nc).setValues(rows2);
-      rows2.forEach(function(r,i){ s2.getRange(i+2,1,1,nc).setBackground(i%2===0?'#f0f4ff':'#ffffff'); });
-      s2.getRange(2,nc,rows2.length,1).setFontWeight('bold').setBackground('#dff5e8');
-      s2.getRange(2,nc-1,rows2.length,1).setBackground('#e0f3ff');
-      s2.getRange(1,1,rows2.length+1,nc).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
-      s2.getRange(2,2,rows2.length,nc-1).setNumberFormat('0.0');
-      s2.setColumnWidth(1,165);
-      for(var ci=2;ci<=nc;ci++) s2.setColumnWidth(ci,82);
+      s1.getRange(2,1,rows1.length,nc).setValues(rows1);
+      rows1.forEach(function(r,i){ s1.getRange(i+2,1,1,nc).setBackground(i%2===0?'#f0f4ff':'#ffffff'); });
+      s1.getRange(2,nc,rows1.length,1).setFontWeight('bold').setBackground('#dff5e8');
+      s1.getRange(2,nc-1,rows1.length,1).setBackground('#e0f3ff');
+      s1.getRange(1,1,rows1.length+1,nc).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
+      s1.getRange(2,2,rows1.length,nc-1).setNumberFormat('0.0');
+      s1.setColumnWidth(1,165);
+      s1.setColumnWidth(nc-1,80);
+      s1.setColumnWidth(nc,90);
     }
 
-    // ── Hoja 3: Fertilización (producto × especie × evento) ──────
-    var fertRows = data.fertRows || [];
-    var s3 = ss.getSheetByName('Fertilización');
-    if (!s3) s3 = ss.insertSheet('Fertilización');
-
-    // Preservar Precio/unidad que el usuario llenó, keyed por Plan|Etapa|Especie|Producto
-    var priceMap = {};
-    var lastRow3 = s3.getLastRow();
-    if(lastRow3 > 1){
-      var existing = s3.getRange(2,1,lastRow3-1,12).getValues();
-      existing.forEach(function(row){
-        var k=(row[2]||'')+'|'+(row[3]||'')+'|'+(row[4]||'')+'|'+(row[7]||'');
-        if(row[11]!==''&&row[11]!==0) priceMap[k]=row[11];
-      });
-      // Limpiar solo cols A–M (no tocar N en adelante = cálculos del usuario)
-      s3.getRange(2,1,lastRow3-1,13).clearContent();
-    }
-
-    // Encabezados (solo si la hoja es nueva o la primera fila cambió)
-    var hdrs3 = ['Fecha','Semana','Plan','Etapa','Especie','Camas','Litros','Producto','Riego','Cantidad','Unidad','Precio/unidad','Costo ➜'];
-    s3.getRange(1,1,1,13).setValues([hdrs3]);
-    styleHdr(s3.getRange(1,1,1,11),'#1a5c2e');
-    s3.getRange(1,12,1,2).setBackground('#8b1a4a').setFontColor('#ffffff').setFontWeight('bold').setFontSize(11).setHorizontalAlignment('center');
-    s3.setFrozenRows(1);
-
+    // ── Hoja 2: Fertilización (especie × evento) ─────────────────
+    var s2 = ss.getSheetByName('Fertilización');
+    if (!s2) s2 = ss.insertSheet('Fertilización');
+    var lastRow2 = s2.getLastRow();
+    if(lastRow2 > 1) s2.getRange(2,1,lastRow2-1,8).clearContent();
+    var hdrs2 = ['Fecha','Semana','Plan','Etapa','Especie','Camas','Litros','Productos aplicados'];
+    s2.getRange(1,1,1,8).setValues([hdrs2]);
+    styleHdr(s2.getRange(1,1,1,8),'#1a5c2e');
+    s2.setFrozenRows(1);
     if(fertRows.length>0){
-      s3.getRange(2,1,fertRows.length,11).setValues(fertRows);
-      var bgRows=fertRows.map(function(r,i){ return Array(11).fill(i%2===0?'#e8f5ed':'#ffffff'); });
-      s3.getRange(2,1,fertRows.length,11).setBackgrounds(bgRows);
-      s3.getRange(2,6,fertRows.length,2).setNumberFormat('0.0');
-      s3.getRange(2,10,fertRows.length,1).setNumberFormat('0.00');
-
-      // Restaurar Precio/unidad guardado
-      var precios=fertRows.map(function(row){
-        var k=(row[2]||'')+'|'+(row[3]||'')+'|'+(row[4]||'')+'|'+(row[7]||'');
-        return [priceMap[k]!==undefined?priceMap[k]:''];
-      });
-      s3.getRange(2,12,fertRows.length,1).setValues(precios).setBackground('#fef9e7');
-
-      // Fórmula Costo = Cantidad × Precio/unidad
-      var costoF=fertRows.map(function(r,i){ return ['=IFERROR(J'+(i+2)+'*L'+(i+2)+',"")']; });
-      s3.getRange(2,13,fertRows.length,1).setFormulas(costoF).setNumberFormat('$ #,##0').setBackground('#fef9e7');
-
-      s3.getRange(1,1,fertRows.length+1,13).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
+      s2.getRange(2,1,fertRows.length,8).setValues(fertRows);
+      var bgF=fertRows.map(function(r,i){ return Array(8).fill(i%2===0?'#e8f5ed':'#ffffff'); });
+      s2.getRange(2,1,fertRows.length,8).setBackgrounds(bgF);
+      s2.getRange(2,6,fertRows.length,2).setNumberFormat('0.0');
+      s2.getRange(2,8,fertRows.length,1).setWrap(true);
+      s2.getRange(1,1,fertRows.length+1,8).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
     }
-    colWidths(s3,[100,140,120,130,140,65,65,140,60,80,60,105,90]);
+    colWidths(s2,[95,135,110,120,130,60,60,280]);
 
-    // ── Hoja 4: Temperaturas ─────────────────────────────────────
-    var s4 = ss.getSheetByName('Temperaturas');
-    if (!s4) s4 = ss.insertSheet('Temperaturas');
-    s4.clearContents(); s4.clearFormats();
-    s4.getRange(1,1,1,5).setValues([['Fecha','Mínima (°C)','Máxima (°C)','Helada','Notas']]);
-    styleHdr(s4.getRange(1,1,1,5),'#0e6494');
-    s4.setFrozenRows(1);
+    // ── Hoja 3: Temperaturas ─────────────────────────────────────
+    var s3 = ss.getSheetByName('Temperaturas');
+    if (!s3) s3 = ss.insertSheet('Temperaturas');
+    s3.clearContents(); s3.clearFormats();
+    s3.getRange(1,1,1,5).setValues([['Fecha','Mínima (°C)','Máxima (°C)','Helada','Notas']]);
+    styleHdr(s3.getRange(1,1,1,5),'#0e6494');
+    s3.setFrozenRows(1);
     if(temps.length>0){
       var tempsOrd=temps.slice().sort(function(a,b){ return a.fecha>b.fecha?1:-1; });
-      var rows4=tempsOrd.map(function(t){ return [t.fecha,t.tMin,t.tMax,t.tMin<0?'❄️ Sí':'No',t.nota||'']; });
-      s4.getRange(2,1,rows4.length,5).setValues(rows4);
-      rows4.forEach(function(r,i){
-        s4.getRange(i+2,1,1,5).setBackground(r[3].indexOf('Sí')>=0?'#dff0f7':i%2===0?'#f5f8fa':'#ffffff');
+      var rows3=tempsOrd.map(function(t){ return [t.fecha,t.tMin,t.tMax,t.tMin<0?'❄️ Sí':'No',t.nota||'']; });
+      s3.getRange(2,1,rows3.length,5).setValues(rows3);
+      rows3.forEach(function(r,i){
+        s3.getRange(i+2,1,1,5).setBackground(r[3].indexOf('Sí')>=0?'#dff0f7':i%2===0?'#f5f8fa':'#ffffff');
       });
-      s4.getRange(2,2,rows4.length,2).setNumberFormat('0.0');
-      s4.getRange(1,1,rows4.length+1,5).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
+      s3.getRange(2,2,rows3.length,2).setNumberFormat('0.0');
+      s3.getRange(1,1,rows3.length+1,5).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
     }
-    colWidths(s4,[105,105,105,80,260]);
+    colWidths(s3,[105,105,105,80,260]);
 
-    return ContentService.createTextOutput(JSON.stringify({ok:true,n:evs.length,nf:fertRows.length,t:temps.length}))
+    return ContentService.createTextOutput(JSON.stringify({ok:true,nf:fertRows.length,t:temps.length}))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch(err) {
@@ -2399,21 +2354,22 @@ async function syncSheets(){
       const especiesList=(ev.especies&&ev.especies.length)?ev.especies:(ev.especie?[ev.especie]:[]);
       const totalCamas=ev.camas||1;
       const totalLitros=ev.litros||0;
-      const prodsList=ev.prods&&ev.prods.length?ev.prods:[{nom:'',riego:'',dosis:0,amt:0,uni:''}];
-      prodsList.forEach(prod=>{
-        especiesList.forEach(espNom=>{
-          const espObj=spp.find(s=>s.nom===espNom);
-          const espCamas=espObj?.ncamas||Math.round(totalCamas/Math.max(especiesList.length,1));
-          const espLitros=totalCamas>0?+(totalLitros*espCamas/totalCamas).toFixed(1):0;
-          const espAmt=prod.dosis?+(prod.dosis*espLitros).toFixed(1):'';
-          fertRows.push([
-            ev.fecha, _fertSemLbl(ev.fecha),
-            planNom, ev.etapa||'',
-            espNom, espCamas, espLitros,
-            prod.nom||'', prod.riego||'',
-            espAmt, prod.uni||''
-          ]);
-        });
+      especiesList.forEach(espNom=>{
+        const espObj=spp.find(s=>s.nom===espNom);
+        const espCamas=espObj?.ncamas||Math.round(totalCamas/Math.max(especiesList.length,1));
+        const espLitros=totalCamas>0?+(totalLitros*espCamas/totalCamas).toFixed(1):0;
+        const prodsStr=(ev.prods&&ev.prods.length)
+          ?ev.prods.filter(p=>p.nom).map(p=>{
+              const amt=p.dosis?+(p.dosis*espLitros).toFixed(1):(p.amt||'');
+              return `${p.nom}: ${amt}${p.uni||'g'}`;
+            }).join(' · ')
+          :'';
+        fertRows.push([
+          ev.fecha, _fertSemLbl(ev.fecha),
+          planNom, ev.etapa||'',
+          espNom, espCamas, espLitros,
+          prodsStr
+        ]);
       });
     });
 
@@ -2423,7 +2379,7 @@ async function syncSheets(){
     let d={};
     try{ d=JSON.parse(txt); }catch(e){}
     if(d.error) throw new Error(d.error);
-    toast(`✓ Riego (${d.n||0}) · Semana · Fertilización (${d.nf||0} filas) · Clima (${d.t||0} días)`,'ok');
+    toast(`✓ Riego x Semana · Fertilización (${d.nf||0} filas) · Clima (${d.t||0} días)`,'ok');
   } catch(err){
     toast('Error: '+err.message,'err');
     console.error('Sheets sync:',err);
