@@ -1959,7 +1959,7 @@ let _frCtx=null; // {planIdx, stageIdx, espSel:Set}
 function openFertRegModal(planIdx, stageIdx){
   const pl=fert_planes[planIdx];
   if(!pl) return;
-  _frCtx={planIdx, stageIdx, espSel:new Set()};
+  _frCtx={planIdx, stageIdx, espSel:new Set(), prodDesel:new Set()};
   renderFertRegModal();
   document.getElementById('ov').classList.add('on');
 }
@@ -1967,6 +1967,12 @@ function openFertRegModal(planIdx, stageIdx){
 function togFertEsp(idx){
   if(_frCtx.espSel.has(idx)) _frCtx.espSel.delete(idx);
   else _frCtx.espSel.add(idx);
+  renderFertRegModal();
+}
+
+function togFertProd(prodId){
+  if(_frCtx.prodDesel.has(prodId)) _frCtx.prodDesel.delete(prodId);
+  else _frCtx.prodDesel.add(prodId);
   renderFertRegModal();
 }
 
@@ -1991,13 +1997,15 @@ function renderFertRegModal(){
       const rows=rProds.map(pp=>{
         const prod=getProd(pp.prodId);
         const amt=calcProdAmt(pp.dosisPorL, litros);
-        return `<div style="display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--br)">
+        const off=_frCtx.prodDesel.has(pp.prodId);
+        return `<div style="display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--br);opacity:${off?'.4':'1'};cursor:pointer" onclick="togFertProd('${pp.prodId}')">
+          <div style="font-size:17px;margin-right:10px;flex-shrink:0">${off?'○':'●'}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600">${prod?prod.nom:pp.prodId}</div>
+            <div style="font-size:13px;font-weight:600;${off?'text-decoration:line-through;color:var(--tx3)':''}">${prod?prod.nom:pp.prodId}</div>
             ${pp.nota?`<div style="font-size:10px;color:var(--verde);margin-top:1px">⚠ ${pp.nota}</div>`:''}
           </div>
           <div style="text-align:right;flex-shrink:0;margin-left:12px">
-            <div style="font-size:15px;font-weight:700;color:var(--verde)">${fmtAmt(amt,prod?prod.unidad:'g')}</div>
+            <div style="font-size:15px;font-weight:700;color:${off?'var(--tx3)':'var(--verde)'}">${fmtAmt(amt,prod?prod.unidad:'g')}</div>
           </div>
         </div>`;
       }).join('');
@@ -2057,7 +2065,7 @@ function saveFertReg(){
 
   let prodsList=[];
   if(etapa){
-    etapa.prods.forEach(pp=>{
+    etapa.prods.filter(pp=>!_frCtx.prodDesel.has(pp.prodId)).forEach(pp=>{
       const prod=getProd(pp.prodId);
       const amt=calcProdAmt(pp.dosisPorL, L);
       prodsList.push({prodId:pp.prodId,nom:prod?prod.nom:pp.prodId,riego:pp.riego,dosis:pp.dosisPorL,amt:Math.round(amt),uni:prod?(prod.unidad==='L'?'cc':'g'):'g'});
