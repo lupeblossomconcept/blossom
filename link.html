@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <title>Blossom Concept · Flores de Temporada</title>
+  <meta name="description" content="Flores de temporada directo del campo · María Pinto · Pedidos por WhatsApp">
+  <meta property="og:title" content="Blossom Concept">
+  <meta property="og:description" content="Flores de temporada directo del campo · María Pinto">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #faf8f6;
+      color: #2d2d2d;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: #8b1a4a;
+      color: white;
+      padding: 56px 28px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 60%, rgba(245,224,234,.14) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 20%, rgba(245,224,234,.09) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.60);
+      margin-bottom: 18px;
+      position: relative;
+    }
+    .hero-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 52px;
+      font-weight: 400;
+      line-height: 1.05;
+      position: relative;
+    }
+    .hero-name em { font-style: italic; }
+    .hero-tagline {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: rgba(255,255,255,.70);
+      letter-spacing: .06em;
+      margin: 14px 0 32px;
+      position: relative;
+    }
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: white;
+      color: #8b1a4a;
+      padding: 15px 28px;
+      border-radius: 50px;
+      font-size: 13.5px;
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: .02em;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,.20);
+    }
+
+    /* ── CONTENT ── */
+    .content {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 18px 48px;
+    }
+
+    /* ── FLORES ── */
+    .flowers-section {
+      padding: 32px 0 8px;
+      text-align: center;
+    }
+    .section-label {
+      font-size: 9.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      color: #1a5c2e;
+      margin-bottom: 16px;
+    }
+    .flowers {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .ftag {
+      background: #f5e0ea;
+      color: #8b1a4a;
+      padding: 7px 15px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .season-note {
+      font-size: 11px;
+      color: #b0a8aa;
+      letter-spacing: .02em;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      text-align: center;
+      color: #e0d8da;
+      letter-spacing: .35em;
+      font-size: 11px;
+      padding: 28px 0 0;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      border-radius: 18px;
+      padding: 26px 22px;
+      margin-top: 16px;
+    }
+    .card-b2c {
+      background: white;
+      box-shadow: 0 2px 18px rgba(139,26,74,.08);
+    }
+    .card-b2b {
+      background: #1a5c2e;
+      color: white;
+    }
+    .card-icon {
+      font-size: 30px;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .card-b2c .card-title { color: #2d2d2d; }
+    .card-b2b .card-title { color: white; }
+    .card-desc {
+      font-size: 13px;
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+    .card-b2c .card-desc { color: #666; }
+    .card-b2b .card-desc { color: rgba(255,255,255,.80); }
+    .card-desc strong { font-weight: 600; }
+    .card-b2c .card-desc strong { color: #2d2d2d; }
+    .card-b2b .card-desc strong { color: white; }
+
+    .bullets {
+      list-style: none;
+      margin-bottom: 20px;
+    }
+    .bullets li {
+      font-size: 12.5px;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-b2c .bullets li { color: #555; }
+    .card-b2b .bullets li { color: rgba(255,255,255,.85); }
+    .bullets li::before {
+      content: '✓';
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .card-b2c .bullets li::before { color: #1a5c2e; }
+    .card-b2b .bullets li::before { color: #a8d5b5; }
+
+    .btn-wa {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      background: #25D366;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 50px;
+      font-size: 13.5px;
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: .02em;
+    }
+    .btn-wa-outline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      background: transparent;
+      border: 2px solid rgba(255,255,255,.50);
+      color: white;
+      padding: 14px 20px;
+      border-radius: 50px;
+      font-size: 13.5px;
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: .02em;
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      text-align: center;
+      padding: 36px 20px 48px;
+    }
+    .footer-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: #8b1a4a;
+      margin-bottom: 6px;
+    }
+    .footer-loc {
+      font-size: 11.5px;
+      color: #b0a8aa;
+      letter-spacing: .05em;
+    }
+    .footer-sep {
+      width: 32px;
+      height: 1.5px;
+      background: #f0e8ec;
+      margin: 18px auto;
+      border-radius: 2px;
+    }
+    .footer-contact {
+      font-size: 12px;
+      color: #999;
+    }
+    .footer-contact a {
+      color: #8b1a4a;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* WhatsApp SVG icon helper */
+    .wa-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-eyebrow">✦ &nbsp; Directo del campo &nbsp; ✦</div>
+  <div class="hero-name">Blossom<br><em>Concept</em></div>
+  <div class="hero-tagline">Flores de temporada · María Pinto</div>
+  <a class="hero-cta" href="https://wa.me/56966321492?text=Hola!%20Vi%20su%20perfil%20en%20Instagram%20%F0%9F%8C%B8%20%C2%BFQu%C3%A9%20tienen%20disponible%20esta%20semana%3F">
+    <svg class="wa-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.121 1.532 5.855L.057 23.886a.5.5 0 00.606.63l6.218-1.63A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.842 9.842 0 01-5.031-1.375l-.36-.214-3.732.979.997-3.64-.235-.374A9.86 9.86 0 012.1 12c0-5.464 4.436-9.9 9.9-9.9 5.463 0 9.9 4.436 9.9 9.9 0 5.463-4.437 9.9-9.9 9.9z"/></svg>
+    Escribirnos
+  </a>
+</div>
+
+<div class="content">
+
+  <!-- ── FLORES ── -->
+  <div class="flowers-section">
+    <div class="section-label">Lo que cultivamos</div>
+    <div class="flowers">
+      <span class="ftag">Lisianthus</span>
+      <span class="ftag">Escabiosa</span>
+      <span class="ftag">Estatice</span>
+      <span class="ftag">Antirrhinum</span>
+      <span class="ftag">Aleli</span>
+      <span class="ftag">Zinnia</span>
+      <span class="ftag">Cosmos</span>
+      <span class="ftag">Girasol</span>
+    </div>
+    <div class="season-note">Disponibilidad según temporada · Consulta por WhatsApp</div>
+  </div>
+
+  <div class="divider">· · ·</div>
+
+  <!-- ── B2C ── -->
+  <div class="card card-b2c">
+    <span class="card-icon">🌸</span>
+    <div class="card-title">Para ti</div>
+    <div class="card-desc">
+      Flores frescas <strong>directo del campo</strong>, sin intermediarios.<br>
+      Puedes venir a buscar a María Pinto o coordinamos entrega.
+    </div>
+    <ul class="bullets">
+      <li>Ramos de temporada siempre frescos</li>
+      <li>Precio directo del productor</li>
+      <li>Retiro en campo o entrega coordinada</li>
+    </ul>
+    <a class="btn-wa" href="https://wa.me/56966321492?text=Hola!%20Vi%20su%20perfil%20en%20Instagram%20%F0%9F%8C%B8%20Me%20gustar%C3%ADa%20pedir%20flores.%20%C2%BFQu%C3%A9%20tienen%20disponible%20esta%20semana%3F">
+      <svg class="wa-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.121 1.532 5.855L.057 23.886a.5.5 0 00.606.63l6.218-1.63A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.842 9.842 0 01-5.031-1.375l-.36-.214-3.732.979.997-3.64-.235-.374A9.86 9.86 0 012.1 12c0-5.464 4.436-9.9 9.9-9.9 5.463 0 9.9 4.436 9.9 9.9 0 5.463-4.437 9.9-9.9 9.9z"/></svg>
+      Pedir mi ramo
+    </a>
+  </div>
+
+  <!-- ── B2B ── -->
+  <div class="card card-b2b">
+    <span class="card-icon">🌿</span>
+    <div class="card-title">Para tu negocio</div>
+    <div class="card-desc">
+      Proveemos a <strong>cafés, restaurantes y floristerías</strong>.<br>
+      Abastecimiento semanal directo del productor.
+    </div>
+    <ul class="bullets">
+      <li>Precios por volumen</li>
+      <li>Pedidos semanales coordinados</li>
+      <li>Sin intermediarios, más frescas</li>
+    </ul>
+    <a class="btn-wa-outline" href="https://wa.me/56966321492?text=Hola!%20Vi%20su%20perfil%20en%20Instagram%20%F0%9F%8C%BF%20Tengo%20un%20negocio%20y%20me%20interesa%20conocer%20sus%20opciones%20para%20proveedores.">
+      <svg class="wa-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.121 1.532 5.855L.057 23.886a.5.5 0 00.606.63l6.218-1.63A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.842 9.842 0 01-5.031-1.375l-.36-.214-3.732.979.997-3.64-.235-.374A9.86 9.86 0 012.1 12c0-5.464 4.436-9.9 9.9-9.9 5.463 0 9.9 4.436 9.9 9.9 0 5.463-4.437 9.9-9.9 9.9z"/></svg>
+      Consultar por volumen
+    </a>
+  </div>
+
+</div>
+
+<!-- ── FOOTER ── -->
+<div class="footer">
+  <div class="footer-brand">Blossom Concept</div>
+  <div class="footer-loc">María Pinto · Región Metropolitana · Chile</div>
+  <div class="footer-sep"></div>
+  <div class="footer-contact">
+    <a href="mailto:lupeblossomconcept@gmail.com">lupeblossomconcept@gmail.com</a>
+  </div>
+</div>
+
+</body>
+</html>
