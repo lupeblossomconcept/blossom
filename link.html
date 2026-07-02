@@ -74,7 +74,7 @@
     .hero-brand {
       font-family: 'Against', 'Cormorant Garamond', serif;
       font-size: 46px;
-      font-weight: 400;
+      font-weight: 700;
       letter-spacing: .20em;
       text-transform: uppercase;
       color: var(--berry);
@@ -86,7 +86,7 @@
       font-family: 'Against', 'Cormorant Garamond', serif;
       font-size: 13px;
       font-weight: 400;
-      letter-spacing: .14em;
+      letter-spacing: .02em;
       color: var(--berry);
       margin-bottom: 30px;
     }
@@ -94,7 +94,7 @@
     .hero-cta {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       background: var(--berry);
       color: white;
       padding: 13px 28px;
@@ -107,22 +107,37 @@
       box-shadow: 0 4px 16px rgba(158,42,93,0.35);
     }
 
-    /* ── MANIFESTO ── */
-    .manifesto {
-      background: rgba(255,255,255,0.65);
-      backdrop-filter: blur(4px);
+    /* ── HERO STORY ACCORDION ── */
+    .hero-story { text-align: center; }
+    .hero-story summary { list-style: none; display: inline-flex; cursor: pointer; }
+    .hero-story summary::-webkit-details-marker { display: none; }
+
+    .hero-story-content {
+      margin-top: 16px;
+      background: rgba(235,243,250,0.55);
+      backdrop-filter: blur(8px);
+      padding: 22px 24px 18px;
       text-align: center;
-      padding: 28px 28px;
-      border-bottom: 1px solid rgba(196,220,241,0.6);
+      border-top: 1px solid rgba(158,42,93,0.15);
     }
 
-    .manifesto p {
-      font-family: 'Against', 'Cormorant Garamond', serif;
-      font-size: 18px;
-      font-weight: 400;
-      line-height: 1.6;
+    .hero-story-quote {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 17px;
+      font-weight: 300;
+      font-style: italic;
+      line-height: 1.75;
+      color: var(--berry);
+      margin-bottom: 12px;
+    }
+
+    .hero-story-author {
+      font-family: 'Against', sans-serif;
+      font-size: 12px;
+      letter-spacing: .14em;
       color: var(--mid);
     }
+
 
     /* ── SERVICIOS ── */
     .services {
@@ -132,11 +147,12 @@
     }
 
     .services-eyebrow {
+      font-family: 'Against', 'Cormorant Garamond', serif;
       text-align: center;
-      font-size: 11px;
-      font-weight: 600;
+      font-size: 24px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: .24em;
+      letter-spacing: .20em;
       color: var(--berry);
       margin-bottom: 22px;
       display: block;
@@ -154,9 +170,10 @@
     .card-3 { background: rgba(139,111,62,0.09); border-left-color: #8B6F3E; }
 
     .card-tag {
-      font-size: 8px;
-      font-weight: 600;
-      letter-spacing: .28em;
+      font-family: 'Against', sans-serif;
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: .20em;
       text-transform: uppercase;
       margin-bottom: 8px;
       display: block;
@@ -166,11 +183,13 @@
     .card-3 .card-tag { color: #8B6F3E; }
 
     .card-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 27px;
-      font-weight: 400;
+      font-family: 'Against', 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
       line-height: 1.2;
-      color: var(--dark);
+      color: var(--berry);
       margin-bottom: 8px;
     }
 
@@ -209,14 +228,43 @@
     .btn-green { background: #2A3A28; color: white; }
     .btn-warm  { background: #8B6F3E; color: white; }
 
+    /* ── CARD CON FOTO ── */
+    .card-photo {
+      overflow: hidden;
+      padding: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+    }
+
+    .card-photo-bg {
+      width: 140px;
+      flex-shrink: 0;
+      background-size: cover;
+      background-position: center 15%;
+      background-repeat: no-repeat;
+    }
+
+    .card-photo .card-body {
+      padding: 18px 18px 16px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-price {
+      font-family: 'Against', 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--berry);
+      margin-bottom: 14px;
+      display: block;
+    }
+
     /* ── CÓMO NACE ── */
     .origin {
       text-align: center;
       padding: 44px 32px;
-      background: rgba(255,255,255,0.5);
-      backdrop-filter: blur(4px);
-      border-top: 1px solid rgba(196,220,241,0.5);
-      border-bottom: 1px solid rgba(196,220,241,0.5);
+      background: linear-gradient(160deg, #7d1f49 0%, var(--berry) 100%);
     }
 
     .origin-eyebrow {
@@ -224,28 +272,27 @@
       font-weight: 600;
       letter-spacing: .32em;
       text-transform: uppercase;
-      color: var(--berry);
+      color: rgba(255,255,255,0.6);
       display: block;
       margin-bottom: 20px;
     }
 
     .origin-quote {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 20px;
-      font-style: italic;
-      font-weight: 300;
-      line-height: 1.75;
-      color: var(--dark);
+      font-family: 'Against', sans-serif;
+      font-size: 26px;
+      font-weight: 400;
+      line-height: 1.55;
+      color: white;
       max-width: 340px;
-      margin: 0 auto 16px;
+      margin: 0 auto 20px;
     }
 
     .origin-author {
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: .22em;
-      text-transform: uppercase;
-      color: var(--berry);
+      font-family: 'Against', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: .18em;
+      color: rgba(255,255,255,0.7);
     }
 
     /* ── STRIP DESPACHO ── */
@@ -271,10 +318,11 @@
     }
 
     .season-eyebrow {
-      font-size: 8px;
-      font-weight: 600;
+      font-family: 'Against', 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: .32em;
+      letter-spacing: .20em;
       color: var(--berry);
       margin-bottom: 18px;
       display: block;
@@ -289,9 +337,9 @@
     }
 
     .ftag {
-      border: 1px solid rgba(158,42,93,.28);
-      color: var(--berry);
-      background: rgba(255,255,255,.65);
+      border: 1px solid var(--berry);
+      color: white;
+      background: var(--berry);
       padding: 7px 14px;
       font-size: 10px;
       font-weight: 500;
@@ -314,7 +362,7 @@
     }
 
     .footer-brand {
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Against', 'Cormorant Garamond', serif;
       font-size: 13px;
       font-weight: 300;
       letter-spacing: .32em;
@@ -324,13 +372,24 @@
     }
 
     .footer-sub {
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Montserrat', sans-serif;
       font-size: 12px;
       font-style: italic;
       font-weight: 300;
       letter-spacing: .06em;
       color: rgba(255,255,255,.55);
       margin-bottom: 22px;
+    }
+
+    .footer-manifesto {
+      font-family: 'Against', 'Cormorant Garamond', serif;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.7;
+      letter-spacing: .04em;
+      color: rgba(255,255,255,0.65);
+      max-width: 260px;
+      margin: 0 auto 22px;
     }
 
     .footer-sep {
@@ -367,7 +426,6 @@
 
       .services { max-width: 560px; padding-top: 36px; }
 
-      .manifesto p { font-size: 20px; }
     }
   </style>
 </head>
@@ -380,67 +438,72 @@
     <div class="hero-icon"></div>
     <div class="hero-brand">Blossom<br>Concept</div>
     <div class="hero-sub">· Flower Farm &amp; Design ·</div>
-    <a class="hero-cta" href="https://wa.me/56966321492?text=Hola!%20Vi%20su%20perfil%20en%20Instagram%20y%20me%20gustar%C3%ADa%20cotizar%20%F0%9F%8C%B8">
-      <svg class="wa-icon" viewBox="0 0 24 24">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.121 1.532 5.855L.057 23.886a.5.5 0 00.606.63l6.218-1.63A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.842 9.842 0 01-5.031-1.375l-.36-.214-3.732.979.997-3.64-.235-.374A9.86 9.86 0 012.1 12c0-5.464 4.436-9.9 9.9-9.9 5.463 0 9.9 4.436 9.9 9.9 0 5.463-4.437 9.9-9.9 9.9z"/>
-      </svg>
-      Cotiza con nosotras
-    </a>
+    <details class="hero-story">
+      <summary class="hero-cta">Nuestra historia &nbsp;↓</summary>
+      <div class="hero-story-content">
+        <div class="hero-story-quote">"Blossom Concept nace desde mi pasión por la naturaleza, la tierra, el campo y mi sueño de tener una flower farm propia."</div>
+        <div class="hero-story-author">— María Gracia</div>
+      </div>
+    </details>
   </div>
-</div>
-
-<!-- ── MANIFESTO ── -->
-<div class="manifesto">
-  <p>Trabajamos con las manos, la tierra y el corazón.</p>
-</div>
-
-<!-- ── CÓMO NACE ── -->
-<div class="origin">
-  <span class="origin-eyebrow">Cómo nace</span>
-  <div class="origin-quote">"Blossom Concept nace desde mi pasión y mi sueño de tener una flower farm propia."</div>
-  <div class="origin-author">— María Gracia</div>
 </div>
 
 <!-- ── SERVICIOS ── -->
 <div class="services">
   <span class="services-eyebrow">Nuestros servicios</span>
 
+  <!-- Ramo de la semana -->
+  <div class="card card-1 card-photo">
+    <div class="card-photo-bg" style="background-image: url('img/ramo-semana.jpg')"></div>
+    <div class="card-body">
+      <span class="card-tag">Especial de la semana</span>
+      <div class="card-title">Ramo de la semana</div>
+      <div class="card-sub">Un ramo distinto, cada semana</div>
+      <div class="card-desc">Cada semana armamos un ramo único con lo mejor de nuestra cosecha del momento.</div>
+      <span class="card-price">$24.000</span>
+      <a class="btn btn-berry" href="https://wa.me/56966321492?text=Hola!%20Vi%20el%20ramo%20de%20la%20semana%20en%20su%20perfil%20%F0%9F%8C%B7%20%C2%BFMe%20puedes%20contar%20m%C3%A1s%3F">
+        <svg class="wa-icon" viewBox="0 0 24 24">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.121 1.532 5.855L.057 23.886a.5.5 0 00.606.63l6.218-1.63A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.842 9.842 0 01-5.031-1.375l-.36-.214-3.732.979.997-3.64-.235-.374A9.86 9.86 0 012.1 12c0-5.464 4.436-9.9 9.9-9.9 5.463 0 9.9 4.436 9.9 9.9 0 5.463-4.437 9.9-9.9 9.9z"/>
+        </svg>
+        Quiero mi ramo de la semana
+      </a>
+    </div>
+  </div>
+
   <!-- Card 1 -->
   <div class="card card-1">
     <span class="card-tag">Para ti</span>
     <div class="card-title">Ramos y flores al detalle</div>
-    <div class="card-sub">Ramos armados o flores para que juegues tú</div>
-    <div class="card-desc">Elige un ramo ya diseñado por nosotras, o pide las flores sueltas y arma el tuyo.</div>
-    <a class="btn btn-berry" href="https://wa.me/56966321492?text=Hola!%20Vi%20su%20perfil%20en%20Instagram%20%F0%9F%8C%B8%20Quiero%20cotizar%20un%20ramo.">
+    <div class="card-sub">¿Ramo listo o le pones tú la magia?</div>
+    <div class="card-desc">Armamos tu ramo, o te llevas las flores por paquete para que las uses como quieras: Nosotras ponemos la flor fresca, tú pones la creatividad.</div>
+    <a class="btn btn-berry" href="https://wa.me/56966321492?text=Hola!%20Vi%20su%20perfil%20en%20Instagram%20%F0%9F%8C%B8%20Quiero%20mis%20flores.">
       <svg class="wa-icon" viewBox="0 0 24 24">
         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
         <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.121 1.532 5.855L.057 23.886a.5.5 0 00.606.63l6.218-1.63A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.842 9.842 0 01-5.031-1.375l-.36-.214-3.732.979.997-3.64-.235-.374A9.86 9.86 0 012.1 12c0-5.464 4.436-9.9 9.9-9.9 5.463 0 9.9 4.436 9.9 9.9 0 5.463-4.437 9.9-9.9 9.9z"/>
       </svg>
-      Quiero mi ramo
+      Quiero mis flores
     </a>
   </div>
 
   <!-- Card 2 -->
   <div class="card card-2">
     <span class="card-tag">Para tu negocio</span>
-    <div class="card-title">Flor fresca al por mayor</div>
-    <div class="card-sub">Para tu café, restaurante o floristería</div>
-    <div class="card-desc">Para cafés, restaurantes, hoteles, florerías y floristas. Directo de nuestro cultivo, sin intermediarios.</div>
-    <a class="btn btn-green" href="https://wa.me/56966321492?text=Hola!%20Vi%20su%20perfil%20en%20Instagram%20%F0%9F%8C%BF%20Tengo%20un%20negocio%20y%20me%20gustar%C3%ADa%20cotizar%20flores%20al%20por%20mayor.">
+    <div class="card-title">Flores recién cosechadas, directo a tu local</div>
+    <div class="card-desc">Trabajamos con florerías, floristas, cafés, restaurantes y hoteles.</div>
+    <a class="btn btn-green" href="https://wa.me/56966321492?text=Hola!%20Vi%20su%20perfil%20en%20Instagram%20%F0%9F%8C%BF%20Tengo%20un%20negocio%20y%20me%20gustar%C3%ADa%20hablemos%20de%20mi%20pedido.">
       <svg class="wa-icon" viewBox="0 0 24 24">
         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
         <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.121 1.532 5.855L.057 23.886a.5.5 0 00.606.63l6.218-1.63A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.842 9.842 0 01-5.031-1.375l-.36-.214-3.732.979.997-3.64-.235-.374A9.86 9.86 0 012.1 12c0-5.464 4.436-9.9 9.9-9.9 5.463 0 9.9 4.436 9.9 9.9 0 5.463-4.437 9.9-9.9 9.9z"/>
       </svg>
-      Cotizar para mi negocio
+      Hablemos de tu pedido
     </a>
   </div>
 
   <!-- Card 3 -->
   <div class="card card-3">
     <span class="card-tag">Semillas</span>
-    <div class="card-title">Cultiva tus propias flores</div>
-    <div class="card-sub">Directo de nuestros cultivos</div>
+    <div class="card-title">Tu propio cultivo, a un paquete de distancia</div>
     <div class="card-desc">Semillas de zinnias y cosmos, de nuestros propios cultivos.</div>
     <a class="btn btn-warm" href="https://wa.me/56966321492?text=Hola!%20Vi%20su%20perfil%20en%20Instagram%20%F0%9F%8C%BB%20Me%20gustar%C3%ADa%20saber%20m%C3%A1s%20sobre%20sus%20semillas.">
       <svg class="wa-icon" viewBox="0 0 24 24">
@@ -452,14 +515,9 @@
   </div>
 </div>
 
-<!-- ── DESPACHO ── -->
-<div class="shipping-strip">
-  <p>✦ &nbsp;Despachamos a todo Chile &nbsp;✦</p>
-</div>
-
 <!-- ── FLORES ── -->
 <div class="season-section">
-  <span class="season-eyebrow">Flores de temporada</span>
+  <span class="season-eyebrow">Las flores que ofrecemos</span>
   <div class="flowers">
     <span class="ftag">Lisianthus</span>
     <span class="ftag">Escabiosa</span>
@@ -469,6 +527,7 @@
     <span class="ftag">Zinnia</span>
     <span class="ftag">Cosmos</span>
     <span class="ftag">Delphinium</span>
+    <span class="ftag">Pensamientos</span>
   </div>
   <div class="season-note">Disponibilidad varía según temporada</div>
 </div>
@@ -477,6 +536,7 @@
 <div class="footer">
   <div class="footer-brand">Blossom Concept</div>
   <div class="footer-sub">Flower Farm &amp; Design</div>
+  <div class="footer-manifesto">En Blossom, trabajamos con las manos, la tierra y el corazón.</div>
   <div class="footer-sep"></div>
   <a class="footer-email" href="mailto:contactoblossomconcept@gmail.com">contactoblossomconcept@gmail.com</a>
   <div class="footer-loc">María Pinto · Chile</div>
