@@ -66,7 +66,7 @@
     .hero-icon {
       width: 86px;
       height: 86px;
-      background: url('img/logo-blanco.png') center center / 250% no-repeat;
+      background: url('img/logo-blanco.png') center center / 185% no-repeat;
       margin-bottom: 16px;
       flex-shrink: 0;
     }
@@ -83,13 +83,11 @@
     }
 
     .hero-sub {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 10.5px;
-      font-weight: 100;
-      font-style: italic;
-      letter-spacing: .20em;
+      font-family: 'Against', 'Cormorant Garamond', serif;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: .14em;
       color: var(--berry);
-      opacity: 0.78;
       margin-bottom: 30px;
     }
 
@@ -136,29 +134,28 @@
 
     .services-eyebrow {
       text-align: center;
-      font-size: 8px;
+      font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: .32em;
+      letter-spacing: .24em;
       color: var(--berry);
-      margin-bottom: 20px;
+      margin-bottom: 22px;
       display: block;
     }
 
     .card {
-      background: rgba(255,255,255,0.82);
       backdrop-filter: blur(6px);
       margin-bottom: 10px;
       padding: 26px 22px 22px;
       border-left: 3px solid transparent;
     }
 
-    .card-1 { border-left-color: var(--berry); }
-    .card-2 { border-left-color: #2A3A28; }
-    .card-3 { border-left-color: #8B6F3E; }
+    .card-1 { background: rgba(158,42,93,0.09); border-left-color: var(--berry); }
+    .card-2 { background: rgba(42,58,40,0.08); border-left-color: #2A3A28; }
+    .card-3 { background: rgba(139,111,62,0.09); border-left-color: #8B6F3E; }
 
     .card-tag {
-      font-size: 7.5px;
+      font-size: 8px;
       font-weight: 600;
       letter-spacing: .28em;
       text-transform: uppercase;
@@ -171,7 +168,7 @@
 
     .card-title {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 24px;
+      font-size: 27px;
       font-weight: 400;
       line-height: 1.2;
       color: var(--dark);
@@ -180,7 +177,7 @@
 
     .card-sub {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 14px;
+      font-size: 15px;
       font-style: italic;
       font-weight: 300;
       color: var(--mid);
@@ -189,7 +186,7 @@
     }
 
     .card-desc {
-      font-size: 12px;
+      font-size: 13px;
       line-height: 1.85;
       color: var(--mid);
       margin-bottom: 18px;
@@ -209,9 +206,48 @@
       text-decoration: none;
       border-radius: 2px;
     }
-    .btn-berry { background: var(--berry); color: white; }
-    .btn-green { background: #2A3A28; color: white; }
-    .btn-warm  { background: #8B6F3E; color: white; }
+    .btn-berry { background: white; color: var(--berry); border: 1.5px solid var(--berry); }
+    .btn-green { background: white; color: #2A3A28; border: 1.5px solid #2A3A28; }
+    .btn-warm  { background: white; color: #8B6F3E; border: 1.5px solid #8B6F3E; }
+
+    /* ── CÓMO NACE ── */
+    .origin {
+      text-align: center;
+      padding: 44px 32px;
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(4px);
+      border-top: 1px solid rgba(196,220,241,0.5);
+      border-bottom: 1px solid rgba(196,220,241,0.5);
+    }
+
+    .origin-eyebrow {
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: .32em;
+      text-transform: uppercase;
+      color: var(--berry);
+      display: block;
+      margin-bottom: 20px;
+    }
+
+    .origin-quote {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-style: italic;
+      font-weight: 300;
+      line-height: 1.75;
+      color: var(--dark);
+      max-width: 340px;
+      margin: 0 auto 16px;
+    }
+
+    .origin-author {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--berry);
+    }
 
     /* ── STRIP DESPACHO ── */
     .shipping-strip {
@@ -350,7 +386,7 @@
         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
         <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.121 1.532 5.855L.057 23.886a.5.5 0 00.606.63l6.218-1.63A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.842 9.842 0 01-5.031-1.375l-.36-.214-3.732.979.997-3.64-.235-.374A9.86 9.86 0 012.1 12c0-5.464 4.436-9.9 9.9-9.9 5.463 0 9.9 4.436 9.9 9.9 0 5.463-4.437 9.9-9.9 9.9z"/>
       </svg>
-      Cotiza con nosotros
+      Cotiza con nosotras
     </a>
   </div>
 </div>
@@ -360,9 +396,16 @@
   <p>Trabajamos con las manos, la tierra y el corazón.</p>
 </div>
 
+<!-- ── CÓMO NACE ── -->
+<div class="origin">
+  <span class="origin-eyebrow">Cómo nace</span>
+  <div class="origin-quote">"Blossom Concept nace desde mi pasión y mi sueño de tener una flower farm propia."</div>
+  <div class="origin-author">— María Gracia</div>
+</div>
+
 <!-- ── SERVICIOS ── -->
 <div class="services">
-  <span class="services-eyebrow">¿Qué hacemos?</span>
+  <span class="services-eyebrow">Nuestros servicios</span>
 
   <!-- Card 1 -->
   <div class="card card-1">
@@ -422,11 +465,11 @@
     <span class="ftag">Lisianthus</span>
     <span class="ftag">Escabiosa</span>
     <span class="ftag">Estatice</span>
-    <span class="ftag">Antirrhinum</span>
+    <span class="ftag">Perrito</span>
     <span class="ftag">Aleli</span>
     <span class="ftag">Zinnia</span>
     <span class="ftag">Cosmos</span>
-    <span class="ftag">Girasol</span>
+    <span class="ftag">Delphinium</span>
   </div>
   <div class="season-note">Disponibilidad varía según temporada</div>
 </div>
