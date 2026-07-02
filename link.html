@@ -7,7 +7,9 @@
   <meta name="description" content="Flores de temporada directo del campo · María Pinto · Chile">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=against@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:ital,wght@0,100;0,300;0,400;0,500;0,600;1,100;1,300&display=swap" rel="stylesheet">
   <style>
     :root {
       --berry:  #9E2A5D;
@@ -31,33 +33,26 @@
     /* ── HERO ── */
     .hero {
       position: relative;
-      height: 480px;
+      background: linear-gradient(180deg, var(--sky1) 0%, #daeaf6 52%, var(--sky2) 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       text-align: center;
-      padding: 0 24px;
+      padding: 54px 24px 108px;
       overflow: hidden;
+      min-height: 500px;
     }
 
-    .hero-bg {
+    .hero-flowers {
       position: absolute;
-      inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      object-position: center 28%;
-    }
-
-    .hero-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        to bottom,
-        rgba(255,255,255,0.55) 0%,
-        rgba(255,255,255,0.28) 50%,
-        rgba(0,0,0,0.05) 100%
-      );
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: url('img/cosmos.jpg') center 65% / cover no-repeat;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.45) 35%, rgba(0,0,0,0.88) 100%);
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.45) 35%, rgba(0,0,0,0.88) 100%);
     }
 
     .hero-content {
@@ -68,56 +63,34 @@
       align-items: center;
     }
 
-    .hero-logo {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: white;
-      border: 2px solid rgba(255,255,255,0.9);
-      box-shadow: 0 3px 20px rgba(0,0,0,0.16);
-      overflow: hidden;
-      margin-bottom: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .hero-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .hero-icon {
+      width: 86px;
+      height: 86px;
+      background: url('img/logo-blanco.png') center center / 250% no-repeat;
+      margin-bottom: 16px;
+      flex-shrink: 0;
     }
 
     .hero-brand {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 40px;
-      font-weight: 700;
+      font-family: 'Against', 'Cormorant Garamond', serif;
+      font-size: 46px;
+      font-weight: 400;
       letter-spacing: .20em;
       text-transform: uppercase;
       color: var(--berry);
       line-height: 1.0;
-      margin-bottom: 8px;
-      text-shadow: 0 1px 8px rgba(255,255,255,0.75);
+      margin-bottom: 10px;
     }
 
     .hero-sub {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 15px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10.5px;
+      font-weight: 100;
       font-style: italic;
-      font-weight: 300;
-      letter-spacing: .06em;
-      color: var(--dark);
-      margin-bottom: 6px;
-      text-shadow: 0 1px 6px rgba(255,255,255,0.6);
-    }
-
-    .hero-loc {
-      font-size: 8.5px;
-      font-weight: 600;
-      letter-spacing: .28em;
-      text-transform: uppercase;
-      color: rgba(26,26,26,0.5);
-      margin-bottom: 28px;
+      letter-spacing: .20em;
+      color: var(--berry);
+      opacity: 0.78;
+      margin-bottom: 30px;
     }
 
     .hero-cta {
@@ -133,7 +106,7 @@
       text-transform: uppercase;
       text-decoration: none;
       border-radius: 2px;
-      box-shadow: 0 4px 16px rgba(158,42,93,0.38);
+      box-shadow: 0 4px 16px rgba(158,42,93,0.35);
     }
 
     /* ── MANIFESTO ── */
@@ -352,9 +325,10 @@
 
     /* ── DESKTOP ── */
     @media (min-width: 768px) {
-      .hero { height: 560px; }
-      .hero-brand { font-size: 52px; }
-      .hero-logo { width: 120px; height: 120px; }
+      .hero { min-height: 600px; padding: 70px 24px 140px; }
+      .hero-brand { font-size: 64px; }
+      .hero-icon { width: 108px; height: 108px; }
+      .hero-flowers { height: 52%; }
 
       .services { max-width: 560px; padding-top: 36px; }
 
@@ -366,15 +340,11 @@
 
 <!-- ── HERO ── -->
 <div class="hero">
-  <img src="img/cosmos.jpg" class="hero-bg" alt="Campo de cosmos Blossom Concept">
-  <div class="hero-overlay"></div>
+  <div class="hero-flowers"></div>
   <div class="hero-content">
-    <div class="hero-logo">
-      <img src="img/logo-icon.png" alt="Blossom Concept">
-    </div>
+    <div class="hero-icon"></div>
     <div class="hero-brand">Blossom<br>Concept</div>
     <div class="hero-sub">· Flower Farm &amp; Design ·</div>
-    <div class="hero-loc">María Pinto · Chile</div>
     <a class="hero-cta" href="https://wa.me/56966321492?text=Hola!%20Vi%20su%20perfil%20en%20Instagram%20y%20me%20gustar%C3%ADa%20cotizar%20%F0%9F%8C%B8">
       <svg class="wa-icon" viewBox="0 0 24 24">
         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
