@@ -171,6 +171,19 @@
       margin-bottom: 10px;
       padding: 26px 22px 22px;
       border-left: 3px solid transparent;
+      border-right: 3px solid transparent;
+    }
+
+    /* foto izquierda → franja derecha */
+    .card-photo:not(.card-photo-right) {
+      border-left-color: transparent !important;
+      border-right-color: var(--berry) !important;
+    }
+
+    /* foto derecha → franja izquierda */
+    .card-photo.card-photo-right {
+      border-left-color: var(--berry) !important;
+      border-right-color: transparent !important;
     }
 
     .card-1 { background: rgba(42,58,40,0.08); border-left-color: var(--berry); }
