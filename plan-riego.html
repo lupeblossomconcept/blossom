@@ -1463,7 +1463,7 @@ function openModal(tipo, ctx){
         </div>
         <div class="mfield"><label>Dosis base</label>
           <div style="display:flex;align-items:center;gap:6px">
-            <input type="number" id="ap-dosis" value="${p?p.dosis:''}" min="0" step="0.01" inputmode="decimal" style="flex:1" placeholder="0">
+            <input type="text" id="ap-dosis" value="${p?p.dosis:''}" inputmode="decimal" style="flex:1" placeholder="0">
             <span id="ap-dosis-uni" style="font-size:11px;color:var(--tx3);white-space:nowrap">${p&&p.unidad==='L'?'cc/L':'g/L'}</span>
           </div>
         </div>
@@ -1910,7 +1910,7 @@ function renderStageProdsList(){
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <div style="flex:1"><label style="font-size:10px;color:var(--tx3);display:block;margin-bottom:3px">Dosis (por litro)</label>
-          <input type="number" id="se-dosis-${i}" value="${pp.dosisPorL}" step="0.001" min="0" inputmode="decimal" style="width:100%;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:#fff;color:var(--tx);box-sizing:border-box"></div>
+          <input type="text" id="se-dosis-${i}" value="${pp.dosisPorL}" inputmode="decimal" style="width:100%;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:#fff;color:var(--tx);box-sizing:border-box"></div>
         <div style="flex:1"><label style="font-size:10px;color:var(--tx3);display:block;margin-bottom:3px">Nota (opcional)</label>
           <input id="se-nota-${i}" value="${pp.nota||''}" placeholder="" style="width:100%;padding:7px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:12px;background:#fff;color:var(--tx);box-sizing:border-box"></div>
       </div>
@@ -1938,7 +1938,7 @@ function saveStageEdit(){
   const updatedProds=_stageCtx.prods.map((pp,i)=>({
     prodId:document.getElementById('se-prod-'+i)?.value||pp.prodId,
     riego:document.getElementById('se-riego-'+i)?.value||pp.riego,
-    dosisPorL:parseFloat(document.getElementById('se-dosis-'+i)?.value)||0,
+    dosisPorL:parseFloat((document.getElementById('se-dosis-'+i)?.value||'').replace(',','.'))||0,
     nota:(document.getElementById('se-nota-'+i)?.value||'').trim()
   })).filter(pp=>pp.prodId&&pp.dosisPorL>0);
   const pl=fert_planes[_stageCtx.planIdx];
@@ -2194,7 +2194,7 @@ function delProd(i){
 function saveProd(tipo,ctx){
   const nom=(document.getElementById('ap-nom').value||'').trim();
   const unidad=document.getElementById('ap-uni').value||'kg';
-  const dosis=parseFloat(document.getElementById('ap-dosis').value)||0;
+  const dosis=parseFloat((document.getElementById('ap-dosis').value||'').replace(',','.'))||0;
   if(!nom){toast('Ingresá un nombre','err');return;}
   const prod={id:tipo==='add-prod'?('p'+Date.now()):prods[ctx].id,nom,precio:0,unidad,dosis};
   if(tipo==='add-prod') prods.push(prod);
