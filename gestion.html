@@ -381,9 +381,12 @@ hr{border:none;border-top:1px solid var(--br);margin:14px 0;}
 
 <!-- CONFIG -->
 <div id="sec-config" class="sec">
-  <div class="stit">Productos</div>
-  <div id="cfg-prod-list"></div>
-  <button class="btn" style="background:none;border:1.5px solid var(--bordo);color:var(--bordo);font-size:13px;padding:9px 16px;margin-top:6px;margin-bottom:24px" onclick="openCfgModal('add-prod',null)">+ Agregar producto</button>
+  <div class="stit">Fertilización</div>
+  <div id="cfg-prod-ferti-list"></div>
+  <button class="btn" style="background:none;border:1.5px solid var(--bordo);color:var(--bordo);font-size:13px;padding:9px 16px;margin-top:6px;margin-bottom:24px" onclick="openCfgModal('add-prod-ferti',null)">+ Agregar fertilizante</button>
+  <div class="stit">Fitosanitario</div>
+  <div id="cfg-prod-fito-list"></div>
+  <button class="btn" style="background:none;border:1.5px solid var(--bordo);color:var(--bordo);font-size:13px;padding:9px 16px;margin-top:6px;margin-bottom:24px" onclick="openCfgModal('add-prod-fito',null)">+ Agregar fitosanitario</button>
   <div class="stit">Especies</div>
   <div id="cfg-esp-list"></div>
   <button class="btn" style="background:none;border:1.5px solid var(--bordo);color:var(--bordo);font-size:13px;padding:9px 16px;margin-top:6px" onclick="openCfgModal('add-esp',null)">+ Agregar especie</button>
@@ -459,7 +462,7 @@ let productos=[
   {nom:'Azufre',          precio:9603,   cat:'Fitosanitario',  uni:'L',  nota:'Arañita/Oidio'},
   {nom:'Mainspring Flora',precio:126000, cat:'Fitosanitario',  uni:'kg', nota:'Trips'},
   {nom:'Actara',          precio:245120, cat:'Fitosanitario',  uni:'kg', nota:'Áfidos'},
-  {nom:'Amistar Top',     precio:0,      cat:'Fitosanitario',  uni:'L',  nota:'Fungicida'},
+  {nom:'Amistar Top',     precio:0,      cat:'Fitosanitario',  uni:'L',  nota:'Fusarium', via:'Foliar'},
 ];
 
 let especies=['Aleli','Antirrhinum','Cosmos','Delphinium','Echinacea Magnus','Escabiosa','Estatice','Girasol','Lisianthus','Ranúnculo','Zinnia'];
@@ -2187,16 +2190,19 @@ function renderCamasHist(){
 
 // ── CONFIG ──────────────────────────────────────────────────────
 function renderConfigSec(){
-  const pl=document.getElementById('cfg-prod-list');
-  if(pl) pl.innerHTML=productos.map((p,i)=>`
+  const prodRow=(p,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--br)">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700">${p.nom}</div>
-        <div style="font-size:11px;color:var(--tx2)">${p.cat} · ${p.uni}${p.precio?` · $${p.precio.toLocaleString('es-CL')}/${p.uni}`:''}${p.nota?' · '+p.nota:''}</div>
+        <div style="font-size:11px;color:var(--tx2)">${p.uni}${p.precio?` · $${p.precio.toLocaleString('es-CL')}/${p.uni}`:''}${p.nota?' · '+p.nota:''}${p.via?' · '+p.via:''}</div>
       </div>
       <button onclick="openCfgModal('edit-prod',${i})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px">✏️</button>
       <button onclick="delCfgProd(${i})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px">🗑️</button>
-    </div>`).join('');
+    </div>`;
+  const pf=document.getElementById('cfg-prod-ferti-list');
+  if(pf) pf.innerHTML=productos.map((p,i)=>p.cat==='Fertilizacion'?prodRow(p,i):'').join('');
+  const pfi=document.getElementById('cfg-prod-fito-list');
+  if(pfi) pfi.innerHTML=productos.map((p,i)=>p.cat==='Fitosanitario'?prodRow(p,i):'').join('');
   const el=document.getElementById('cfg-esp-list');
   if(el) el.innerHTML=especies.map((e,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--br)">
@@ -2212,16 +2218,20 @@ function openCfgModal(tipo,idx){
   const e=tipo==='edit-esp'?especies[idx]:null;
   const m=document.getElementById('cfg-modal');
   const mi=document.getElementById('cfg-modal-inner');
-  if(tipo==='add-prod'||tipo==='edit-prod'){
+  if(tipo==='add-prod-ferti'||tipo==='add-prod-fito'||tipo==='add-prod'||tipo==='edit-prod'){
+    const defCat=tipo==='add-prod-fito'?'Fitosanitario':tipo==='add-prod-ferti'?'Fertilizacion':(p?.cat||'Fertilizacion');
+    const isFito=defCat==='Fitosanitario';
+    const tit=p?'Editar':isFito?'Nuevo fitosanitario':'Nuevo fertilizante';
     mi.innerHTML=`
-      <div style="font-size:15px;font-weight:700;color:var(--bordo);margin-bottom:16px">${p?'Editar':'Nuevo'} producto</div>
-      <div class="field"><label>Nombre</label><input id="cp-nom" value="${p?p.nom:''}" placeholder="ej: Sulfato de Magnesio" autocomplete="off"></div>
+      <div style="font-size:15px;font-weight:700;color:var(--bordo);margin-bottom:16px">${tit}</div>
+      <div class="field"><label>Nombre</label><input id="cp-nom" value="${p?p.nom:''}" placeholder="${isFito?'ej: Amistar Top':'ej: Sulfato de Magnesio'}" autocomplete="off"></div>
       <div class="r2">
         <div class="field"><label>Precio ($/kg o $/L)</label><input type="number" id="cp-pre" value="${p?p.precio:''}" min="0" inputmode="numeric" placeholder="0"></div>
-        <div class="field"><label>Unidad</label><select id="cp-uni"><option value="kg"${p&&p.uni==='kg'?' selected':''}>kg</option><option value="L"${p&&p.uni==='L'?' selected':''}>L</option></select></div>
+        <div class="field"><label>Unidad</label><select id="cp-uni"><option value="kg"${(!p||p.uni==='kg')?' selected':''}>kg</option><option value="L"${p&&p.uni==='L'?' selected':''}>L</option></select></div>
       </div>
-      <div class="field"><label>Categoría</label><select id="cp-cat"><option value="Fertilizacion"${!p||p.cat==='Fertilizacion'?' selected':''}>Fertilización</option><option value="Fitosanitario"${p&&p.cat==='Fitosanitario'?' selected':''}>Fitosanitario</option></select></div>
-      <div class="field"><label>Nota (opcional, ej: Botritis)</label><input id="cp-nota" value="${p?p.nota||'':''}" placeholder="Target, plaga, aclaración..." autocomplete="off"></div>
+      <input type="hidden" id="cp-cat" value="${defCat}">
+      <div class="field"><label>Objetivo (plaga, enfermedad)</label><input id="cp-nota" value="${p?p.nota||'':''}" placeholder="${isFito?'ej: Fusarium, Botritis':'ej: Micronutrientes'}" autocomplete="off"></div>
+      ${isFito?`<div class="field"><label>Vía de aplicación</label><select id="cp-via"><option value="">—</option><option value="Foliar"${p&&p.via==='Foliar'?' selected':''}>Foliar</option><option value="Riego"${p&&p.via==='Riego'?' selected':''}>Riego</option><option value="Ambas"${p&&p.via==='Ambas'?' selected':''}>Ambas</option></select></div>`:'<input type="hidden" id="cp-via" value="">'}
       <button class="btn" style="margin-bottom:8px" onclick="saveCfgProd()">Guardar</button>
       <button class="btn" style="background:none;border:1.5px solid var(--br);color:var(--tx2)" onclick="closeCfgModal()">Cancelar</button>`;
   } else if(tipo==='add-esp'){
@@ -2247,8 +2257,10 @@ function saveCfgProd(){
   const uni=document.getElementById('cp-uni').value;
   const cat=document.getElementById('cp-cat').value;
   const nota=(document.getElementById('cp-nota').value||'').trim();
+  const via=(document.getElementById('cp-via').value||'').trim();
   const prod={nom,precio,cat,uni,nota};
-  if(_cfgCtx.tipo==='add-prod') productos.push(prod);
+  if(via) prod.via=via;
+  if(_cfgCtx.tipo==='add-prod'||_cfgCtx.tipo==='add-prod-ferti'||_cfgCtx.tipo==='add-prod-fito') productos.push(prod);
   else productos[_cfgCtx.idx]=prod;
   saveProductos();
   closeCfgModal();
