@@ -473,6 +473,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <div id="cfg-prods"></div>
   <button class="add-btn" onclick="openModal('add-prod')">+ Agregar insumo</button>
   <div style="padding:0 13px;margin-bottom:6px;margin-top:10px">
+    <div class="ctit" style="margin-bottom:6px">💊 Fitosanitarios</div>
+  </div>
+  <div id="cfg-fito-prods"></div>
+  <button class="add-btn" onclick="openModal('add-fito-prod')">+ Agregar fitosanitario</button>
+  <div style="padding:0 13px;margin-bottom:6px;margin-top:10px">
     <div class="ctit" style="margin-bottom:6px">📊 Google Sheets</div>
   </div>
   <div class="sheets-section">
@@ -563,13 +568,20 @@ const DEF_PRODS = [
   {id:'prod_ca_r',     nom:'Calcio Riego',               unidad:'kg', precio:690,  dosis:0.5},
 ];
 
-const FITO_PRODS = [
-  {nom:'Captan',           uni:'g',  nota:'Botritis'},
-  {nom:'Goldazim',         uni:'ml', nota:'Fusarium'},
-  {nom:'Azufre',           uni:'ml', nota:'Arañita/Oidio'},
-  {nom:'Mainspring Flora', uni:'g',  nota:'Trips'},
-  {nom:'Actara',           uni:'g',  nota:'Áfidos'},
+const DEF_FITO_PRODS = [
+  {nom:'Captan',           uni:'g',  nota:'Botritis',      via:'Foliar'},
+  {nom:'Goldazim',         uni:'ml', nota:'Fusarium',      via:'Riego'},
+  {nom:'Azufre',           uni:'ml', nota:'Arañita/Oidio', via:'Foliar'},
+  {nom:'Mainspring Flora', uni:'g',  nota:'Trips',         via:'Foliar'},
+  {nom:'Actara',           uni:'g',  nota:'Áfidos',        via:'Foliar'},
+  {nom:'Amistar Top',      uni:'ml', nota:'Fusarium',      via:'Foliar'},
 ];
+let fito_prods=(()=>{
+  const saved=JSON.parse(localStorage.getItem('pr_fito_prods')||'null');
+  if(!saved||!saved.length) return DEF_FITO_PRODS.map(p=>({...p}));
+  const savedNames=new Set(saved.map(p=>p.nom));
+  return [...saved,...DEF_FITO_PRODS.filter(p=>!savedNames.has(p.nom))];
+})();
 
 const DEF_FERT_PLANES = [
   {
@@ -1111,6 +1123,7 @@ function renderCfg(){
     </div>`).join('');
 
   renderProdsConfig();
+  renderFitoProdsConfig();
 
   // Eventos huérfanos
   const hObj=getHuerfanos();
@@ -1472,6 +1485,34 @@ function openModal(tipo, ctx){
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
     ov.classList.add('on');
     setTimeout(()=>{const n=document.getElementById('ap-nom');if(n)n.focus();},120);
+    return;
+  }
+
+  if(tipo==='add-fito-prod'||tipo==='edit-fito-prod'){
+    const p=tipo==='edit-fito-prod'?fito_prods[ctx]:null;
+    mi.innerHTML=`
+      <div class="modal-tit">💊 ${p?'Editar':'Nuevo'} fitosanitario</div>
+      <div class="mfield"><label>Nombre</label><input id="fp-nom" value="${p?p.nom:''}" placeholder="ej: Amistar Top" autocomplete="off"></div>
+      <div class="mfield"><label>Objetivo (plaga / enfermedad)</label><input id="fp-nota" value="${p?p.nota||'':''}" placeholder="ej: Fusarium, Botritis" autocomplete="off"></div>
+      <div class="mgrid2">
+        <div class="mfield"><label>Unidad</label>
+          <select id="fp-uni">
+            <option value="ml"${(!p||p.uni==='ml')?' selected':''}>ml</option>
+            <option value="g"${p&&p.uni==='g'?' selected':''}>g</option>
+          </select>
+        </div>
+        <div class="mfield"><label>Vía</label>
+          <select id="fp-via">
+            <option value="Foliar"${(!p||p.via==='Foliar')?' selected':''}>Foliar</option>
+            <option value="Riego"${p&&p.via==='Riego'?' selected':''}>Riego</option>
+            <option value="Ambas"${p&&p.via==='Ambas'?' selected':''}>Ambas</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-pri" onclick="saveFitoProd('${tipo}',${ctx!==undefined?ctx:'null'})">Guardar</button>
+      <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+    ov.classList.add('on');
+    setTimeout(()=>{const n=document.getElementById('fp-nom');if(n)n.focus();},120);
     return;
   }
 
@@ -2261,6 +2302,41 @@ function delProd(i){
   renderProdsConfig();
   toast('Insumo eliminado');
 }
+function renderFitoProdsConfig(){
+  const el=document.getElementById('cfg-fito-prods');
+  if(!el) return;
+  el.innerHTML=fito_prods.map((p,i)=>`
+    <div class="cfg-esp-item">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">${p.nom}</div>
+        <div style="font-size:11px;color:var(--tx3)">${p.uni}${p.nota?' · '+p.nota:''}${p.via?' · '+p.via:''}</div>
+      </div>
+      <button class="icon-btn" onclick="openModal('edit-fito-prod',${i})">✏️</button>
+      <button class="icon-btn" onclick="delFitoProd(${i})" style="color:var(--rojo)">🗑️</button>
+    </div>`).join('');
+}
+function delFitoProd(i){
+  if(!confirm('¿Eliminar '+fito_prods[i].nom+'?')) return;
+  fito_prods.splice(i,1);
+  save('pr_fito_prods',fito_prods);
+  renderFitoProdsConfig();
+  toast('Eliminado');
+}
+function saveFitoProd(tipo,ctx){
+  const nom=(document.getElementById('fp-nom').value||'').trim();
+  if(!nom){toast('Ingresá un nombre','err');return;}
+  const nota=(document.getElementById('fp-nota').value||'').trim();
+  const uni=document.getElementById('fp-uni').value;
+  const via=document.getElementById('fp-via').value;
+  const prod={nom,uni,nota,via};
+  if(tipo==='add-fito-prod') fito_prods.push(prod);
+  else fito_prods[ctx]=prod;
+  save('pr_fito_prods',fito_prods);
+  closeOv();
+  renderFitoProdsConfig();
+  toast(`✓ ${nom} guardado`,'ok');
+}
+
 function saveProd(tipo,ctx){
   const nom=(document.getElementById('ap-nom').value||'').trim();
   const unidad=document.getElementById('ap-uni').value||'kg';
@@ -2604,7 +2680,7 @@ function renderFitoSem(){
     const prodsHtml=(ev.prods||[]).filter(p=>p.nom).map(p=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--br)">
       <div style="flex:1;min-width:0">
         <span style="font-size:12px;font-weight:600;color:var(--tx)">${p.nom}</span>
-        ${FITO_PRODS.find(f=>f.nom===p.nom)?.nota?`<span style="font-size:10px;color:var(--tx3);margin-left:5px">${FITO_PRODS.find(f=>f.nom===p.nom).nota}</span>`:''}
+        ${fito_prods.find(f=>f.nom===p.nom)?.nota?`<span style="font-size:10px;color:var(--tx3);margin-left:5px">${fito_prods.find(f=>f.nom===p.nom).nota}</span>`:''}
       </div>
       ${p.qty?`<span style="font-size:12px;font-weight:700;color:var(--verde);flex-shrink:0">${p.qty} ${p.uni||'g'}</span>`:''}
     </div>`).join('');
@@ -2643,12 +2719,12 @@ function renderFitoModal(){
       </div>
     </div>`;
   }).join('');
-  const prodsHtml=FITO_PRODS.map(p=>{
+  const prodsHtml=fito_prods.map(p=>{
     const on=!!_fitoChecked[p.nom];
     return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--br)">
       <div style="flex:1;min-width:0;cursor:pointer" onclick="togFitoProd('${p.nom}')">
         <div style="font-size:13px;font-weight:600;color:${on?'var(--tx)':'var(--tx3)'}">${p.nom}</div>
-        <div style="font-size:10px;color:var(--tx3);margin-top:1px">${p.nota}</div>
+        <div style="font-size:10px;color:var(--tx3);margin-top:1px">${p.nota||''}${p.nota&&p.via?' · ':''}${p.via||''}</div>
       </div>
       ${on?`<input type="text" inputmode="decimal" placeholder="cant." id="fito-qty-${p.nom.replace(/\s/g,'_')}" style="width:60px;padding:5px 7px;border:1.5px solid var(--verde);border-radius:var(--rs);font-size:13px;font-weight:700;color:var(--verde);text-align:right;background:var(--gris);outline:none" oninput="">
              <span style="font-size:11px;color:var(--tx3);flex-shrink:0">${p.uni}</span>`
@@ -2672,7 +2748,7 @@ function _fitoSaveInputs(){
   const n=document.getElementById('fito-nota');
   _fitoTmpFecha=f?f.value:'';
   _fitoTmpNota=n?n.value:'';
-  FITO_PRODS.forEach(p=>{
+  fito_prods.forEach(p=>{
     if(_fitoChecked[p.nom]){
       const inp=document.getElementById('fito-qty-'+p.nom.replace(/\s/g,'_'));
       if(inp) _fitoQtyTmp[p.nom]=inp.value;
@@ -2686,7 +2762,7 @@ function _fitoRestoreInputs(){
   const n=document.getElementById('fito-nota');
   if(f&&_fitoTmpFecha) f.value=_fitoTmpFecha;
   if(n&&_fitoTmpNota)  n.value=_fitoTmpNota;
-  FITO_PRODS.forEach(p=>{
+  fito_prods.forEach(p=>{
     if(_fitoChecked[p.nom]&&_fitoQtyTmp[p.nom]){
       const inp=document.getElementById('fito-qty-'+p.nom.replace(/\s/g,'_'));
       if(inp) inp.value=_fitoQtyTmp[p.nom];
@@ -2713,7 +2789,7 @@ function saveFitoReg(){
   const fecha=_fitoTmpFecha||ds(new Date());
   const nota=_fitoTmpNota||'';
   const especies=[..._fitoEspSel].map(i=>spp[i]?.nom).filter(Boolean);
-  const prods=FITO_PRODS.filter(p=>_fitoChecked[p.nom]).map(p=>{
+  const prods=fito_prods.filter(p=>_fitoChecked[p.nom]).map(p=>{
     const qty=(_fitoQtyTmp[p.nom]||'').replace(',','.').trim();
     return {nom:p.nom, qty, uni:p.uni};
   });
