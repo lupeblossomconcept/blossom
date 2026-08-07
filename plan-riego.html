@@ -1954,25 +1954,68 @@ function saveStageEdit(){
 }
 
 // ── DOSAGE MODAL ──────────────────────────────────────────────────────────
-let _frCtx=null; // {planIdx, stageIdx, espSel:Set}
+let _frCtx=null; // {planIdx, stageIdx, espSel:Set, dosisOverride:{}, extraProds:[]}
 
 function openFertRegModal(planIdx, stageIdx){
   const pl=fert_planes[planIdx];
   if(!pl) return;
-  _frCtx={planIdx, stageIdx, espSel:new Set(), prodDesel:new Set()};
+  _frCtx={planIdx, stageIdx, espSel:new Set(), prodDesel:new Set(), dosisOverride:{}, extraProds:[]};
   renderFertRegModal();
   document.getElementById('ov').classList.add('on');
 }
 
+function saveDosisFromDOM(){
+  if(!_frCtx) return;
+  const pl=fert_planes[_frCtx.planIdx];
+  const etapa=pl&&pl.etapas&&pl.etapas[_frCtx.stageIdx];
+  if(etapa){
+    etapa.prods.forEach(pp=>{
+      const inp=document.getElementById('fr-dosis-'+pp.prodId);
+      if(inp){
+        const v=parseFloat(inp.value.replace(',','.'))||0;
+        if(v!==pp.dosisPorL) _frCtx.dosisOverride[pp.prodId]=v;
+        else delete _frCtx.dosisOverride[pp.prodId];
+      }
+    });
+  }
+  (_frCtx.extraProds||[]).forEach((ep,i)=>{
+    const nomInp=document.getElementById('fr-extra-nom-'+i);
+    const amtInp=document.getElementById('fr-extra-amt-'+i);
+    const uniSel=document.getElementById('fr-extra-uni-'+i);
+    if(nomInp) ep.nom=nomInp.value.trim();
+    if(amtInp) ep.amt=parseFloat(amtInp.value)||0;
+    if(uniSel) ep.uni=uniSel.value;
+  });
+}
+
 function togFertEsp(idx){
+  saveDosisFromDOM();
   if(_frCtx.espSel.has(idx)) _frCtx.espSel.delete(idx);
   else _frCtx.espSel.add(idx);
   renderFertRegModal();
 }
 
 function togFertProd(prodId){
+  saveDosisFromDOM();
   if(_frCtx.prodDesel.has(prodId)) _frCtx.prodDesel.delete(prodId);
   else _frCtx.prodDesel.add(prodId);
+  renderFertRegModal();
+}
+
+function addExtraProd(){
+  saveDosisFromDOM();
+  if(!_frCtx.extraProds) _frCtx.extraProds=[];
+  _frCtx.extraProds.push({nom:'',amt:0,uni:'g'});
+  renderFertRegModal();
+  setTimeout(()=>{
+    const inp=document.getElementById('fr-extra-nom-'+(_frCtx.extraProds.length-1));
+    if(inp) inp.focus();
+  },60);
+}
+
+function delExtraProd(i){
+  saveDosisFromDOM();
+  _frCtx.extraProds.splice(i,1);
   renderFertRegModal();
 }
 
@@ -1996,17 +2039,26 @@ function renderFertRegModal(){
       const rLbl=r==='U'?'':r==='R1'?'Riego 1 – Calcio (estanque separado)':r==='R2'?'Riego 2 – Fertilización':'Riego '+r;
       const rows=rProds.map(pp=>{
         const prod=getProd(pp.prodId);
-        const amt=calcProdAmt(pp.dosisPorL, litros);
+        const curDosis=_frCtx.dosisOverride[pp.prodId]??pp.dosisPorL;
+        const amt=calcProdAmt(curDosis, litros);
         const off=_frCtx.prodDesel.has(pp.prodId);
-        return `<div style="display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--br);opacity:${off?'.4':'1'};cursor:pointer" onclick="togFertProd('${pp.prodId}')">
-          <div style="font-size:17px;margin-right:10px;flex-shrink:0">${off?'○':'●'}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600;${off?'text-decoration:line-through;color:var(--tx3)':''}">${prod?prod.nom:pp.prodId}</div>
-            ${pp.nota?`<div style="font-size:10px;color:var(--verde);margin-top:1px">⚠ ${pp.nota}</div>`:''}
+        const dispUni=prod?(prod.unidad==='L'?'cc/L':'g/L'):'g/L';
+        return `<div style="padding:9px 0;border-bottom:1px solid var(--br)">
+          <div style="display:flex;align-items:center;opacity:${off?'.4':'1'};cursor:pointer" onclick="togFertProd('${pp.prodId}')">
+            <div style="font-size:17px;margin-right:10px;flex-shrink:0">${off?'○':'●'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;${off?'text-decoration:line-through;color:var(--tx3)':''}">${prod?prod.nom:pp.prodId}</div>
+              ${pp.nota?`<div style="font-size:10px;color:var(--verde);margin-top:1px">⚠ ${pp.nota}</div>`:''}
+            </div>
+            <div style="text-align:right;flex-shrink:0;margin-left:12px">
+              <div style="font-size:15px;font-weight:700;color:${off?'var(--tx3)':'var(--verde)'}">${fmtAmt(amt,prod?prod.unidad:'g')}</div>
+            </div>
           </div>
-          <div style="text-align:right;flex-shrink:0;margin-left:12px">
-            <div style="font-size:15px;font-weight:700;color:${off?'var(--tx3)':'var(--verde)'}">${fmtAmt(amt,prod?prod.unidad:'g')}</div>
-          </div>
+          ${!off?`<div style="display:flex;align-items:center;gap:5px;margin-top:4px;padding-left:27px">
+            <span style="font-size:10px;color:var(--tx3)">Dosis:</span>
+            <input type="text" id="fr-dosis-${pp.prodId}" value="${curDosis}" inputmode="decimal" style="width:60px;padding:4px 7px;border:1.5px solid var(--br);border-radius:8px;font-size:13px;font-weight:700;font-family:'Playfair Display',serif;background:var(--gris);color:var(--tx);text-align:center;-webkit-appearance:none;outline:none">
+            <span style="font-size:10px;color:var(--tx3)">${dispUni}</span>
+          </div>`:''}
         </div>`;
       }).join('');
       return (rLbl?`<div style="font-size:9.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;padding:8px 0 2px">${rLbl}</div>`:'')
@@ -2040,6 +2092,19 @@ function renderFertRegModal(){
     </div>`:`<div style="font-size:11px;color:var(--tx3);padding:6px 0 14px">Seleccioná al menos una especie para ver las dosis</div>`}
     ${ordenHtml}
     ${prodsHtml?`<div>${prodsHtml}</div>`:''}
+    ${camas>0?`<div style="margin-top:2px">
+      ${(_frCtx.extraProds||[]).map((ep,i)=>`
+        <div style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--br)">
+          <input id="fr-extra-nom-${i}" value="${ep.nom||''}" placeholder="Producto..." style="flex:1;min-width:0;padding:6px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:12px;background:var(--gris);color:var(--tx);outline:none">
+          <input type="text" id="fr-extra-amt-${i}" value="${ep.amt||''}" inputmode="decimal" placeholder="0" style="width:56px;padding:6px 7px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-weight:700;font-family:'Playfair Display',serif;background:var(--gris);color:var(--tx);text-align:center;outline:none;-webkit-appearance:none">
+          <select id="fr-extra-uni-${i}" style="width:48px;padding:6px 4px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:11px;background:var(--gris);color:var(--tx);outline:none">
+            <option value="g"${(ep.uni||'g')==='g'?' selected':''}>g</option>
+            <option value="cc"${ep.uni==='cc'?' selected':''}>cc</option>
+          </select>
+          <button onclick="delExtraProd(${i})" style="background:none;border:none;color:var(--tx3);font-size:20px;cursor:pointer;padding:0;line-height:1">×</button>
+        </div>`).join('')}
+      <button onclick="addExtraProd()" style="width:100%;margin-top:6px;padding:9px;border:1.5px dashed var(--br);border-radius:var(--rs);background:none;font-size:12px;color:var(--bordo);cursor:pointer;font-family:'Montserrat',sans-serif;font-weight:600">+ Agregar producto</button>
+    </div>`:''}
     ${camas>0?`
     <div class="mfield" style="margin-top:10px"><label>Fecha</label><input type="date" id="fr-fecha" value="${fpDs(new Date())}"></div>
     <div class="mfield"><label>Nota (opcional)</label><textarea id="fr-nota" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;resize:none;height:52px"></textarea></div>
@@ -2049,6 +2114,7 @@ function renderFertRegModal(){
 }
 
 function saveFertReg(){
+  saveDosisFromDOM();
   const pl=fert_planes[_frCtx.planIdx];
   if(!pl) return;
   const etapaIdx=_frCtx.stageIdx;
@@ -2067,10 +2133,14 @@ function saveFertReg(){
   if(etapa){
     etapa.prods.filter(pp=>!_frCtx.prodDesel.has(pp.prodId)).forEach(pp=>{
       const prod=getProd(pp.prodId);
-      const amt=calcProdAmt(pp.dosisPorL, L);
-      prodsList.push({prodId:pp.prodId,nom:prod?prod.nom:pp.prodId,riego:pp.riego,dosis:pp.dosisPorL,amt:Math.round(amt),uni:prod?(prod.unidad==='L'?'cc':'g'):'g'});
+      const dosisEfectiva=_frCtx.dosisOverride[pp.prodId]??pp.dosisPorL;
+      const amt=calcProdAmt(dosisEfectiva, L);
+      prodsList.push({prodId:pp.prodId,nom:prod?prod.nom:pp.prodId,riego:pp.riego,dosis:dosisEfectiva,amt:Math.round(amt),uni:prod?(prod.unidad==='L'?'cc':'g'):'g'});
     });
   }
+  (_frCtx.extraProds||[]).filter(ep=>ep.nom&&ep.amt>0).forEach(ep=>{
+    prodsList.push({nom:ep.nom,riego:'',dosis:0,amt:ep.amt,uni:ep.uni||'g'});
+  });
 
   const prodNota=prodsList.map(p=>`${p.nom}: ${p.amt}${p.uni}`).join(' · ');
   const ev={

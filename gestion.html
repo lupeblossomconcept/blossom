@@ -453,11 +453,13 @@ let productos=[
   {nom:'Ácido Fosfórico', precio:1656,   cat:'Fertilizacion', uni:'kg'},
   {nom:'Calcio',          precio:3158,   cat:'Fertilizacion', uni:'L'},
   {nom:'Bioestimulante',  precio:0,      cat:'Fertilizacion', uni:'L'},
+  {nom:'Nitrato de Calcio',precio:0,    cat:'Fertilizacion', uni:'kg'},
   {nom:'Captan',          precio:14400,  cat:'Fitosanitario',  uni:'kg', nota:'Botritis'},
   {nom:'Goldazim',        precio:24500,  cat:'Fitosanitario',  uni:'L',  nota:'Fusarium'},
   {nom:'Azufre',          precio:9603,   cat:'Fitosanitario',  uni:'L',  nota:'Arañita/Oidio'},
   {nom:'Mainspring Flora',precio:126000, cat:'Fitosanitario',  uni:'kg', nota:'Trips'},
   {nom:'Actara',          precio:245120, cat:'Fitosanitario',  uni:'kg', nota:'Áfidos'},
+  {nom:'Amistar Top',     precio:0,      cat:'Fitosanitario',  uni:'L',  nota:'Fungicida'},
 ];
 
 let especies=['Aleli','Antirrhinum','Cosmos','Delphinium','Echinacea Magnus','Escabiosa','Estatice','Girasol','Lisianthus','Ranúnculo','Zinnia'];
@@ -465,7 +467,15 @@ let especies=['Aleli','Antirrhinum','Cosmos','Delphinium','Echinacea Magnus','Es
 // Cargar desde localStorage si existen versiones editadas
 (function(){
   const ps=localStorage.getItem('bl_productos');
-  if(ps) try{const p=JSON.parse(ps);if(Array.isArray(p)&&p.length)productos=p;}catch(e){}
+  const deletedProds=new Set(JSON.parse(localStorage.getItem('bl_productos_deleted')||'[]'));
+  if(ps) try{
+    const saved=JSON.parse(ps);
+    if(Array.isArray(saved)&&saved.length){
+      const savedNames=new Set(saved.map(p=>p.nom));
+      const newFromBase=productos.filter(p=>!savedNames.has(p.nom)&&!deletedProds.has(p.nom));
+      productos=[...saved,...newFromBase];
+    }
+  }catch(e){}
   const es=localStorage.getItem('bl_especies');
   if(es) try{const v=JSON.parse(es);if(Array.isArray(v)&&v.length)especies=v;}catch(e){}
 })();
@@ -2249,6 +2259,10 @@ function saveCfgProd(){
 
 function delCfgProd(i){
   if(!confirm('¿Eliminar '+productos[i].nom+'?')) return;
+  const nom=productos[i].nom;
+  const deleted=JSON.parse(localStorage.getItem('bl_productos_deleted')||'[]');
+  if(!deleted.includes(nom)) deleted.push(nom);
+  localStorage.setItem('bl_productos_deleted',JSON.stringify(deleted));
   productos.splice(i,1);
   saveProductos();
   renderConfigSec();
