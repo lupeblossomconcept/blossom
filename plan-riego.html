@@ -116,13 +116,20 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .chip-nom{font-size:13px;font-weight:600;color:var(--tx);flex:1;}
 
 /* TAREAS */
-.tarea-item{display:flex;align-items:flex-start;gap:10px;padding:10px 13px;border-bottom:1px solid var(--br);}
+.tarea-item{display:flex;align-items:flex-start;gap:8px;padding:10px 13px;border-bottom:1px solid var(--br);}
 .tarea-item:last-child{border-bottom:none;}
 .tarea-chk{width:20px;height:20px;border:2px solid var(--br2);border-radius:6px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;margin-top:1px;}
 .tarea-chk.done{background:var(--verde);border-color:var(--verde);color:#fff;}
 .tarea-txt{flex:1;font-size:13px;line-height:1.4;color:var(--tx);padding-top:2px;}
 .tarea-txt.done{text-decoration:line-through;color:var(--tx3);}
 .tarea-del{background:none;border:none;color:var(--tx3);font-size:16px;cursor:pointer;padding:0 2px;flex-shrink:0;line-height:1;}
+.tarea-acciones{display:flex;align-items:center;gap:1px;flex-shrink:0;margin-top:0px;}
+.tarea-mv{background:none;border:none;color:var(--tx3);font-size:11px;cursor:pointer;padding:2px 3px;line-height:1;border-radius:4px;-webkit-tap-highlight-color:transparent;}
+.tarea-mv:active{background:var(--rose);color:var(--bordo);}
+.tarea-dia-sel{border:1px solid var(--br);background:var(--gris);font-size:10px;font-weight:600;color:var(--tx2);font-family:'Montserrat',sans-serif;cursor:pointer;padding:2px 3px;border-radius:5px;outline:none;max-width:72px;}
+.dia-sec{margin-bottom:12px;}
+.dia-hdr{font-size:10px;font-weight:700;color:var(--bordo);text-transform:uppercase;letter-spacing:.1em;padding:8px 13px 5px;display:flex;align-items:center;justify-content:space-between;}
+.dia-badge{background:var(--rose);color:var(--bordo);border-radius:10px;font-size:10px;font-weight:700;padding:2px 7px;}
 .chip.on .chip-nom{color:var(--verde);}
 .chip-n{font-size:10px;color:var(--tx3);}
 .chip.on .chip-n{color:var(--verde);}
@@ -691,6 +698,9 @@ let spp    = JSON.parse(localStorage.getItem('pr_spp')    || 'null') || DEF_SPP.
 let reglas = JSON.parse(localStorage.getItem('pr_reglas') || 'null') || DEF_REGLAS.map(r=>({...r}));
 let eventos= JSON.parse(localStorage.getItem('pr_eventos')|| localStorage.getItem('plan_riego_v1') || '[]');
 let tareas = JSON.parse(localStorage.getItem('pr_tareas') || '[]');
+const DIAS = ['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
+const DIAS_LABEL = {lunes:'Lunes',martes:'Martes',miercoles:'Miércoles',jueves:'Jueves',viernes:'Viernes',sabado:'Sábado',domingo:'Domingo'};
+const DIAS_SHORT = {lunes:'Lun',martes:'Mar',miercoles:'Mié',jueves:'Jue',viernes:'Vie',sabado:'Sáb',domingo:'Dom'};
 let temps  = JSON.parse(localStorage.getItem('pr_temps')  || '[]');
 let notas  = JSON.parse(localStorage.getItem('pr_notas')  || '[]');
 let prods  = JSON.parse(localStorage.getItem('pr_prods')  || 'null') || DEF_PRODS.map(p=>({...p}));
@@ -1518,10 +1528,14 @@ function openModal(tipo, ctx){
   }
 
   if(tipo==='add-tar'){
+    const diaOpts=['<option value="">Sin día asignado</option>',...DIAS.map(d=>`<option value="${d}">${DIAS_LABEL[d]}</option>`)].join('');
     mi.innerHTML=`
       <div class="modal-tit">✅ Nueva tarea</div>
       <div class="mfield"><label>Descripción</label>
         <input id="tar-txt" placeholder="ej: Revisar Lisianthus camas 1-5" style="font-size:14px">
+      </div>
+      <div class="mfield"><label>Día</label>
+        <select id="tar-dia" style="width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;background:var(--gris);color:var(--tx);font-family:'Montserrat',sans-serif;outline:none;">${diaOpts}</select>
       </div>
       <button class="btn-pri" onclick="saveTarea()">Agregar</button>
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
@@ -1746,20 +1760,67 @@ function renderNotas(){
 function renderTareas(){
   const el=document.getElementById('tar-list');
   if(!tareas.length){ el.innerHTML='<div style="padding:14px 13px;font-size:12px;color:var(--tx3)">Sin tareas — ¡todo en orden! 🌸</div>'; return; }
-  el.innerHTML=tareas.map((t,i)=>`
-    <div class="tarea-item">
-      <div class="tarea-chk${t.done?' done':''}" onclick="toggleTarea(${i})">${t.done?'✓':''}</div>
-      <span class="tarea-txt${t.done?' done':''}">${t.texto}</span>
-      <button class="tarea-del" onclick="delTarea(${i})">×</button>
-    </div>`).join('');
+  const grupos={};
+  DIAS.forEach(d=>grupos[d]=[]);
+  grupos['_']=[];
+  tareas.forEach((t,i)=>{
+    const d=(t.dia&&DIAS.includes(t.dia))?t.dia:'_';
+    grupos[d].push({t,i});
+  });
+  const diasConItems=[...DIAS,'_'].filter(d=>grupos[d].length);
+  if(!diasConItems.length){ el.innerHTML='<div style="padding:14px 13px;font-size:12px;color:var(--tx3)">Sin tareas — ¡todo en orden! 🌸</div>'; return; }
+  const diaOpts=(sel)=>['_',...DIAS].map(d=>`<option value="${d}"${sel===d?' selected':''}>${d==='_'?'Sin día':DIAS_SHORT[d]}</option>`).join('');
+  el.innerHTML=diasConItems.map(dia=>{
+    const items=grupos[dia];
+    const label=dia==='_'?'Sin día asignado':DIAS_LABEL[dia];
+    const pend=items.filter(({t})=>!t.done).length;
+    const rows=items.map(({t,i})=>`
+      <div class="tarea-item">
+        <div class="tarea-chk${t.done?' done':''}" onclick="toggleTarea(${i})">${t.done?'✓':''}</div>
+        <span class="tarea-txt${t.done?' done':''}">${t.texto}</span>
+        <div class="tarea-acciones">
+          <button class="tarea-mv" onclick="mvTareaUp(${i})" title="Subir">▲</button>
+          <button class="tarea-mv" onclick="mvTareaDown(${i})" title="Bajar">▼</button>
+          <select class="tarea-dia-sel" onchange="moveTareaDia(${i},this.value)">${diaOpts(t.dia&&DIAS.includes(t.dia)?t.dia:'_')}</select>
+          <button class="tarea-del" onclick="delTarea(${i})">×</button>
+        </div>
+      </div>`).join('');
+    return `<div class="dia-sec">
+      <div class="dia-hdr"><span>${label}</span>${pend?`<span class="dia-badge">${pend}</span>`:''}</div>
+      <div class="card" style="padding:0;overflow:hidden">${rows}</div>
+    </div>`;
+  }).join('');
 }
 function toggleTarea(i){ tareas[i].done=!tareas[i].done; save('pr_tareas',tareas); renderTareas(); }
 function delTarea(i){ tareas.splice(i,1); save('pr_tareas',tareas); renderTareas(); }
 function clearDone(){ tareas=tareas.filter(t=>!t.done); save('pr_tareas',tareas); renderTareas(); toast('Completadas eliminadas','ok'); }
+function mvTareaUp(i){
+  const dia=tareas[i].dia&&DIAS.includes(tareas[i].dia)?tareas[i].dia:'_';
+  const grupo=tareas.map((t,idx)=>({t,idx})).filter(({t})=>(t.dia&&DIAS.includes(t.dia)?t.dia:'_')===dia);
+  const pos=grupo.findIndex(({idx})=>idx===i);
+  if(pos===0) return;
+  const prev=grupo[pos-1].idx;
+  [tareas[i],tareas[prev]]=[tareas[prev],tareas[i]];
+  save('pr_tareas',tareas); renderTareas();
+}
+function mvTareaDown(i){
+  const dia=tareas[i].dia&&DIAS.includes(tareas[i].dia)?tareas[i].dia:'_';
+  const grupo=tareas.map((t,idx)=>({t,idx})).filter(({t})=>(t.dia&&DIAS.includes(t.dia)?t.dia:'_')===dia);
+  const pos=grupo.findIndex(({idx})=>idx===i);
+  if(pos===grupo.length-1) return;
+  const next=grupo[pos+1].idx;
+  [tareas[i],tareas[next]]=[tareas[next],tareas[i]];
+  save('pr_tareas',tareas); renderTareas();
+}
+function moveTareaDia(i,dia){
+  tareas[i].dia=(dia==='_')?null:dia;
+  save('pr_tareas',tareas); renderTareas();
+}
 function saveTarea(){
   const txt=(document.getElementById('tar-txt').value||'').trim();
+  const dia=(document.getElementById('tar-dia').value||'');
   if(!txt){ toast('Ingresá una tarea','err'); return; }
-  tareas.push({id:Date.now().toString(36),texto:txt,done:false});
+  tareas.push({id:Date.now().toString(36),texto:txt,done:false,dia:dia&&dia!=='_'?dia:null});
   save('pr_tareas',tareas);
   document.getElementById('ov').classList.remove('on');
   renderTareas();
