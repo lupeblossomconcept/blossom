@@ -2741,7 +2741,7 @@ function renderFitoSem(){
     const especiesHtml=(ev.especies||[]).map(n=>`<span style="display:inline-block;background:var(--rose);color:var(--bordo);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;margin:2px 3px 2px 0">${n}</span>`).join('');
     const prodsHtml=(ev.prods||[]).filter(p=>p.nom).map(p=>{
       const nota=fito_prods.find(f=>f.nom===p.nom)?.nota||'';
-      const viaColor=p.via==='Riego'?{bg:'#e3f2fd',tx:'#1565c0'}:{bg:'#fce4ec',tx:'#880e4f'};
+      const viaColor=p.via==='Riego'?{bg:'#e3f2fd',tx:'#1565c0'}:{bg:'#fff3e0',tx:'#bf5500'};
       const viaBadge=p.via?`<span style="display:inline-block;background:${viaColor.bg};color:${viaColor.tx};border-radius:20px;padding:1px 7px;font-size:9px;font-weight:700;margin-left:5px;vertical-align:middle">${p.via}</span>`:'';
       return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--br)">
       <div style="flex:1;min-width:0">
