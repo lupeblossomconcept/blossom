@@ -2808,6 +2808,20 @@ function renderFitoHist(){
   const el=document.getElementById('fito-hist');
   if(!el) return;
 
+  // Si hay eventos pero el mes actual (calOff=0 o sin datos en el mes) está vacío,
+  // saltar automáticamente al mes del último evento
+  if(fito_eventos.length){
+    const now2=new Date();
+    const tgt2=new Date(now2.getFullYear(),now2.getMonth()+_fitoCalOff,1);
+    const pfx2=`${tgt2.getFullYear()}-${String(tgt2.getMonth()+1).padStart(2,'0')}`;
+    const hasCurrent=fito_eventos.some(e=>e.fecha.startsWith(pfx2));
+    if(!hasCurrent&&_fitoSelDay===null){
+      const lastFecha=fito_eventos.map(e=>e.fecha).sort().pop();
+      const d=new Date(lastFecha+'T12:00:00');
+      _fitoCalOff=(d.getFullYear()-now2.getFullYear())*12+(d.getMonth()-now2.getMonth());
+    }
+  }
+
   const now=new Date();
   const tgt=new Date(now.getFullYear(),now.getMonth()+_fitoCalOff,1);
   const yr=tgt.getFullYear(), mo=tgt.getMonth();
