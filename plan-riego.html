@@ -102,6 +102,35 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .wk-bar-fill{height:100%;border-radius:3px;}
 .wk-mm{font-size:11px;color:var(--tx2);font-weight:600;flex-shrink:0;text-align:right;min-width:72px;}
 
+/* FITO CALENDARIO */
+.fito-mode-btns{display:flex;gap:7px;padding:8px 13px 4px;}
+.fito-mode-btn{flex:1;padding:7px 4px;border:1.5px solid var(--br);border-radius:20px;background:none;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;}
+.fito-mode-btn.on{background:var(--bordo);color:#fff;border-color:var(--bordo);}
+.fito-pf-bar{display:flex;gap:6px;overflow-x:auto;padding:6px 13px 4px;scrollbar-width:none;}
+.fito-pf-bar::-webkit-scrollbar{display:none;}
+.fito-pf-chip{flex-shrink:0;padding:4px 11px;border-radius:20px;border:1.5px solid var(--br);background:var(--sf);font-size:10px;font-weight:600;color:var(--tx3);cursor:pointer;white-space:nowrap;font-family:'Montserrat',sans-serif;}
+.fito-pf-chip.on{background:var(--bordo);color:#fff;border-color:var(--bordo);}
+.fito-cal-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 13px 4px;}
+.fito-cal-month{font-size:13px;font-weight:700;color:var(--tx);text-transform:capitalize;}
+.fito-cal-nav-btns{display:flex;gap:4px;}
+.fito-cal-nav-btns button{background:none;border:1.5px solid var(--br);border-radius:8px;padding:3px 10px;font-size:13px;cursor:pointer;color:var(--tx2);font-family:'Montserrat',sans-serif;}
+.fito-cal-nav-btns button.hoy-act{background:var(--bordo);color:#fff;border-color:var(--bordo);}
+.fito-cal-wrap{background:var(--sf);border-radius:var(--r);margin:0 13px;box-shadow:var(--shadow);padding:6px 8px 10px;}
+.fito-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
+.fito-cal-dh{text-align:center;font-size:9px;font-weight:700;color:var(--tx3);padding:3px 0 5px;text-transform:uppercase;}
+.fito-cal-day{position:relative;display:flex;flex-direction:column;align-items:center;padding:3px 1px 7px;border-radius:8px;cursor:default;}
+.fito-cal-day.clickable{cursor:pointer;}
+.fito-cal-day.clickable:active{background:var(--rose);}
+.fito-day-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-size:12px;font-weight:500;color:var(--tx);}
+.fito-cal-day.is-today .fito-day-num{background:var(--rose);color:var(--bordo);font-weight:700;}
+.fito-cal-day.is-sel .fito-day-num{background:var(--bordo);color:#fff;font-weight:700;}
+.fito-cal-day.is-today.is-sel .fito-day-num{background:var(--bordo);color:#fff;}
+.fito-day-dot{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--bordo);}
+.fito-day-detail{background:var(--sf);border-radius:var(--r);margin:9px 13px 0;box-shadow:var(--shadow);padding:13px 14px;}
+.fito-day-title{font-size:12px;font-weight:700;color:var(--bordo);text-transform:capitalize;margin-bottom:10px;}
+.fito-det-prod{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--br);}
+.fito-det-prod:last-child{border-bottom:none;}
+
 /* FERTILIZACIÓN INLINE */
 .fert-toggle-btn{display:flex;align-items:center;justify-content:space-between;width:calc(100% - 26px);margin:0 13px 11px;padding:11px 15px;background:var(--verde-l);border:1.5px solid rgba(26,92,46,.2);border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--verde);cursor:pointer;}
 .fert-section{display:none;background:var(--sf);border-radius:var(--r);margin:0 13px 11px;box-shadow:var(--shadow);padding:13px;border:1.5px solid rgba(26,92,46,.2);}
@@ -380,18 +409,32 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 
 <!-- FITO -->
 <div class="sec" id="sec-fito">
-  <div class="week-nav">
-    <div class="week-lbl" id="week-lbl-fito">—</div>
-    <div class="week-btns">
-      <button onclick="navW(-1)">‹</button>
-      <button class="act" onclick="navW(0)">Hoy</button>
-      <button onclick="navW(1)">›</button>
+  <div class="fito-mode-btns">
+    <button class="fito-mode-btn on" id="fito-btn-sem" onclick="setFitoMode('sem')">Esta semana</button>
+    <button class="fito-mode-btn" id="fito-btn-hist" onclick="setFitoMode('hist')">Historial</button>
+  </div>
+  <!-- Semana -->
+  <div id="fito-sem-wrap">
+    <div class="week-nav">
+      <div class="week-lbl" id="week-lbl-fito">—</div>
+      <div class="week-btns">
+        <button onclick="navW(-1)">‹</button>
+        <button class="act" onclick="navW(0)">Hoy</button>
+        <button onclick="navW(1)">›</button>
+      </div>
     </div>
+    <div style="padding:0 13px 11px">
+      <button class="btn-pri" style="width:100%" onclick="openFitoModal()">+ Registrar aplicación</button>
+    </div>
+    <div id="fito-list"></div>
   </div>
-  <div style="padding:0 13px 11px">
-    <button class="btn-pri" style="width:100%" onclick="openFitoModal()">+ Registrar aplicación</button>
+  <!-- Historial calendario -->
+  <div id="fito-hist-wrap" style="display:none;padding-bottom:20px">
+    <div style="padding:8px 13px 4px">
+      <button class="btn-pri" style="width:100%" onclick="openFitoModal()">+ Registrar aplicación</button>
+    </div>
+    <div id="fito-hist"></div>
   </div>
-  <div id="fito-list"></div>
 </div>
 
 <!-- CLIMA -->
@@ -2424,7 +2467,7 @@ function showSec(id){
   if(id==='tar')   { renderTareas(); }
   if(id==='clima') { renderTemps(); }
   if(id==='fert')  { renderFertSem(); }
-  if(id==='fito')  { renderFitoSem(); }
+  if(id==='fito')  { if(_fitoMode==='hist') renderFitoHist(); else renderFitoSem(); }
   if(id==='notas') { const nf=document.getElementById('nota-fecha');if(nf&&!nf.value)nf.value=ds(new Date()); renderNotas(); }
 }
 
@@ -2722,6 +2765,125 @@ function renderTemps(){
 }
 
 // ── FITOSANITARIOS ────────────────────────────────────────────────────────
+let _fitoMode='sem', _fitoCalOff=0, _fitoSelDay=null, _fitoFilterProd=null;
+
+function setFitoMode(m){
+  _fitoMode=m;
+  document.getElementById('fito-btn-sem').classList.toggle('on',m==='sem');
+  document.getElementById('fito-btn-hist').classList.toggle('on',m==='hist');
+  document.getElementById('fito-sem-wrap').style.display=m==='sem'?'':'none';
+  document.getElementById('fito-hist-wrap').style.display=m==='hist'?'':'none';
+  if(m==='sem') renderFitoSem();
+  else renderFitoHist();
+}
+
+function navFitoCal(n){
+  _fitoCalOff=n===0?0:_fitoCalOff+n;
+  _fitoSelDay=null;
+  renderFitoHist();
+}
+
+function selFitoDay(d){
+  _fitoSelDay=_fitoSelDay===d?null:d;
+  renderFitoHist();
+}
+
+function setFitoFilter(prod){
+  _fitoFilterProd=_fitoFilterProd===prod?null:prod;
+  _fitoSelDay=null;
+  renderFitoHist();
+}
+
+function renderFitoHist(){
+  const el=document.getElementById('fito-hist');
+  if(!el) return;
+
+  const now=new Date();
+  const tgt=new Date(now.getFullYear(),now.getMonth()+_fitoCalOff,1);
+  const yr=tgt.getFullYear(), mo=tgt.getMonth();
+  const monthStr=tgt.toLocaleDateString('es-CL',{month:'long',year:'numeric'});
+  const todayStr=ds(new Date());
+  const prefix=`${yr}-${String(mo+1).padStart(2,'0')}`;
+
+  // Eventos a mostrar (con filtro si aplica)
+  const evsFilt=_fitoFilterProd
+    ? fito_eventos.filter(e=>(e.prods||[]).some(p=>p.nom===_fitoFilterProd))
+    : fito_eventos;
+  const evDays=new Set(evsFilt.filter(e=>e.fecha.startsWith(prefix)).map(e=>e.fecha));
+
+  // Chips de filtro por producto
+  const prodNames=[...new Set(fito_eventos.flatMap(e=>(e.prods||[]).map(p=>p.nom)))].sort();
+  const chips=['Todos',...prodNames].map(n=>{
+    const isAll=n==='Todos';
+    const on=isAll?!_fitoFilterProd:_fitoFilterProd===n;
+    const fn=isAll?`setFitoFilter(null)`:`setFitoFilter('${n.replace(/'/g,"\\'")}')`;
+    return `<div class="fito-pf-chip${on?' on':''}" onclick="${fn}">${n}</div>`;
+  }).join('');
+
+  // Grilla del calendario
+  const firstDow=(new Date(yr,mo,1).getDay()+6)%7; // lunes=0
+  const daysInMo=new Date(yr,mo+1,0).getDate();
+  const dayHdrs=['L','M','M','J','V','S','D'].map(d=>`<div class="fito-cal-dh">${d}</div>`).join('');
+  let cells='';
+  for(let i=0;i<firstDow;i++) cells+=`<div class="fito-cal-day"></div>`;
+  for(let d=1;d<=daysInMo;d++){
+    const dStr=`${prefix}-${String(d).padStart(2,'0')}`;
+    const hasEv=evDays.has(dStr);
+    const isToday=dStr===todayStr;
+    const isSel=dStr===_fitoSelDay;
+    const cls=['fito-cal-day',isToday&&!isSel?'is-today':'',isSel?'is-sel':'',hasEv?'clickable':''].filter(Boolean).join(' ');
+    const click=hasEv?`onclick="selFitoDay('${dStr}')"`:'' ;
+    cells+=`<div class="${cls}" ${click}>
+      <span class="fito-day-num">${d}</span>
+      ${hasEv?`<span class="fito-day-dot"></span>`:''}
+    </div>`;
+  }
+
+  // Detalle del día seleccionado
+  let detail='';
+  if(_fitoSelDay){
+    const dayEvts=fito_eventos.filter(e=>e.fecha===_fitoSelDay);
+    const dayLbl=new Date(_fitoSelDay+'T12:00:00').toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'});
+    const evHtml=dayEvts.map((ev,ei)=>{
+      const espHtml=(ev.especies||[]).map(n=>`<span style="display:inline-block;background:var(--rose);color:var(--bordo);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;margin:2px 3px 2px 0">${n}</span>`).join('');
+      const prodHtml=(ev.prods||[]).filter(p=>p.nom).map(p=>{
+        const viaC=p.via==='Riego'?{bg:'#e3f2fd',tx:'#1565c0'}:{bg:'#fff3e0',tx:'#bf5500'};
+        const viaBadge=p.via?`<span style="display:inline-block;background:${viaC.bg};color:${viaC.tx};border-radius:20px;padding:1px 7px;font-size:9px;font-weight:700;margin-left:5px">${p.via}</span>`:'';
+        return `<div class="fito-det-prod">
+          <div style="flex:1;min-width:0"><span style="font-size:12px;font-weight:600;color:var(--tx)">${p.nom}</span>${viaBadge}</div>
+          ${p.qty?`<span style="font-size:12px;font-weight:700;color:var(--verde);flex-shrink:0">${p.qty} ${p.uni||'g'}</span>`:''}
+        </div>`;
+      }).join('');
+      return `${ei>0?'<div style="height:1px;background:var(--br);margin:6px 0"></div>':''}
+        ${espHtml?`<div style="margin-bottom:7px">${espHtml}</div>`:''}
+        ${prodHtml}
+        ${ev.nota?`<div style="padding-top:5px;font-size:11px;color:var(--tx3);font-style:italic">${ev.nota}</div>`:''}`;
+    }).join('');
+    detail=`<div class="fito-day-detail">
+      <div class="fito-day-title">${dayLbl}</div>
+      ${evHtml}
+    </div>`;
+  }
+
+  const sinDatos=!fito_eventos.length
+    ?`<div class="card" style="margin:10px 13px 0;text-align:center;color:var(--tx3);font-size:12px;padding:20px">Sin aplicaciones registradas aún</div>`:'';
+
+  el.innerHTML=`
+    <div class="fito-pf-bar">${chips}</div>
+    <div class="fito-cal-nav">
+      <div class="fito-cal-month">${monthStr}</div>
+      <div class="fito-cal-nav-btns">
+        <button onclick="navFitoCal(-1)">‹</button>
+        <button class="${_fitoCalOff===0?'hoy-act':''}" onclick="navFitoCal(0)">Hoy</button>
+        <button onclick="navFitoCal(1)">›</button>
+      </div>
+    </div>
+    <div class="fito-cal-wrap">
+      <div class="fito-cal-grid">${dayHdrs}${cells}</div>
+    </div>
+    ${detail}${sinDatos}`;
+}
+
 function renderFitoSem(){
   const el=document.getElementById('fito-list');
   if(!el) return;
@@ -2924,7 +3086,7 @@ loadAll().then(()=>{
     if(act.id==='sec-plan')  renderPlan();
     if(act.id==='sec-clima') renderTemps();
     if(act.id==='sec-fert')  renderFertSem();
-    if(act.id==='sec-fito')  renderFitoSem();
+    if(act.id==='sec-fito')  { if(_fitoMode==='hist') renderFitoHist(); else renderFitoSem(); }
   }
 });
 </script>
