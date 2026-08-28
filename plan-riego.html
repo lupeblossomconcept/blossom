@@ -2773,8 +2773,18 @@ function setFitoMode(m){
   document.getElementById('fito-btn-hist').classList.toggle('on',m==='hist');
   document.getElementById('fito-sem-wrap').style.display=m==='sem'?'':'none';
   document.getElementById('fito-hist-wrap').style.display=m==='hist'?'':'none';
-  if(m==='sem') renderFitoSem();
-  else renderFitoHist();
+  if(m==='sem'){
+    renderFitoSem();
+  } else {
+    // Ir al mes del último evento registrado, no al mes actual
+    if(fito_eventos.length){
+      const lastFecha=fito_eventos.map(e=>e.fecha).sort().pop();
+      const d=new Date(lastFecha+'T12:00:00');
+      const now=new Date();
+      _fitoCalOff=(d.getFullYear()-now.getFullYear())*12+(d.getMonth()-now.getMonth());
+    }
+    renderFitoHist();
+  }
 }
 
 function navFitoCal(n){
@@ -2866,7 +2876,10 @@ function renderFitoHist(){
   }
 
   const sinDatos=!fito_eventos.length
-    ?`<div class="card" style="margin:10px 13px 0;text-align:center;color:var(--tx3);font-size:12px;padding:20px">Sin aplicaciones registradas aún</div>`:'';
+    ?`<div class="card" style="margin:10px 13px 0;text-align:center;color:var(--tx3);font-size:12px;padding:20px">Sin aplicaciones registradas aún</div>`
+    :!evDays.size
+    ?`<div style="margin:10px 13px 0;text-align:center;color:var(--tx3);font-size:11px;padding:10px">Sin aplicaciones este mes · usá ‹ para ver meses anteriores</div>`
+    :'';
 
   el.innerHTML=`
     <div class="fito-pf-bar">${chips}</div>
