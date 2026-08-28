@@ -3092,6 +3092,9 @@ renderSem();
 loadAll().then(()=>{
   migrateFitoVia();
   renderSem();
+  // Siempre actualizar fito con datos de Firebase, esté visible o no
+  renderFitoSem();
+  if(_fitoMode==='hist') renderFitoHist();
   const act=document.querySelector('.sec.on');
   if(act){
     if(act.id==='sec-tar')   renderTareas();
@@ -3099,7 +3102,6 @@ loadAll().then(()=>{
     if(act.id==='sec-plan')  renderPlan();
     if(act.id==='sec-clima') renderTemps();
     if(act.id==='sec-fert')  renderFertSem();
-    if(act.id==='sec-fito')  { if(_fitoMode==='hist') renderFitoHist(); else renderFitoSem(); }
   }
 });
 </script>
