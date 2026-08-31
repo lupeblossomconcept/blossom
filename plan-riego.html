@@ -539,6 +539,13 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
       <button class="sheets-btn sheets-btn-code" onclick="openModal('sheets-code')">Ver código</button>
     </div>
   </div>
+  <div style="padding:0 13px;margin-bottom:6px;margin-top:10px">
+    <div class="ctit" style="margin-bottom:6px">💾 Respaldo de datos</div>
+  </div>
+  <div class="card" style="margin:0 13px 11px">
+    <div style="font-size:11px;color:var(--tx3);margin-bottom:10px;line-height:1.5">Exportá todos los datos como texto. Copiá y guardalo en WhatsApp o Notes como respaldo.</div>
+    <button class="btn-pri" style="width:100%" onclick="exportarTodo()">📋 Exportar todo a texto</button>
+  </div>
   <div style="height:20px"></div>
 </div>
 
@@ -839,12 +846,9 @@ async function loadAll(){
     if(d.fert_planes!=null){fert_planes=d.fert_planes;localStorage.setItem('pr_fert_planes',JSON.stringify(fert_planes));}
     else{const t=await fbToken();fetch(`${FB_URL}/fert_planes.json?auth=${t}`,{method:'PUT',body:JSON.stringify(fert_planes)}).catch(()=>{});}
     if(d.fito_eventos!=null){
-      // Firebase a veces guarda arrays como objetos — convertir si es necesario
       const raw=d.fito_eventos;
-      const asArr=Array.isArray(raw)?raw:Object.values(raw).filter(v=>v&&v.id);
-      fito_eventos=asArr;
+      fito_eventos=Array.isArray(raw)?raw:Object.values(raw).filter(v=>v&&v.id);
       localStorage.setItem('pr_fito_eventos',JSON.stringify(fito_eventos));
-      toast('Firebase fito: '+(Array.isArray(raw)?'array':'objeto')+' · '+asArr.length+' registros','');
     }
   }catch(e){}
 }
@@ -3124,6 +3128,48 @@ function delFitoEv(id){
   save('pr_fito_eventos', fito_eventos);
   renderFitoSem();
   toast('Registro eliminado');
+}
+
+// ── EXPORTAR DATOS ────────────────────────────────────────────────────────
+function exportarTodo(){
+  const lines=[];
+  const hoy=new Date().toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'});
+  lines.push('=== RESPALDO BLOSSOM · '+hoy+' ===\n');
+
+  // Fito
+  lines.push('── FITOSANITARIOS ('+fito_eventos.length+' registros) ──');
+  [...fito_eventos].sort((a,b)=>b.fecha.localeCompare(a.fecha)).forEach(ev=>{
+    const fecha=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    const esp=(ev.especies||[]).join(', ')||'Sin especie';
+    const prods=(ev.prods||[]).filter(p=>p.nom).map(p=>p.nom+(p.qty?' '+p.qty+(p.uni||'g'):'')+' ('+p.via+')').join(' · ');
+    lines.push(fecha+' | '+esp+' | '+prods+(ev.nota?' | '+ev.nota:''));
+  });
+
+  // Tareas
+  lines.push('\n── TAREAS ('+tareas.length+') ──');
+  tareas.forEach(t=>lines.push((t.done?'✓':'○')+' '+t.txt+(t.fecha?' ['+t.fecha+']':'')));
+
+  // Eventos riego/fert (últimos 30)
+  const evRecientes=[...eventos].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,30);
+  lines.push('\n── ÚLTIMOS 30 EVENTOS RIEGO/FERT ──');
+  evRecientes.forEach(ev=>{
+    const fecha=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{day:'numeric',month:'short'});
+    lines.push(fecha+' | '+(ev.especie||'')+'  | '+(ev.tipo||'')+' | '+ev.mm+'mm'+(ev.nota?' | '+ev.nota:''));
+  });
+
+  lines.push('\n=== FIN RESPALDO ===');
+  const txt=lines.join('\n');
+
+  // Copiar al portapapeles y mostrar modal con el texto
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).catch(()=>{});}
+  const mo=document.getElementById('modal-inner');
+  const ov=document.getElementById('ov');
+  mo.innerHTML=`<div class="modal-tit">📋 Respaldo de datos</div>
+    <div style="font-size:10px;color:var(--tx3);margin-bottom:8px">Copiado al portapapeles. También podés seleccionar todo y copiar:</div>
+    <textarea readonly style="width:100%;height:220px;font-size:10px;font-family:monospace;padding:8px;border:1.5px solid var(--br);border-radius:var(--rs);background:var(--gris);color:var(--tx);resize:none">${txt.replace(/</g,'&lt;')}</textarea>
+    <button class="btn-pri" style="margin-top:10px" onclick="navigator.clipboard.writeText(document.querySelector('#modal-inner textarea').value).then(()=>toast('✓ Copiado','ok'))">Copiar al portapapeles</button>
+    <button class="btn-sec" onclick="closeOv()">Cerrar</button>`;
+  ov.classList.add('on');
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
