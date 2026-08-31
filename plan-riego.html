@@ -839,7 +839,6 @@ async function loadAll(){
     if(d.fert_planes!=null){fert_planes=d.fert_planes;localStorage.setItem('pr_fert_planes',JSON.stringify(fert_planes));}
     else{const t=await fbToken();fetch(`${FB_URL}/fert_planes.json?auth=${t}`,{method:'PUT',body:JSON.stringify(fert_planes)}).catch(()=>{});}
     if(d.fito_eventos!=null){
-      // Mezclar Firebase con localStorage: si hay eventos en local que no están en Firebase, subirlos
       const fbIds=new Set(d.fito_eventos.map(e=>e.id));
       const localExtra=fito_eventos.filter(e=>!fbIds.has(e.id));
       if(localExtra.length){
@@ -849,9 +848,7 @@ async function loadAll(){
         fito_eventos=d.fito_eventos;
       }
       localStorage.setItem('pr_fito_eventos',JSON.stringify(fito_eventos));
-    } else if(fito_eventos.length){
-      // Firebase no tiene fito_eventos pero localStorage sí — subir
-      fetch(`${FB_URL}/fito_eventos.json?auth=${tok}`,{method:'PUT',body:JSON.stringify(fito_eventos)}).catch(()=>{});
+      toast('Firebase: '+fito_eventos.length+' registros fito','');
     }
   }catch(e){}
 }
