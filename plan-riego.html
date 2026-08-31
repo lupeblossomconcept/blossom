@@ -2903,26 +2903,59 @@ function renderFitoHist(){
     </div>`;
   }
 
-  const sinDatos=!fito_eventos.length
-    ?`<div class="card" style="margin:10px 13px 0;text-align:center;color:var(--tx3);font-size:12px;padding:20px">Sin aplicaciones registradas aún</div>`
-    :!evDays.size
-    ?`<div style="margin:10px 13px 0;text-align:center;color:var(--tx3);font-size:11px;padding:10px">Sin aplicaciones este mes · usá ‹ para ver meses anteriores</div>`
-    :'';
+  // Lista completa de todos los eventos (filtrada si hay producto seleccionado), del más reciente al más antiguo
+  const evsFiltAll=(_fitoFilterProd
+    ? fito_eventos.filter(e=>(e.prods||[]).some(p=>p.nom===_fitoFilterProd))
+    : fito_eventos).slice().sort((a,b)=>b.fecha.localeCompare(a.fecha));
+
+  function evCardHtml(ev){
+    const dateStr=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    const espHtml=(ev.especies||[]).map(n=>`<span style="display:inline-block;background:var(--rose);color:var(--bordo);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;margin:2px 3px 2px 0">${n}</span>`).join('');
+    const prodHtml=(ev.prods||[]).filter(p=>p.nom).map(p=>{
+      const viaC=p.via==='Riego'?{bg:'#e3f2fd',tx:'#1565c0'}:{bg:'#fff3e0',tx:'#bf5500'};
+      const viaBadge=p.via?`<span style="display:inline-block;background:${viaC.bg};color:${viaC.tx};border-radius:20px;padding:1px 7px;font-size:9px;font-weight:700;margin-left:5px">${p.via}</span>`:'';
+      return `<div class="fito-det-prod">
+        <div style="flex:1;min-width:0"><span style="font-size:12px;font-weight:600;color:var(--tx)">${p.nom}</span>${viaBadge}</div>
+        ${p.qty?`<span style="font-size:12px;font-weight:700;color:var(--verde);flex-shrink:0">${p.qty} ${p.uni||'g'}</span>`:''}
+      </div>`;
+    }).join('');
+    return `<div class="esp-card" style="margin:0 13px 9px">
+      <div style="padding:10px 13px 6px;display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--bordo);text-transform:capitalize;margin-bottom:4px">${dateStr}</div>
+          ${espHtml?`<div>${espHtml}</div>`:''}
+        </div>
+      </div>
+      ${prodHtml?`<div style="padding:0 13px 8px">${prodHtml}</div>`:''}
+      ${ev.nota?`<div style="padding:4px 13px 10px;font-size:11px;color:var(--tx3);font-style:italic">${ev.nota}</div>`:''}
+    </div>`;
+  }
+
+  let listaHtml='';
+  if(!fito_eventos.length){
+    listaHtml=`<div class="card" style="margin:0 13px;text-align:center;color:var(--tx3);font-size:12px;padding:20px">Sin aplicaciones registradas aún</div>`;
+  } else if(!evsFiltAll.length){
+    listaHtml=`<div style="margin:0 13px;text-align:center;color:var(--tx3);font-size:11px;padding:10px">Sin registros para este producto</div>`;
+  } else {
+    // Agrupar por mes
+    const byMonth={};
+    evsFiltAll.forEach(ev=>{
+      const mk=ev.fecha.slice(0,7);
+      if(!byMonth[mk]) byMonth[mk]=[];
+      byMonth[mk].push(ev);
+    });
+    listaHtml=Object.keys(byMonth).sort((a,b)=>b.localeCompare(a)).map(mk=>{
+      const [y,m]=mk.split('-');
+      const mLbl=new Date(y,m-1,1).toLocaleDateString('es-CL',{month:'long',year:'numeric'});
+      return `<div style="padding:8px 13px 4px;font-size:9.5px;font-weight:700;color:var(--tx3);text-transform:capitalize;letter-spacing:.05em">${mLbl} · ${byMonth[mk].length} aplicación${byMonth[mk].length>1?'es':''}</div>
+        ${byMonth[mk].map(ev=>evCardHtml(ev)).join('')}`;
+    }).join('');
+  }
 
   el.innerHTML=`
     <div class="fito-pf-bar">${chips}</div>
-    <div class="fito-cal-nav">
-      <div class="fito-cal-month">${monthStr}</div>
-      <div class="fito-cal-nav-btns">
-        <button onclick="navFitoCal(-1)">‹</button>
-        <button class="${_fitoCalOff===0?'hoy-act':''}" onclick="navFitoCal(0)">Hoy</button>
-        <button onclick="navFitoCal(1)">›</button>
-      </div>
-    </div>
-    <div class="fito-cal-wrap">
-      <div class="fito-cal-grid">${dayHdrs}${cells}</div>
-    </div>
-    ${detail}${sinDatos}`;
+    ${fito_eventos.length?`<div style="padding:2px 13px 6px;font-size:10px;color:var(--tx3)">${evsFiltAll.length} aplicación${evsFiltAll.length!==1?'es':''} registrada${evsFiltAll.length!==1?'s':''}</div>`:''}
+    ${listaHtml}`;
 }
 
 function renderFitoSem(){
