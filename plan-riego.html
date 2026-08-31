@@ -838,18 +838,7 @@ async function loadAll(){
     else{const t=await fbToken();fetch(`${FB_URL}/prods.json?auth=${t}`,{method:'PUT',body:JSON.stringify(prods)}).catch(()=>{});}
     if(d.fert_planes!=null){fert_planes=d.fert_planes;localStorage.setItem('pr_fert_planes',JSON.stringify(fert_planes));}
     else{const t=await fbToken();fetch(`${FB_URL}/fert_planes.json?auth=${t}`,{method:'PUT',body:JSON.stringify(fert_planes)}).catch(()=>{});}
-    if(d.fito_eventos!=null){
-      const fbIds=new Set(d.fito_eventos.map(e=>e.id));
-      const localExtra=fito_eventos.filter(e=>!fbIds.has(e.id));
-      if(localExtra.length){
-        fito_eventos=[...d.fito_eventos,...localExtra].sort((a,b)=>a.fecha.localeCompare(b.fecha));
-        fetch(`${FB_URL}/fito_eventos.json?auth=${tok}`,{method:'PUT',body:JSON.stringify(fito_eventos)}).catch(()=>{});
-      } else {
-        fito_eventos=d.fito_eventos;
-      }
-      localStorage.setItem('pr_fito_eventos',JSON.stringify(fito_eventos));
-      toast('Firebase: '+fito_eventos.length+' registros fito','');
-    }
+    if(d.fito_eventos!=null){fito_eventos=d.fito_eventos;localStorage.setItem('pr_fito_eventos',JSON.stringify(fito_eventos));}
   }catch(e){}
 }
 
