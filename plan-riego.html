@@ -838,7 +838,14 @@ async function loadAll(){
     else{const t=await fbToken();fetch(`${FB_URL}/prods.json?auth=${t}`,{method:'PUT',body:JSON.stringify(prods)}).catch(()=>{});}
     if(d.fert_planes!=null){fert_planes=d.fert_planes;localStorage.setItem('pr_fert_planes',JSON.stringify(fert_planes));}
     else{const t=await fbToken();fetch(`${FB_URL}/fert_planes.json?auth=${t}`,{method:'PUT',body:JSON.stringify(fert_planes)}).catch(()=>{});}
-    if(d.fito_eventos!=null){fito_eventos=d.fito_eventos;localStorage.setItem('pr_fito_eventos',JSON.stringify(fito_eventos));}
+    if(d.fito_eventos!=null){
+      // Firebase a veces guarda arrays como objetos — convertir si es necesario
+      const raw=d.fito_eventos;
+      const asArr=Array.isArray(raw)?raw:Object.values(raw).filter(v=>v&&v.id);
+      fito_eventos=asArr;
+      localStorage.setItem('pr_fito_eventos',JSON.stringify(fito_eventos));
+      toast('Firebase fito: '+(Array.isArray(raw)?'array':'objeto')+' · '+asArr.length+' registros','');
+    }
   }catch(e){}
 }
 
