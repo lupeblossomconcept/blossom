@@ -2885,6 +2885,7 @@ function maybeRenderAgenda(){
 // ── AGENDA ────────────────────────────────────────────────────────────────
 let agenda_plan=JSON.parse(localStorage.getItem('pr_agenda_plan')||'[]');
 let _agCalOff=0, _agSelDay=null;
+let _agExtraCatSel=new Set(), _agExtraCatDosis={};
 
 function navAgCal(n){_agCalOff=n===0?0:_agCalOff+n;_agSelDay=null;renderAgenda();}
 function selAgDay(d){_agSelDay=_agSelDay===d?null:d;renderAgenda();}
@@ -2967,12 +2968,14 @@ function renderAgenda(){
         }
       }
       const mainLabel=ev.tipo==='fert'?(planLabel||ev.desc||''):ev.desc||'';
+      const extraStr=(ev.extraCatProds||[]).map(p=>`${p.nom} ${p.dosis}${p.uni}/L`).join(' · ');
       items+=`<div class="ag-ev-item">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div class="ag-ev-tipo ag-ev-tipo-plan">${ev.tipo==='fito'?'💊 Fito':'🌿 Fert'} programado</div>
           <button onclick="delAgPlan('${ev.id}')" style="background:none;border:none;color:var(--tx3);font-size:18px;cursor:pointer;line-height:1;padding:0">×</button>
         </div>
         ${mainLabel?`<div class="ag-ev-esp">${mainLabel}</div>`:''}
+        ${extraStr?`<div class="ag-ev-det">+ ${extraStr}</div>`:''}
         ${ev.nota?`<div class="ag-ev-nota">${ev.nota}</div>`:''}
       </div>`;
     });
@@ -3014,6 +3017,7 @@ function renderAgenda(){
 const _SEL_STYLE='width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:var(--gris);color:var(--tx);font-family:\'Montserrat\',sans-serif;outline:none';
 
 function openAgPlanModal(fecha){
+  _agExtraCatSel=new Set(); _agExtraCatDosis={};
   const mo=document.getElementById('modal-inner');
   const ov=document.getElementById('ov');
   const def=fecha||(()=>{const d=new Date();d.setDate(d.getDate()+7);return ds(d);})();
@@ -3037,7 +3041,8 @@ function openAgPlanModal(fecha){
         ? `<div class="mfield"><label>Plan de fertilización</label>
              <select id="ag-plan-idx" onchange="agPlanChange()" style="${_SEL_STYLE}">${planOpts}</select>
            </div>
-           <div id="ag-etapa-wrap"></div>`
+           <div id="ag-etapa-wrap"></div>
+           <div id="ag-ecat-wrap"></div>`
         : `<div style="font-size:11px;color:var(--tx3);padding:4px 0 10px">Sin planes. Creá uno en Config → Planes de fertilización.</div>`}
     </div>
     <div class="mfield"><label>Nota</label><textarea id="ag-nota" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;resize:none;height:48px"></textarea></div>
@@ -3061,13 +3066,64 @@ function agPlanChange(){
   const el=document.getElementById('ag-etapa-wrap');
   if(!el||!pl) return;
   const etapas=pl.etapas||[];
-  if(etapas.length<=1){ el.innerHTML=''; return; }
-  const opts=etapas.map((et,i)=>`<option value="${i}">E${i+1}: ${et.nom}</option>`).join('');
-  el.innerHTML=`<div class="mfield"><label>Etapa</label>
-    <select id="ag-etapa-idx" style="${_SEL_STYLE}">${opts}</select>
+  if(etapas.length<=1){ el.innerHTML=''; }
+  else {
+    const opts=etapas.map((et,i)=>`<option value="${i}">E${i+1}: ${et.nom}</option>`).join('');
+    el.innerHTML=`<div class="mfield"><label>Etapa</label>
+      <select id="ag-etapa-idx" onchange="renderAgExtraCat()" style="${_SEL_STYLE}">${opts}</select>
+    </div>`;
+    const s=document.getElementById('ag-etapa-idx');
+    if(s) s.value=String(pl.etapaActual||0);
+  }
+  _agExtraCatSel=new Set(); _agExtraCatDosis={};
+  renderAgExtraCat();
+}
+
+function renderAgExtraCat(){
+  const el=document.getElementById('ag-ecat-wrap');
+  if(!el) return;
+  const planIdxEl=document.getElementById('ag-plan-idx');
+  if(!planIdxEl){ el.innerHTML=''; return; }
+  const pl=fert_planes[parseInt(planIdxEl.value)||0];
+  if(!pl){ el.innerHTML=''; return; }
+  const etapaEl=document.getElementById('ag-etapa-idx');
+  const stageIdx=etapaEl?parseInt(etapaEl.value)||0:(pl.etapaActual||0);
+  const etapa=pl.etapas&&pl.etapas[stageIdx];
+  const etapaProdIds=new Set((etapa?.prods||[]).map(pp=>pp.prodId));
+  const catExtras=prods.filter(p=>!etapaProdIds.has(p.id));
+  if(!catExtras.length){ el.innerHTML=''; return; }
+  const rows=catExtras.map(p=>{
+    const on=_agExtraCatSel.has(p.id);
+    const curDosis=_agExtraCatDosis[p.id]??p.dosis??0;
+    const dispUni=p.unidad==='L'?'cc/L':'g/L';
+    return `<div style="padding:9px 0;border-bottom:1px solid var(--br)">
+      <div style="display:flex;align-items:center;opacity:${on?'1':'.45'};cursor:pointer" onclick="togAgExtraCatProd('${p.id}')">
+        <div style="font-size:17px;margin-right:10px;flex-shrink:0">${on?'●':'○'}</div>
+        <div style="font-size:13px;font-weight:600;flex:1;${!on?'color:var(--tx3)':''}">${p.nom}</div>
+      </div>
+      ${on?`<div style="display:flex;align-items:center;gap:5px;margin-top:4px;padding-left:27px">
+        <span style="font-size:10px;color:var(--tx3)">Dosis:</span>
+        <input type="text" id="ag-ecat-dosis-${p.id}" value="${curDosis}" inputmode="decimal" style="width:60px;padding:4px 7px;border:1.5px solid var(--br);border-radius:8px;font-size:13px;font-weight:700;font-family:'Playfair Display',serif;background:var(--gris);color:var(--tx);text-align:center;-webkit-appearance:none;outline:none">
+        <span style="font-size:10px;color:var(--tx3)">${dispUni}</span>
+      </div>`:''}
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div style="margin-top:4px">
+    <div style="font-size:9.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 2px">Productos adicionales</div>
+    ${rows}
   </div>`;
-  const s=document.getElementById('ag-etapa-idx');
-  if(s) s.value=String(pl.etapaActual||0);
+}
+
+function togAgExtraCatProd(prodId){
+  _agExtraCatSel.forEach(id=>{const inp=document.getElementById('ag-ecat-dosis-'+id);if(inp)_agExtraCatDosis[id]=parseFloat(inp.value)||0;});
+  if(_agExtraCatSel.has(prodId)){
+    _agExtraCatSel.delete(prodId); delete _agExtraCatDosis[prodId];
+  } else {
+    _agExtraCatSel.add(prodId);
+    const p=getProd(prodId);
+    if(p&&!(_agExtraCatDosis[prodId]>0)) _agExtraCatDosis[prodId]=p.dosis||0;
+  }
+  renderAgExtraCat();
 }
 
 function saveAgPlan(){
@@ -3086,6 +3142,16 @@ function saveAgPlan(){
       entry.planId=pl.id;
       const etapaEl=document.getElementById('ag-etapa-idx');
       entry.stageIdx=etapaEl?parseInt(etapaEl.value)||0:(pl.etapaActual||0);
+    }
+    // guardar dosis actuales y construir lista de productos adicionales
+    _agExtraCatSel.forEach(id=>{const inp=document.getElementById('ag-ecat-dosis-'+id);if(inp)_agExtraCatDosis[id]=parseFloat(inp.value)||0;});
+    if(_agExtraCatSel.size>0){
+      const extraCatProds=[];
+      _agExtraCatSel.forEach(prodId=>{
+        const p=getProd(prodId);
+        if(p) extraCatProds.push({prodId,nom:p.nom,dosis:_agExtraCatDosis[prodId]??p.dosis??0,uni:p.unidad==='L'?'cc':'g'});
+      });
+      if(extraCatProds.length) entry.extraCatProds=extraCatProds;
     }
   }
   agenda_plan.push(entry);
