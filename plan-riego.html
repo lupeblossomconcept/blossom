@@ -2152,7 +2152,7 @@ let _frCtx=null; // {planIdx, stageIdx, espSel:Set, dosisOverride:{}, extraProds
 function openFertRegModal(planIdx, stageIdx){
   const pl=fert_planes[planIdx];
   if(!pl) return;
-  _frCtx={planIdx, stageIdx, espSel:new Set(), prodDesel:new Set(), dosisOverride:{}, extraProds:[]};
+  _frCtx={planIdx, stageIdx, espSel:new Set(), prodDesel:new Set(), dosisOverride:{}, extraProds:[], extraCatSel:new Set(), extraCatDosis:{}};
   renderFertRegModal();
   document.getElementById('ov').classList.add('on');
 }
@@ -2179,6 +2179,14 @@ function saveDosisFromDOM(){
     if(amtInp) ep.amt=parseFloat(amtInp.value)||0;
     if(uniSel) ep.uni=uniSel.value;
   });
+  // guardar dosis editadas de productos de catálogo adicionales
+  (_frCtx.extraCatSel||new Set()).forEach(prodId=>{
+    const inp=document.getElementById('fr-ecat-dosis-'+prodId);
+    if(inp){
+      const v=parseFloat(inp.value.replace(',','.'))||0;
+      _frCtx.extraCatDosis[prodId]=v;
+    }
+  });
 }
 
 function togFertEsp(idx){
@@ -2192,6 +2200,19 @@ function togFertProd(prodId){
   saveDosisFromDOM();
   if(_frCtx.prodDesel.has(prodId)) _frCtx.prodDesel.delete(prodId);
   else _frCtx.prodDesel.add(prodId);
+  renderFertRegModal();
+}
+
+function togExtraCatProd(prodId){
+  saveDosisFromDOM();
+  if(_frCtx.extraCatSel.has(prodId)){
+    _frCtx.extraCatSel.delete(prodId);
+    delete _frCtx.extraCatDosis[prodId];
+  } else {
+    _frCtx.extraCatSel.add(prodId);
+    const p=getProd(prodId);
+    if(p&&!(_frCtx.extraCatDosis[prodId]>0)) _frCtx.extraCatDosis[prodId]=p.dosis||0;
+  }
   renderFertRegModal();
 }
 
@@ -2261,6 +2282,41 @@ function renderFertRegModal(){
 
   const ordenHtml=pl.orden&&camas>0?`<div style="background:var(--am-l);border-radius:var(--rs);padding:8px 11px;font-size:11px;color:var(--am);margin-bottom:10px;line-height:1.5">${pl.orden}</div>`:'';
 
+  // Productos del catálogo que NO están en la etapa actual
+  let extraCatHtml='';
+  if(camas>0){
+    const etapaProdIds=new Set((etapa?.prods||[]).map(pp=>pp.prodId));
+    const catExtras=prods.filter(p=>!etapaProdIds.has(p.id));
+    if(catExtras.length){
+      const rows=catExtras.map(p=>{
+        const on=(_frCtx.extraCatSel||new Set()).has(p.id);
+        const curDosis=(_frCtx.extraCatDosis||{})[p.id]??p.dosis??0;
+        const amt=on?calcProdAmt(curDosis,litros):0;
+        const dispUni=p.unidad==='L'?'cc/L':'g/L';
+        return `<div style="padding:9px 0;border-bottom:1px solid var(--br)">
+          <div style="display:flex;align-items:center;opacity:${on?'1':'.45'};cursor:pointer" onclick="togExtraCatProd('${p.id}')">
+            <div style="font-size:17px;margin-right:10px;flex-shrink:0">${on?'●':'○'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;${!on?'color:var(--tx3)':''}">${p.nom}</div>
+            </div>
+            ${on?`<div style="text-align:right;flex-shrink:0;margin-left:12px">
+              <div style="font-size:15px;font-weight:700;color:var(--verde)">${fmtAmt(amt,p.unidad)}</div>
+            </div>`:''}
+          </div>
+          ${on?`<div style="display:flex;align-items:center;gap:5px;margin-top:4px;padding-left:27px">
+            <span style="font-size:10px;color:var(--tx3)">Dosis:</span>
+            <input type="text" id="fr-ecat-dosis-${p.id}" value="${curDosis}" inputmode="decimal" style="width:60px;padding:4px 7px;border:1.5px solid var(--br);border-radius:8px;font-size:13px;font-weight:700;font-family:'Playfair Display',serif;background:var(--gris);color:var(--tx);text-align:center;-webkit-appearance:none;outline:none">
+            <span style="font-size:10px;color:var(--tx3)">${dispUni}</span>
+          </div>`:''}
+        </div>`;
+      }).join('');
+      extraCatHtml=`<div style="margin-top:8px">
+        <div style="font-size:9.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 2px">Productos adicionales</div>
+        ${rows}
+      </div>`;
+    }
+  }
+
   const chipsHtml=sortedSpp().map(e=>{
     const on=_frCtx.espSel.has(e._idx);
     return `<div class="chip${on?' on':''}" onclick="togFertEsp(${e._idx})" style="margin-bottom:6px">
@@ -2285,6 +2341,7 @@ function renderFertRegModal(){
     </div>`:`<div style="font-size:11px;color:var(--tx3);padding:6px 0 14px">Seleccioná al menos una especie para ver las dosis</div>`}
     ${ordenHtml}
     ${prodsHtml?`<div>${prodsHtml}</div>`:''}
+    ${extraCatHtml}
     ${camas>0?`<div style="margin-top:2px">
       ${(_frCtx.extraProds||[]).map((ep,i)=>`
         <div style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--br)">
@@ -2331,6 +2388,13 @@ function saveFertReg(){
       prodsList.push({prodId:pp.prodId,nom:prod?prod.nom:pp.prodId,riego:pp.riego,dosis:dosisEfectiva,amt:Math.round(amt),uni:prod?(prod.unidad==='L'?'cc':'g'):'g'});
     });
   }
+  (_frCtx.extraCatSel||new Set()).forEach(prodId=>{
+    const prod=getProd(prodId);
+    if(!prod) return;
+    const dosis=(_frCtx.extraCatDosis||{})[prodId]??prod.dosis??0;
+    const amt=calcProdAmt(dosis,L);
+    if(amt>0) prodsList.push({prodId,nom:prod.nom,riego:'',dosis,amt:Math.round(amt),uni:prod.unidad==='L'?'cc':'g'});
+  });
   (_frCtx.extraProds||[]).filter(ep=>ep.nom&&ep.amt>0).forEach(ep=>{
     prodsList.push({nom:ep.nom,riego:'',dosis:0,amt:ep.amt,uni:ep.uni||'g'});
   });
