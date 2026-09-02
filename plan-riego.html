@@ -102,6 +102,32 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .wk-bar-fill{height:100%;border-radius:3px;}
 .wk-mm{font-size:11px;color:var(--tx2);font-weight:600;flex-shrink:0;text-align:right;min-width:72px;}
 
+/* AGENDA CALENDARIO */
+.ag-cal-wrap{background:var(--sf);border-radius:var(--r);margin:0 13px;box-shadow:var(--shadow);padding:6px 8px 10px;}
+.ag-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
+.ag-cal-dh{text-align:center;font-size:9px;font-weight:700;color:var(--tx3);padding:3px 0 5px;text-transform:uppercase;}
+.ag-cal-day{display:flex;flex-direction:column;align-items:center;padding:2px 1px 5px;border-radius:8px;cursor:pointer;min-height:42px;}
+.ag-cal-day:active{background:var(--rose);}
+.ag-day-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-size:12px;font-weight:500;color:var(--tx);}
+.ag-today .ag-day-num{background:var(--rose);color:var(--bordo);font-weight:700;}
+.ag-sel .ag-day-num{background:var(--bordo);color:#fff;font-weight:700;}
+.ag-dots{display:flex;gap:2px;justify-content:center;margin-top:2px;min-height:8px;flex-wrap:wrap;}
+.ag-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.ag-dot-fito{background:var(--bordo);}
+.ag-dot-fert{background:var(--verde);}
+.ag-dot-plan{border:1.5px solid var(--am);background:transparent;}
+.ag-day-detail{background:var(--sf);border-radius:var(--r);margin:9px 13px 0;box-shadow:var(--shadow);padding:13px 14px;}
+.ag-day-title{font-size:12px;font-weight:700;color:var(--tx);text-transform:capitalize;}
+.ag-ev-item{padding:8px 0;border-bottom:1px solid var(--br);}
+.ag-ev-item:last-child{border-bottom:none;}
+.ag-ev-tipo{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.ag-ev-tipo-fito{color:var(--bordo);}
+.ag-ev-tipo-fert{color:var(--verde);}
+.ag-ev-tipo-plan{color:var(--am);}
+.ag-ev-esp{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px;}
+.ag-ev-det{font-size:11px;color:var(--tx2);}
+.ag-ev-nota{font-size:10px;color:var(--tx3);font-style:italic;margin-top:3px;}
+
 /* FITO CALENDARIO */
 .fito-mode-btns{display:flex;gap:7px;padding:8px 13px 4px;}
 .fito-mode-btn{flex:1;padding:7px 4px;border:1.5px solid var(--br);border-radius:20px;background:none;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;}
@@ -337,6 +363,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
   <button class="ntab" id="nt-fito" onclick="showSec('fito')"><span class="ntab-icon">💊</span>Fito</button>
   <button class="ntab" id="nt-plan" onclick="showSec('plan')"><span class="ntab-icon">📋</span>Plan</button>
   <button class="ntab" id="nt-clima" onclick="showSec('clima')"><span class="ntab-icon">🌡️</span>Clima</button>
+  <button class="ntab" id="nt-agenda" onclick="showSec('agenda')"><span class="ntab-icon">🗓️</span>Agenda</button>
   <button class="ntab" id="nt-tar" onclick="showSec('tar')"><span class="ntab-icon">✅</span>Tareas</button>
   <button class="ntab" id="nt-cfg" onclick="showSec('cfg')"><span class="ntab-icon">⚙️</span>Config</button>
 </div>
@@ -435,6 +462,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
     </div>
     <div id="fito-hist"></div>
   </div>
+</div>
+
+<!-- AGENDA -->
+<div class="sec" id="sec-agenda">
+  <div id="agenda-cal" style="padding-bottom:20px"></div>
 </div>
 
 <!-- CLIMA -->
@@ -2479,6 +2511,7 @@ function showSec(id){
   if(id==='clima') { renderTemps(); }
   if(id==='fert')  { renderFertSem(); }
   if(id==='fito')  { if(_fitoMode==='hist') renderFitoHist(); else renderFitoSem(); }
+  if(id==='agenda'){ renderAgenda(); }
   if(id==='notas') { const nf=document.getElementById('nota-fecha');if(nf&&!nf.value)nf.value=ds(new Date()); renderNotas(); }
 }
 
@@ -2773,6 +2806,167 @@ function renderTemps(){
       <button class="temp-del" onclick="deleteTemp('${t.fecha}')" title="Eliminar">✕</button>
     </div>`;
   }).join('');
+}
+
+// ── AGENDA ────────────────────────────────────────────────────────────────
+let agenda_plan=JSON.parse(localStorage.getItem('pr_agenda_plan')||'[]');
+let _agCalOff=0, _agSelDay=null;
+
+function navAgCal(n){_agCalOff=n===0?0:_agCalOff+n;_agSelDay=null;renderAgenda();}
+function selAgDay(d){_agSelDay=_agSelDay===d?null:d;renderAgenda();}
+
+function renderAgenda(){
+  const el=document.getElementById('agenda-cal');
+  if(!el)return;
+  const now=new Date();
+  const tgt=new Date(now.getFullYear(),now.getMonth()+_agCalOff,1);
+  const yr=tgt.getFullYear(),mo=tgt.getMonth();
+  const prefix=`${yr}-${String(mo+1).padStart(2,'0')}`;
+  const todayStr=ds(new Date());
+  const monthStr=tgt.toLocaleDateString('es-CL',{month:'long',year:'numeric'});
+
+  const fitoMes=fito_eventos.filter(e=>e.fecha.startsWith(prefix));
+  const fertMes=eventos.filter(e=>e.tipo==='fertilizacion'&&e.fecha.startsWith(prefix));
+  const planMes=agenda_plan.filter(e=>e.fecha.startsWith(prefix));
+
+  const fitoDays=new Set(fitoMes.map(e=>e.fecha));
+  const fertDays=new Set(fertMes.map(e=>e.fecha));
+  const planDays=new Set(planMes.map(e=>e.fecha));
+
+  const firstDow=(new Date(yr,mo,1).getDay()+6)%7;
+  const daysInMo=new Date(yr,mo+1,0).getDate();
+  const dayHdrs=['L','M','M','J','V','S','D'].map(d=>`<div class="ag-cal-dh">${d}</div>`).join('');
+
+  let cells='';
+  for(let i=0;i<firstDow;i++) cells+=`<div></div>`;
+  for(let d=1;d<=daysInMo;d++){
+    const dStr=`${prefix}-${String(d).padStart(2,'0')}`;
+    const isSel=dStr===_agSelDay;
+    const isToday=dStr===todayStr;
+    const cls='ag-cal-day'+(isSel?' ag-sel':isToday?' ag-today':'');
+    cells+=`<div class="${cls}" onclick="selAgDay('${dStr}')">
+      <span class="ag-day-num">${d}</span>
+      <div class="ag-dots">
+        ${fitoDays.has(dStr)?`<span class="ag-dot ag-dot-fito"></span>`:''}
+        ${fertDays.has(dStr)?`<span class="ag-dot ag-dot-fert"></span>`:''}
+        ${planDays.has(dStr)?`<span class="ag-dot ag-dot-plan"></span>`:''}
+      </div>
+    </div>`;
+  }
+
+  let detail='';
+  if(_agSelDay){
+    const dayFito=fito_eventos.filter(e=>e.fecha===_agSelDay);
+    const dayFert=eventos.filter(e=>e.tipo==='fertilizacion'&&e.fecha===_agSelDay);
+    const dayPlan=agenda_plan.filter(e=>e.fecha===_agSelDay);
+    const dayLbl=new Date(_agSelDay+'T12:00:00').toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'});
+    let items='';
+
+    dayFito.forEach(ev=>{
+      const esp=(ev.especies||[]).join(', ')||'Sin especie';
+      const prods=(ev.prods||[]).filter(p=>p.nom).map(p=>p.nom+(p.qty?' '+p.qty+(p.uni||'g'):'')+' ('+p.via+')').join(' · ');
+      items+=`<div class="ag-ev-item">
+        <div class="ag-ev-tipo ag-ev-tipo-fito">💊 Fito aplicado</div>
+        <div class="ag-ev-esp">${esp}</div>
+        ${prods?`<div class="ag-ev-det">${prods}</div>`:''}
+        ${ev.nota?`<div class="ag-ev-nota">${ev.nota}</div>`:''}
+      </div>`;
+    });
+
+    dayFert.forEach(ev=>{
+      const planNom=fert_planes.find(p=>p.id===ev.planId)?.nom||'';
+      items+=`<div class="ag-ev-item">
+        <div class="ag-ev-tipo ag-ev-tipo-fert">🌿 Fertilización aplicada</div>
+        ${planNom?`<div class="ag-ev-esp">${planNom}${ev.etapa?' · '+ev.etapa:''}</div>`:''}
+        ${ev.especie?`<div class="ag-ev-det">${ev.especie}</div>`:''}
+        ${ev.nota?`<div class="ag-ev-nota">${ev.nota}</div>`:''}
+      </div>`;
+    });
+
+    dayPlan.forEach(ev=>{
+      items+=`<div class="ag-ev-item">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="ag-ev-tipo ag-ev-tipo-plan">${ev.tipo==='fito'?'💊 Fito':'🌿 Fert'} programado</div>
+          <button onclick="delAgPlan('${ev.id}')" style="background:none;border:none;color:var(--tx3);font-size:18px;cursor:pointer;line-height:1;padding:0">×</button>
+        </div>
+        ${ev.desc?`<div class="ag-ev-esp">${ev.desc}</div>`:''}
+        ${ev.nota?`<div class="ag-ev-nota">${ev.nota}</div>`:''}
+      </div>`;
+    });
+
+    if(!items) items=`<div style="text-align:center;color:var(--tx3);font-size:12px;padding:8px">Sin eventos · tocá + Agendar para programar</div>`;
+
+    detail=`<div class="ag-day-detail">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="ag-day-title">${dayLbl}</div>
+        <button onclick="openAgPlanModal('${_agSelDay}')" style="background:var(--bordo);color:#fff;border:none;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif">+ Agendar</button>
+      </div>
+      ${items}
+    </div>`;
+  }
+
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 13px 4px">
+      <div style="font-size:13px;font-weight:700;color:var(--tx);text-transform:capitalize">${monthStr}</div>
+      <div style="display:flex;gap:4px">
+        <button onclick="navAgCal(-1)" style="background:none;border:1.5px solid var(--br);border-radius:8px;padding:3px 10px;font-size:13px;cursor:pointer;color:var(--tx2);font-family:'Montserrat',sans-serif">‹</button>
+        <button onclick="navAgCal(0)" style="background:${_agCalOff===0?'var(--bordo)':'none'};color:${_agCalOff===0?'#fff':'var(--tx2)'};border:1.5px solid ${_agCalOff===0?'var(--bordo)':'var(--br)'};border-radius:8px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif">Hoy</button>
+        <button onclick="navAgCal(1)" style="background:none;border:1.5px solid var(--br);border-radius:8px;padding:3px 10px;font-size:13px;cursor:pointer;color:var(--tx2);font-family:'Montserrat',sans-serif">›</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:14px;padding:2px 13px 8px">
+      <span style="font-size:10px;color:var(--tx3);display:flex;align-items:center;gap:3px"><span style="width:7px;height:7px;border-radius:50%;background:var(--bordo);display:inline-block"></span>Fito</span>
+      <span style="font-size:10px;color:var(--tx3);display:flex;align-items:center;gap:3px"><span style="width:7px;height:7px;border-radius:50%;background:var(--verde);display:inline-block"></span>Fert</span>
+      <span style="font-size:10px;color:var(--tx3);display:flex;align-items:center;gap:3px"><span style="width:7px;height:7px;border-radius:50%;border:1.5px solid var(--am);display:inline-block"></span>Programado</span>
+    </div>
+    <div class="ag-cal-wrap">
+      <div class="ag-cal-grid">${dayHdrs}${cells}</div>
+    </div>
+    ${detail}
+    <div style="padding:10px 13px 4px">
+      <button onclick="openAgPlanModal(null)" style="width:100%;padding:11px;background:var(--sf);border:1.5px dashed var(--br2);border-radius:var(--r);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:600;color:var(--tx2);cursor:pointer">+ Agendar aplicación futura</button>
+    </div>`;
+}
+
+function openAgPlanModal(fecha){
+  const mo=document.getElementById('modal-inner');
+  const ov=document.getElementById('ov');
+  const def=fecha||(()=>{const d=new Date();d.setDate(d.getDate()+7);return ds(d);})();
+  mo.innerHTML=`
+    <div class="modal-tit">🗓️ Agendar aplicación</div>
+    <div class="mfield"><label>Fecha</label><input type="date" id="ag-fecha" value="${def}"></div>
+    <div class="mfield"><label>Tipo</label>
+      <select id="ag-tipo" style="width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:var(--gris);color:var(--tx);font-family:'Montserrat',sans-serif;outline:none">
+        <option value="fito">💊 Fitosanitario</option>
+        <option value="fert">🌿 Fertilización</option>
+      </select>
+    </div>
+    <div class="mfield"><label>Descripción (producto, dosis, etc.)</label><input type="text" id="ag-desc" placeholder="Ej: Folicur 15ml foliar" style="width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:var(--gris);color:var(--tx);font-family:'Montserrat',sans-serif;outline:none"></div>
+    <div class="mfield"><label>Nota</label><textarea id="ag-nota" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;resize:none;height:48px"></textarea></div>
+    <button class="btn-pri" style="margin-top:8px" onclick="saveAgPlan()">✓ Guardar</button>
+    <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+  ov.classList.add('on');
+}
+
+function saveAgPlan(){
+  const fecha=document.getElementById('ag-fecha').value;
+  const tipo=document.getElementById('ag-tipo').value;
+  const desc=document.getElementById('ag-desc').value.trim();
+  const nota=document.getElementById('ag-nota').value.trim();
+  if(!fecha){toast('Elegí una fecha','err');return;}
+  agenda_plan.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),fecha,tipo,desc,nota});
+  localStorage.setItem('pr_agenda_plan',JSON.stringify(agenda_plan));
+  closeOv();
+  _agSelDay=fecha;
+  renderAgenda();
+  toast('✓ Agendado','ok');
+}
+
+function delAgPlan(id){
+  agenda_plan=agenda_plan.filter(e=>e.id!==id);
+  localStorage.setItem('pr_agenda_plan',JSON.stringify(agenda_plan));
+  renderAgenda();
+  toast('Evento eliminado');
 }
 
 // ── FITOSANITARIOS ────────────────────────────────────────────────────────
