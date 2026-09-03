@@ -1635,16 +1635,12 @@ function openModal(tipo, ctx){
     const goteros=parseGoteros(e?e.config:'');
     mi.innerHTML=`
       <div class="modal-tit">${e?'Editar':'Nueva'} especie</div>
-      <div class="mfield"><label>Nombre</label><input id="ae-nom" value="${e?e.nom:''}"></div>
+      <div class="mfield"><label>Nombre del cultivo</label><input id="ae-nom" value="${e?e.nom:''}" placeholder="ej: Lisianthus, Snapdragon, Perritos"></div>
       <div class="mfield">
-        <label>Nombre de lote</label>
-        <input id="ae-cultivo" value="${e?e.cultivo||'':''}" placeholder="ej: Perritos Marzo 26', Lisianthus">
-        <div style="font-size:10px;color:var(--tx3);margin-top:4px">Agrupa todas las etapas de estas camas en el historial. No cambia aunque edites el nombre de la especie.</div>
-      </div>
-      <div class="mfield"><label>Etapa / Fase (opcional)</label>
-        <input id="ae-etapa" value="${e?e.etapa||'':''}" placeholder="ej: Floración, Crecimiento veg., Trasplante">
+        <label>Etapa actual <span style="font-weight:400;color:var(--tx3)">(se puede cambiar cuando crece)</span></label>
+        <input id="ae-etapa" value="${e?e.etapa||'':''}" placeholder="ej: Semillero, Crecimiento veg., Floración">
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">
-          ${['Crecimiento veg.','Floración','Post-trasplante','Trasplante','Producción'].map(t=>
+          ${['Semillero','Crecimiento veg.','Trasplante','Floración','Producción'].map(t=>
             `<button type="button" class="pbtn" style="font-size:10px" onclick="document.getElementById('ae-etapa').value='${t}'">${t}</button>`
           ).join('')}
         </div>
@@ -1906,8 +1902,8 @@ function savePlan(tipo,espIdx){
 
 function saveEsp(tipo, idx){
   const nom=document.getElementById('ae-nom').value.trim();
-  const cultivo=document.getElementById('ae-cultivo').value.trim()||nom;
   const etapa=document.getElementById('ae-etapa').value.trim();
+  const cultivo=nom; // el nombre del cultivo es el identificador permanente
   const grp=document.getElementById('ae-grp').value;
   const nc=+document.getElementById('ae-nc').value||1;
   const tasa=+document.getElementById('ae-tasa').value||1;
