@@ -2205,7 +2205,16 @@ function _toggleCh(c){
 function renderCultivoHist(){
   const el=document.getElementById('aplics-hist');
   if(!el) return;
-  const cultOf=nom=>{ const s=spp.find(x=>x.nom===nom); return s?.cultivo||nom; };
+
+  // Para cada grupoId, elegir el cultivo más representativo (el que difiere del nom, o el del primero)
+  const grupoToCult={};
+  spp.forEach(s=>{
+    if(!s.grupoId||grupoToCult[s.grupoId]) return;
+    const chain=spp.filter(x=>x.grupoId===s.grupoId);
+    const withCult=chain.find(x=>x.cultivo&&x.cultivo!==x.nom);
+    grupoToCult[s.grupoId]=withCult?.cultivo||chain[0]?.cultivo||chain[0]?.nom||s.nom;
+  });
+  const cultOf=nom=>{ const s=spp.find(x=>x.nom===nom); if(!s) return nom; return (s.grupoId&&grupoToCult[s.grupoId])||s.cultivo||nom; };
   const grupoOf=nom=>{ const s=spp.find(x=>x.nom===nom); return s?.grupoId||nom; };
 
   // byC[cultivo][grupoId] = [{...ev, _k}]
@@ -3664,16 +3673,38 @@ function saveAgPlan(){
   }
   if(_agEspSel.size>0) entry.especies=[..._agEspSel];
   agenda_plan.push(entry);
-  localStorage.setItem('pr_agenda_plan',JSON.stringify(agenda_plan));
+  saveAgendaPlan();
   closeOv();
   _agSelDay=fecha;
   renderAgenda();
   toast('✓ Agendado','ok');
 }
 
+async function saveAgendaPlan(){
+  localStorage.setItem('pr_agenda_plan',JSON.stringify(agenda_plan));
+  try{ const tok=await fbToken(); await fetch(`${FB_URL}/agenda_plan.json?auth=${tok}`,{method:'PUT',body:JSON.stringify(agenda_plan)}); }catch(e){}
+}
+
+async function loadAgendaPlan(){
+  try{
+    const tok=await fbToken();
+    const r=await fetch(`${FB_URL}/agenda_plan.json?auth=${tok}`);
+    const d=await r.json();
+    if(Array.isArray(d)&&d.length){
+      const hoy=ds(new Date());
+      // merge: unión por id, filtrar pasados
+      const byId={};
+      agenda_plan.forEach(e=>byId[e.id]=e);
+      d.forEach(e=>{if(e&&e.id&&!byId[e.id])byId[e.id]=e;});
+      agenda_plan=Object.values(byId).filter(e=>e.fecha>=hoy);
+      localStorage.setItem('pr_agenda_plan',JSON.stringify(agenda_plan));
+    }
+  }catch(e){}
+}
+
 function delAgPlan(id){
   agenda_plan=agenda_plan.filter(e=>e.id!==id);
-  localStorage.setItem('pr_agenda_plan',JSON.stringify(agenda_plan));
+  saveAgendaPlan();
   renderAgenda();
   toast('Evento eliminado');
 }
@@ -4182,7 +4213,7 @@ function migrateFitoVia(){
 mergeDefaultProds();
 migrateFitoVia();
 renderSem();
-loadAll().then(()=>{
+loadAll().then(()=>loadAgendaPlan()).then(()=>{
   migrateFitoVia();
   renderSem();
   // Siempre actualizar fito con datos de Firebase, esté visible o no
@@ -4194,7 +4225,8 @@ loadAll().then(()=>{
     if(act.id==='sec-cfg')   renderCfg();
     if(act.id==='sec-plan')  renderPlan();
     if(act.id==='sec-clima') renderTemps();
-    if(act.id==='sec-aplics'){ if(_aplicsTab==='fert') renderFertSem(); else { if(_fitoMode==='hist') renderFitoHist(); else renderFitoSem(); } }
+    if(act.id==='sec-aplics'){ if(_aplicsTab==='fert') renderFertSem(); else if(_aplicsTab==='hist') renderCultivoHist(); else { if(_fitoMode==='hist') renderFitoHist(); else renderFitoSem(); } }
+    if(act.id==='sec-agenda') renderAgenda();
   }
 });
 </script>
