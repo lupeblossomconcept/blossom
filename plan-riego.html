@@ -3523,13 +3523,15 @@ function renderAgenda(){
         if(pl){
           const et=pl.etapas&&pl.etapas[ev.stageIdx];
           if(et&&et.prods.length){
+            const desel=new Set(ev.deselProds||[]);
             planProdsHtml=et.prods.map(pp=>{
               const p=getProd(pp.prodId);
               if(!p) return '';
+              const off=desel.has(pp.prodId);
               const dispUni=p.unidad==='L'?'cc/L':'g/L';
-              return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--br)">
-                <span style="font-size:11px;font-weight:600;color:var(--tx)">${p.nom}</span>
-                <span style="font-size:11px;color:var(--verde);font-weight:700">${pp.dosisPorL} ${dispUni}</span>
+              return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--br);opacity:${off?'.4':'1'}">
+                <span style="font-size:11px;font-weight:600;${off?'text-decoration:line-through;color:var(--tx3)':'color:var(--tx)'}">${p.nom}</span>
+                <span style="font-size:11px;color:${off?'var(--tx3)':'var(--verde)'};font-weight:700">${pp.dosisPorL} ${dispUni}</span>
               </div>`;
             }).join('');
           }
@@ -3652,7 +3654,7 @@ function _agTogEsp(nom){
 }
 
 function openAgPlanModal(fecha){
-  _agExtraCatSel=new Set(); _agExtraCatDosis={}; _agEspSel=new Set(); _agFitoProdSel=new Set(); _agFitoDosis={}; _agFertMode='estandar';
+  _agExtraCatSel=new Set(); _agExtraCatDosis={}; _agEspSel=new Set(); _agFitoProdSel=new Set(); _agFitoDosis={}; _agFertMode='estandar'; _agProdDesel=new Set();
   const mo=document.getElementById('modal-inner');
   const ov=document.getElementById('ov');
   const def=fecha||(()=>{const d=new Date();d.setDate(d.getDate()+7);return ds(d);})();
@@ -3704,6 +3706,12 @@ function agTipoChange(){
 }
 
 let _agFertMode='estandar';
+let _agProdDesel=new Set();
+function togAgProd(prodId){
+  if(_agProdDesel.has(prodId)) _agProdDesel.delete(prodId);
+  else _agProdDesel.add(prodId);
+  renderAgPlanProds();
+}
 function agFertModeChange(m){
   _agFertMode=m;
   document.getElementById('ag-fm-est').classList.toggle('on',m==='estandar');
@@ -3729,7 +3737,7 @@ function agPlanChange(){
     const s=document.getElementById('ag-etapa-idx');
     if(s) s.value=String(pl.etapaActual||0);
   }
-  _agExtraCatSel=new Set(); _agExtraCatDosis={};
+  _agExtraCatSel=new Set(); _agExtraCatDosis={}; _agProdDesel=new Set();
   renderAgPlanProds();
   renderAgExtraCat();
   agFertModeChange(_agFertMode);
@@ -3749,14 +3757,16 @@ function renderAgPlanProds(){
   const rows=etapa.prods.map(pp=>{
     const p=getProd(pp.prodId);
     if(!p) return '';
+    const off=_agProdDesel.has(pp.prodId);
     const dispUni=p.unidad==='L'?'cc/L':'g/L';
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--br)">
-      <span style="font-size:12px;font-weight:600;color:var(--tx)">${p.nom}</span>
-      <span style="font-size:11px;color:var(--verde);font-weight:700">${pp.dosisPorL} ${dispUni}</span>
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--br);opacity:${off?'.4':'1'};cursor:pointer" onclick="togAgProd('${pp.prodId}')">
+      <span style="font-size:17px;flex-shrink:0">${off?'○':'●'}</span>
+      <span style="font-size:12px;font-weight:600;flex:1;${off?'text-decoration:line-through;color:var(--tx3)':''}">${p.nom}</span>
+      <span style="font-size:11px;color:${off?'var(--tx3)':'var(--verde)'};font-weight:700">${pp.dosisPorL} ${dispUni}</span>
     </div>`;
   }).join('');
-  el.innerHTML=`<div style="margin-top:8px;background:var(--verde-l,#e8f5ed);border-radius:var(--rs);padding:10px 12px">
-    <div style="font-size:9.5px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Receta estándar</div>
+  el.innerHTML=`<div style="margin-top:8px;background:var(--verde-l,#e8f5ed);border-radius:var(--rs);padding:8px 12px">
+    <div style="font-size:9.5px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Receta · tocá para deseleccionar</div>
     ${rows}
   </div>`;
 }
@@ -3834,6 +3844,7 @@ function saveAgPlan(){
     }
     // guardar dosis actuales y construir lista de productos adicionales
     entry.fertMode=_agFertMode;
+    if(_agProdDesel.size>0) entry.deselProds=[..._agProdDesel];
     if(_agFertMode==='personalizado'){
       _agExtraCatSel.forEach(id=>{const inp=document.getElementById('ag-ecat-dosis-'+id);if(inp)_agExtraCatDosis[id]=parseFloat(inp.value)||0;});
       if(_agExtraCatSel.size>0){
