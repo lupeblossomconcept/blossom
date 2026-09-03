@@ -745,7 +745,13 @@ const DEF_FERT_PLANES = [
   {
     id:'fp_gen', nom:'General (sin Ranúnculo)',
     ncamas:20, litros:500, frecSem:1, etapaActual:1,
-    orden:'1° Ácido Fosfórico en estanque (pH 6.0-6.5) · 2° En balde aparte: Ultrasol → Urea → Fulvic Mix · 3° Verter balde al estanque · 4° Medir pH final',
+    orden:'',
+    ordenMezcla:[
+      {prodId:'prod_acidofos', nota:'pH 6.0-6.5 en estanque'},
+      {prodId:'prod_ultrasol', nota:'En balde aparte'},
+      {prodId:'prod_urea',     nota:'En balde aparte'},
+      {prodId:'prod_fulvic',   nota:'Verter balde al estanque al final'},
+    ],
     etapas:[
       {nom:'Recién Transplantado (0-2 sem)', prods:[
         {prodId:'prod_acidofos', riego:'U', dosisPorL:0.130},
@@ -769,7 +775,14 @@ const DEF_FERT_PLANES = [
   {
     id:'fp_ran', nom:'Ranúnculo',
     ncamas:7, litros:175, frecSem:1, etapaActual:1,
-    orden:'R1: SOLO Nitrato de Calcio (+ 10-15cc ácido fosfórico para pH) · R2: Ácido Fosfórico → Ultrasol → Urea → Bioestimulante · NUNCA mezclar Ca con fosfatos en el mismo estanque',
+    orden:'',
+    ordenMezcla:[
+      {prodId:'prod_nitcalcio', nota:'R1 · SOLO. NUNCA mezclar con fosfatos'},
+      {prodId:'prod_acidofos',  nota:'R2'},
+      {prodId:'prod_ultrasol',  nota:'R2'},
+      {prodId:'prod_urea',      nota:'R2'},
+      {prodId:'prod_epivio',    nota:'R2 · Alternar con Mc Gram sem a sem'},
+    ],
     etapas:[
       {nom:'Crecimiento Vegetativo (sin calcio)', prods:[
         {prodId:'prod_acidofos', riego:'R2', dosisPorL:0.103},
@@ -855,18 +868,20 @@ let temps  = JSON.parse(localStorage.getItem('pr_temps')  || '[]');
 let notas  = JSON.parse(localStorage.getItem('pr_notas')  || '[]');
 let prods  = JSON.parse(localStorage.getItem('pr_prods')  || 'null') || DEF_PRODS.map(p=>({...p}));
 let fert_planes = JSON.parse(localStorage.getItem('pr_fert_planes')||'null') || DEF_FERT_PLANES.map(p=>JSON.parse(JSON.stringify(p)));
-// migración: restaurar orden y E3 de Ranúnculo si fueron borrados por error
+// migración: restaurar ordenMezcla y E3 de Ranúnculo
 (()=>{
+  let changed=false;
+  fert_planes.forEach(pl=>{
+    const def=DEF_FERT_PLANES.find(d=>d.id===pl.id);
+    if(def&&!pl.ordenMezcla){ pl.ordenMezcla=JSON.parse(JSON.stringify(def.ordenMezcla)); changed=true; }
+    if(!pl.ordenMezcla){ pl.ordenMezcla=[]; changed=true; }
+  });
   const ran=fert_planes.find(p=>p.id==='fp_ran');
-  const def=DEF_FERT_PLANES.find(p=>p.id==='fp_ran');
-  if(ran&&def){
-    let changed=false;
-    if(!ran.orden){ran.orden=def.orden; changed=true;}
-    if(ran.etapas&&ran.etapas.length<def.etapas.length){
-      ran.etapas=JSON.parse(JSON.stringify(def.etapas)); changed=true;
-    }
-    if(changed) localStorage.setItem('pr_fert_planes',JSON.stringify(fert_planes));
+  const defRan=DEF_FERT_PLANES.find(p=>p.id==='fp_ran');
+  if(ran&&defRan&&ran.etapas&&ran.etapas.length<defRan.etapas.length){
+    ran.etapas=JSON.parse(JSON.stringify(defRan.etapas)); changed=true;
   }
+  if(changed) localStorage.setItem('pr_fert_planes',JSON.stringify(fert_planes));
 })();
 // migración: asignar grupoId a especies que no lo tienen
 (()=>{
@@ -1228,7 +1243,32 @@ function renderFertPlanRef(){
   el.innerHTML=fert_planes.map((pl,i)=>{
     const etapas=pl.etapas||[];
     const nEtapas=etapas.length;
-    const ordenHtml=pl.orden?`<div style="background:var(--am-l);border-radius:var(--rs);padding:8px 11px;font-size:11px;color:var(--am);margin:0 13px 8px;line-height:1.5">${pl.orden}</div>`:'';
+    const om=pl.ordenMezcla||[];
+    const etapaActiva=etapas[pl.etapaActual]||etapas[0]||{prods:[]};
+    const ordenHtml=om.length?`<details style="margin:0 13px 8px" id="om-ref-${i}">
+      <summary style="font-size:10px;font-weight:700;color:var(--am);cursor:pointer;padding:7px 10px;background:var(--am-l);border-radius:var(--rs);list-style:none;display:flex;align-items:center;justify-content:space-between">
+        <span>⚗️ Orden de mezcla</span><span style="font-size:9px;color:var(--am);opacity:.7">${om.length} pasos ▸</span>
+      </summary>
+      <div style="padding:6px 0 2px">${om.map((it,si)=>{
+        const prod=getProd(it.prodId);
+        const ep=etapaActiva.prods.find(pp=>pp.prodId===it.prodId);
+        const dosis=ep?`${ep.dosisPorL} ${prod&&prod.unidad==='L'?'cc/L':'g/L'} · ${fmtAmt(calcProdAmt(ep.dosisPorL,pl.litros),prod?prod.unidad:'g')}`:'';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--br)">
+          <span style="font-size:11px;font-weight:700;color:var(--am);flex-shrink:0;min-width:18px">${si+1}°</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;color:var(--tx)">${prod?prod.nom:it.prodId}</div>
+            ${dosis?`<div style="font-size:10px;color:var(--verde);margin-top:1px">${dosis}</div>`:''}
+            ${it.nota?`<div style="font-size:10px;color:var(--tx2);margin-top:1px">${it.nota}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+      <div style="padding:6px 10px">
+        <button onclick="openOrdenMezclaModal(${i})" style="background:none;border:1.5px dashed var(--br);border-radius:var(--rs);width:100%;padding:6px;font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;font-family:'Montserrat',sans-serif">✏️ Editar orden</button>
+      </div>
+      </div>
+    </details>`:`<div style="margin:0 13px 8px">
+      <button onclick="openOrdenMezclaModal(${i})" style="background:none;border:1.5px dashed var(--br);border-radius:var(--rs);width:100%;padding:8px;font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;font-family:'Montserrat',sans-serif">+ Definir orden de mezcla</button>
+    </div>`;
     const etapasHtml=etapas.map((et,ei)=>{
       const prodsHtml=et.prods.length?et.prods.map(pp=>{
         const prod=getProd(pp.prodId);
@@ -2644,7 +2684,28 @@ function renderFertRegModal(){
     }).join('');
   }
 
-  const ordenHtml=pl.orden&&camas>0?`<div style="background:var(--am-l);border-radius:var(--rs);padding:8px 11px;font-size:11px;color:var(--am);margin-bottom:10px;line-height:1.5">${pl.orden}</div>`:'';
+  const om=pl.ordenMezcla||[];
+  const ordenHtml=om.length&&camas>0?`<details style="margin-bottom:10px">
+    <summary style="font-size:10px;font-weight:700;color:var(--am);cursor:pointer;padding:8px 11px;background:var(--am-l);border-radius:var(--rs);list-style:none;display:flex;align-items:center;justify-content:space-between">
+      <span>⚗️ Orden de mezcla</span><span style="font-size:9px;opacity:.7">${om.length} pasos ▸</span>
+    </summary>
+    <div style="border:1.5px solid var(--am-l);border-radius:0 0 var(--rs) var(--rs);padding:4px 0 2px">
+      ${om.map((it,si)=>{
+        const prod=getProd(it.prodId);
+        const ep=etapa?etapa.prods.find(pp=>pp.prodId===it.prodId):null;
+        const curDosis=ep?(_frCtx.dosisOverride[it.prodId]??ep.dosisPorL):null;
+        const amt=ep?calcProdAmt(curDosis,litros):null;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 11px;border-bottom:1px solid var(--br)">
+          <span style="font-size:11px;font-weight:700;color:var(--am);flex-shrink:0;min-width:20px">${si+1}°</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600">${prod?prod.nom:it.prodId}</div>
+            ${it.nota?`<div style="font-size:10px;color:var(--tx2)">${it.nota}</div>`:''}
+          </div>
+          ${amt!=null?`<div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--verde);flex-shrink:0">${fmtAmt(amt,prod?prod.unidad:'g')}</div>`:''}
+        </div>`;
+      }).join('')}
+    </div>
+  </details>`:'';
 
   // Productos del catálogo que NO están en la etapa actual
   let extraCatHtml='';
@@ -2812,8 +2873,44 @@ function delFertPlan(i){
   maybeRenderAgenda();
   toast('Plan eliminado');
 }
+let _fpOrden=[];
+function renderFpOrdenList(){
+  const el=document.getElementById('fp-orden-list');
+  if(!el) return;
+  const prodOpts=prods.map(p=>`<option value="${p.id}">${p.nom}</option>`).join('');
+  el.innerHTML=_fpOrden.map((it,i)=>`
+    <div style="display:flex;align-items:center;gap:5px;padding:6px 0;border-bottom:1px solid var(--br)">
+      <span style="font-size:11px;font-weight:700;color:var(--am);flex-shrink:0;min-width:20px">${i+1}°</span>
+      <select id="fo-prod-${i}" style="flex:1;padding:6px 8px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:12px;background:var(--gris);color:var(--tx);outline:none">
+        <option value="">— Producto —</option>
+        ${prodOpts}
+      </select>
+      <input id="fo-nota-${i}" value="${(it.nota||'').replace(/"/g,'&quot;')}" placeholder="Nota..." style="flex:1;min-width:0;padding:6px 8px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:11px;background:var(--gris);color:var(--tx);outline:none">
+      <button onclick="removeOrdenRow(${i})" style="background:none;border:none;color:var(--tx3);font-size:20px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">×</button>
+    </div>`).join('');
+  // set dropdown values after render
+  _fpOrden.forEach((it,i)=>{
+    const sel=document.getElementById('fo-prod-'+i);
+    if(sel&&it.prodId) sel.value=it.prodId;
+  });
+}
+function addOrdenRow(){
+  _fpOrden.push({prodId:'',nota:''});
+  renderFpOrdenList();
+}
+function removeOrdenRow(i){
+  _fpOrden.splice(i,1);
+  renderFpOrdenList();
+}
+function collectFpOrden(){
+  return _fpOrden.map((_,i)=>({
+    prodId:(document.getElementById('fo-prod-'+i)||{}).value||'',
+    nota:(document.getElementById('fo-nota-'+i)||{}).value.trim()||''
+  })).filter(it=>it.prodId);
+}
 function openFertPlanModal(tipo,idx){
   const pl=tipo==='edit'?fert_planes[idx]:null;
+  _fpOrden=pl&&pl.ordenMezcla?JSON.parse(JSON.stringify(pl.ordenMezcla)):[];
   const mi=document.getElementById('modal-inner');
   mi.innerHTML=`
     <div class="modal-tit">📋 ${pl?'Editar':'Nuevo'} plan de fertilización</div>
@@ -2827,14 +2924,42 @@ function openFertPlanModal(tipo,idx){
         ${[1,2,3].map(n=>`<option value="${n}"${pl&&pl.frecSem===n?' selected':''}>${n}×/semana</option>`).join('')}
       </select>
     </div>
-    <div class="mfield"><label>Orden de mezcla / Notas</label>
-      <textarea id="fp-orden" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:12px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;resize:none;height:64px">${pl?pl.orden||'':''}</textarea>
+    <div style="margin-bottom:14px">
+      <div style="font-size:9.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Orden de mezcla</div>
+      <div id="fp-orden-list"></div>
+      <button onclick="addOrdenRow()" style="width:100%;margin-top:6px;padding:8px;border:1.5px dashed var(--br);border-radius:var(--rs);background:none;font-size:12px;color:var(--bordo);cursor:pointer;font-family:'Montserrat',sans-serif;font-weight:600">+ Agregar paso</button>
     </div>
-    <div style="font-size:11px;color:var(--tx3);margin-bottom:12px">Las etapas y productos se editan desde el botón ✏️ en la tarjeta del plan (tab Fertil).</div>
+    <div style="font-size:11px;color:var(--tx3);margin-bottom:12px">Las etapas y dosis se editan desde el botón ✏️ en la tarjeta del plan.</div>
     <button class="btn-pri" onclick="saveFertPlan('${tipo}',${idx!=null?idx:'null'})">Guardar</button>
     <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
   document.getElementById('ov').classList.add('on');
+  renderFpOrdenList();
   setTimeout(()=>{const n=document.getElementById('fp-nom');if(n)n.focus();},120);
+}
+function openOrdenMezclaModal(planIdx){
+  const pl=fert_planes[planIdx];
+  if(!pl) return;
+  _fpOrden=pl.ordenMezcla?JSON.parse(JSON.stringify(pl.ordenMezcla)):[];
+  const mi=document.getElementById('modal-inner');
+  mi.innerHTML=`
+    <div class="modal-tit">⚗️ Orden de mezcla · ${pl.nom}</div>
+    <div class="modal-sub">Definí el orden en que se agregan los productos al estanque.</div>
+    <div id="fp-orden-list"></div>
+    <button onclick="addOrdenRow()" style="width:100%;margin-top:6px;padding:8px;border:1.5px dashed var(--br);border-radius:var(--rs);background:none;font-size:12px;color:var(--bordo);cursor:pointer;font-family:'Montserrat',sans-serif;font-weight:600">+ Agregar paso</button>
+    <button class="btn-pri" style="margin-top:14px" onclick="saveOrdenMezcla(${planIdx})">Guardar</button>
+    <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
+  document.getElementById('ov').classList.add('on');
+  renderFpOrdenList();
+}
+function saveOrdenMezcla(planIdx){
+  const pl=fert_planes[planIdx];
+  if(!pl) return;
+  pl.ordenMezcla=collectFpOrden();
+  save('pr_fert_planes',fert_planes);
+  closeOv();
+  renderFertPlanRef();
+  renderFertPlanesConfig();
+  toast('Orden guardado','ok');
 }
 function saveFertPlan(tipo,idx){
   const nom=(document.getElementById('fp-nom').value||'').trim();
@@ -2842,14 +2967,14 @@ function saveFertPlan(tipo,idx){
   const ncamas=parseInt(document.getElementById('fp-nc').value)||20;
   const litros=parseInt(document.getElementById('fp-l').value)||500;
   const frecSem=parseInt(document.getElementById('fp-frec').value)||1;
-  const orden=document.getElementById('fp-orden').value||'';
+  const ordenMezcla=collectFpOrden();
   if(tipo==='add'){
-    fert_planes.push({id:'fp_'+Date.now(),nom,ncamas,litros,frecSem,orden,etapaActual:0,etapas:[
+    fert_planes.push({id:'fp_'+Date.now(),nom,ncamas,litros,frecSem,orden:'',ordenMezcla,etapaActual:0,etapas:[
       {nom:'Etapa 1',prods:[]}
     ]});
   } else {
     const pl=fert_planes[idx];
-    pl.nom=nom; pl.ncamas=ncamas; pl.litros=litros; pl.frecSem=frecSem; pl.orden=orden;
+    pl.nom=nom; pl.ncamas=ncamas; pl.litros=litros; pl.frecSem=frecSem; pl.ordenMezcla=ordenMezcla;
   }
   save('pr_fert_planes',fert_planes);
   closeOv();
