@@ -747,10 +747,10 @@ const DEF_FERT_PLANES = [
     ncamas:20, litros:500, frecSem:1, etapaActual:1,
     orden:'',
     ordenMezcla:[
-      {prodId:'prod_acidofos', nota:'pH 6.0-6.5 en estanque'},
-      {prodId:'prod_ultrasol', nota:'En balde aparte'},
-      {prodId:'prod_urea',     nota:'En balde aparte'},
-      {prodId:'prod_fulvic',   nota:'Verter balde al estanque al final'},
+      {prodId:'prod_acidofos', dosis:0.130},
+      {prodId:'prod_ultrasol', dosis:0.330},
+      {prodId:'prod_urea',     dosis:0.200},
+      {prodId:'prod_fulvic',   dosis:0.800},
     ],
     etapas:[
       {nom:'Recién Transplantado (0-2 sem)', prods:[
@@ -777,11 +777,11 @@ const DEF_FERT_PLANES = [
     ncamas:7, litros:175, frecSem:1, etapaActual:1,
     orden:'',
     ordenMezcla:[
-      {prodId:'prod_nitcalcio', nota:'R1 · SOLO. NUNCA mezclar con fosfatos'},
-      {prodId:'prod_acidofos',  nota:'R2'},
-      {prodId:'prod_ultrasol',  nota:'R2'},
-      {prodId:'prod_urea',      nota:'R2'},
-      {prodId:'prod_epivio',    nota:'R2 · Alternar con Mc Gram sem a sem'},
+      {prodId:'prod_nitcalcio', dosis:0.846},
+      {prodId:'prod_acidofos',  dosis:0.103},
+      {prodId:'prod_ultrasol',  dosis:0.303},
+      {prodId:'prod_urea',      dosis:0.029},
+      {prodId:'prod_epivio',    dosis:0.251},
     ],
     etapas:[
       {nom:'Crecimiento Vegetativo (sin calcio)', prods:[
@@ -1244,22 +1244,19 @@ function renderFertPlanRef(){
     const etapas=pl.etapas||[];
     const nEtapas=etapas.length;
     const om=pl.ordenMezcla||[];
-    const etapaActiva=etapas[pl.etapaActual]||etapas[0]||{prods:[]};
     const ordenHtml=om.length?`<details style="margin:0 13px 8px" id="om-ref-${i}">
       <summary style="font-size:10px;font-weight:700;color:var(--am);cursor:pointer;padding:7px 10px;background:var(--am-l);border-radius:var(--rs);list-style:none;display:flex;align-items:center;justify-content:space-between">
         <span>⚗️ Orden de mezcla</span><span style="font-size:9px;color:var(--am);opacity:.7">${om.length} pasos ▸</span>
       </summary>
       <div style="padding:6px 0 2px">${om.map((it,si)=>{
         const prod=getProd(it.prodId);
-        const ep=etapaActiva.prods.find(pp=>pp.prodId===it.prodId);
-        const dosis=ep?`${ep.dosisPorL} ${prod&&prod.unidad==='L'?'cc/L':'g/L'} · ${fmtAmt(calcProdAmt(ep.dosisPorL,pl.litros),prod?prod.unidad:'g')}`:'';
+        const dispUni=prod&&prod.unidad==='L'?'cc/L':'g/L';
         return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--br)">
           <span style="font-size:11px;font-weight:700;color:var(--am);flex-shrink:0;min-width:18px">${si+1}°</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;color:var(--tx)">${prod?prod.nom:it.prodId}</div>
-            ${dosis?`<div style="font-size:10px;color:var(--verde);margin-top:1px">${dosis}</div>`:''}
-            ${it.nota?`<div style="font-size:10px;color:var(--tx2);margin-top:1px">${it.nota}</div>`:''}
           </div>
+          ${it.dosis?`<div style="font-size:13px;font-weight:700;color:var(--verde);flex-shrink:0">${it.dosis} ${dispUni}</div>`:''}
         </div>`;
       }).join('')}
       <div style="padding:6px 10px">
@@ -2692,14 +2689,13 @@ function renderFertRegModal(){
     <div style="border:1.5px solid var(--am-l);border-radius:0 0 var(--rs) var(--rs);padding:4px 0 2px">
       ${om.map((it,si)=>{
         const prod=getProd(it.prodId);
-        const ep=etapa?etapa.prods.find(pp=>pp.prodId===it.prodId):null;
-        const curDosis=ep?(_frCtx.dosisOverride[it.prodId]??ep.dosisPorL):null;
-        const amt=ep?calcProdAmt(curDosis,litros):null;
+        const dispUni=prod&&prod.unidad==='L'?'cc/L':'g/L';
+        const amt=it.dosis&&litros?calcProdAmt(it.dosis,litros):null;
         return `<div style="display:flex;align-items:center;gap:8px;padding:6px 11px;border-bottom:1px solid var(--br)">
           <span style="font-size:11px;font-weight:700;color:var(--am);flex-shrink:0;min-width:20px">${si+1}°</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600">${prod?prod.nom:it.prodId}</div>
-            ${it.nota?`<div style="font-size:10px;color:var(--tx2)">${it.nota}</div>`:''}
+            ${it.dosis?`<div style="font-size:10px;color:var(--tx3);margin-top:1px">${it.dosis} ${dispUni}</div>`:''}
           </div>
           ${amt!=null?`<div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--verde);flex-shrink:0">${fmtAmt(amt,prod?prod.unidad:'g')}</div>`:''}
         </div>`;
@@ -2885,7 +2881,8 @@ function renderFpOrdenList(){
         <option value="">— Producto —</option>
         ${prodOpts}
       </select>
-      <input id="fo-nota-${i}" value="${(it.nota||'').replace(/"/g,'&quot;')}" placeholder="Nota..." style="flex:1;min-width:0;padding:6px 8px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:11px;background:var(--gris);color:var(--tx);outline:none">
+      <input type="text" id="fo-dosis-${i}" value="${it.dosis||''}" inputmode="decimal" placeholder="0" style="width:52px;padding:6px 7px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-weight:700;font-family:'Playfair Display',serif;background:var(--gris);color:var(--tx);text-align:center;outline:none;-webkit-appearance:none;flex-shrink:0">
+      <span style="font-size:9px;color:var(--tx3);flex-shrink:0">cc/L</span>
       <button onclick="removeOrdenRow(${i})" style="background:none;border:none;color:var(--tx3);font-size:20px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">×</button>
     </div>`).join('');
   // set dropdown values after render
@@ -2895,7 +2892,7 @@ function renderFpOrdenList(){
   });
 }
 function addOrdenRow(){
-  _fpOrden.push({prodId:'',nota:''});
+  _fpOrden.push({prodId:'',dosis:''});
   renderFpOrdenList();
 }
 function removeOrdenRow(i){
@@ -2905,7 +2902,7 @@ function removeOrdenRow(i){
 function collectFpOrden(){
   return _fpOrden.map((_,i)=>({
     prodId:(document.getElementById('fo-prod-'+i)||{}).value||'',
-    nota:(document.getElementById('fo-nota-'+i)||{}).value.trim()||''
+    dosis:parseFloat((document.getElementById('fo-dosis-'+i)||{}).value||'')||0
   })).filter(it=>it.prodId);
 }
 function openFertPlanModal(tipo,idx){
