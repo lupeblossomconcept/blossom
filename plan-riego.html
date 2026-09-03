@@ -872,6 +872,20 @@ let fert_planes = JSON.parse(localStorage.getItem('pr_fert_planes')||'null') || 
 })();
 
 let fito_eventos = JSON.parse(localStorage.getItem('pr_fito_eventos') || '[]');
+
+// Migración: normalizar ev.especie de "Nom · Etapa" → "Nom"
+(()=>{
+  const nomSet=new Set(spp.map(s=>s.nom));
+  let changed=false;
+  eventos.forEach(ev=>{
+    if(ev.especie&&ev.especie.includes(' · ')){
+      const base=ev.especie.split(' · ')[0];
+      if(nomSet.has(base)){ ev.especie=base; changed=true; }
+    }
+  });
+  if(changed){ localStorage.setItem('pr_eventos',JSON.stringify(eventos)); }
+})();
+
 let fertWeekOff = 0;
 let _fertSel=new Set(), _fertDosis={};
 let weekOff= 0;
@@ -1082,7 +1096,7 @@ function renderSem(){
   cont.innerHTML = sortedSpp().map(e=>{
     const plan = planForMes(e, mk);
     if(!plan) return '';
-    const evE   = wEvts.filter(v=>v.especie===espId(e));
+    const evE   = wEvts.filter(v=>v.especie===e.nom||v.especie===espId(e));
     const mmR   = evE.filter(v=>v.tipo==='riego').reduce((s,v)=>s+v.mm,0);
     const mmF   = evE.filter(v=>v.tipo==='fertilizacion').reduce((s,v)=>s+v.mm,0);
     const mmL   = lluvia;
@@ -1266,13 +1280,31 @@ function toggleRegla(i){
 
 // ── CONFIG ────────────────────────────────────────────────────────────────
 function getHuerfanos(){
-  const ids=new Set(spp.map(e=>espId(e)));  // incluye baja, no son huérfanos
+  const noms=new Set(spp.map(e=>e.nom)); // solo nom, no espId
   const grupos={};
+  const add=(nom,n=1)=>{ if(!noms.has(nom)) grupos[nom]=(grupos[nom]||0)+n; };
   eventos.forEach(ev=>{
     if(ev.tipo==='lluvia'||ev.tipo==='fertilizacion'||!ev.especie||ev.especie==='*lluvia') return;
-    if(!ids.has(ev.especie)){ grupos[ev.especie]=(grupos[ev.especie]||0)+1; }
+    add(ev.especie);
   });
+  fito_eventos.forEach(ev=>{ (ev.especies||[]).forEach(n=>add(n)); });
   return grupos;
+}
+
+function reasignarNom(oldNom,newNom){
+  eventos.forEach(ev=>{
+    if(ev.especie===oldNom) ev.especie=newNom;
+    if(ev.especies) ev.especies=ev.especies.map(n=>n===oldNom?newNom:n);
+  });
+  fito_eventos.forEach(ev=>{
+    if(ev.especies) ev.especies=ev.especies.map(n=>n===oldNom?newNom:n);
+  });
+  agenda_plan.forEach(ev=>{
+    if(ev.especies) ev.especies=ev.especies.map(n=>n===oldNom?newNom:n);
+  });
+  save('pr_eventos',eventos);
+  save('pr_fito_eventos',fito_eventos);
+  saveAgendaPlan();
 }
 
 function renderCfg(){
@@ -1297,13 +1329,20 @@ function renderCfg(){
   // sección de bajas
   const bajas = spp.map((e,i)=>({...e,_idx:i})).filter(e=>e.baja);
   if(bajas.length){
+    const activos=sortedSpp();
     const bajasHtml = `<div style="margin:8px 13px 4px;font-size:9.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em">Dadas de baja</div>`+
-      bajas.map(e=>`<div class="cfg-esp-item" style="opacity:.55">
-        <div class="cfg-esp-info">
+      bajas.map(e=>`<div class="cfg-esp-item" style="opacity:.7;flex-wrap:wrap;gap:6px">
+        <div class="cfg-esp-info" style="min-width:0">
           <div class="cfg-esp-nom" style="text-decoration:line-through">${e.nom}</div>
-          <div class="cfg-esp-sub">Historial conservado</div>
+          <div style="display:flex;gap:5px;margin-top:4px;align-items:center;flex-wrap:wrap">
+            <select id="reas-baja-sel-${e._idx}" style="font-size:11px;padding:3px 6px;border:1.5px solid var(--br);border-radius:var(--rs);background:var(--sf);color:var(--tx);font-family:'Montserrat',sans-serif;flex:1;min-width:0">
+              <option value="">→ Mover historial a...</option>
+              ${activos.map(a=>`<option value="${a._idx}">${a.nom}</option>`).join('')}
+            </select>
+            <button class="icon-btn" style="font-size:12px" onclick="reasignarBaja(${e._idx})" title="Mover historial y eliminar">↗️</button>
+            <button class="icon-btn" onclick="restoreEsp(${e._idx})" title="Restaurar activa">↩️</button>
+          </div>
         </div>
-        <button class="icon-btn" onclick="restoreEsp(${e._idx})" title="Restaurar">↩️</button>
       </div>`).join('');
     document.getElementById('cfg-spp').innerHTML += bajasHtml;
   }
@@ -1351,13 +1390,27 @@ function doReasignar(idx){
   const oldNom=_huerfanosList[idx];
   const newIdx=parseInt(document.getElementById('reas-sel').value);
   if(isNaN(newIdx)||!spp[newIdx]){ toast('Elegí una especie','err'); return; }
-  const newId=espId(spp[newIdx]);
-  let cnt=0;
-  eventos.forEach(ev=>{ if(ev.especie===oldNom){ ev.especie=newId; cnt++; } });
-  save('pr_eventos',eventos);
+  const newNom=spp[newIdx].nom;
+  reasignarNom(oldNom,newNom);
   document.getElementById('ov').classList.remove('on');
   renderCfg(); renderSem();
-  toast(`✓ ${cnt} evento${cnt>1?'s':''} reasignados a ${newId}`,'ok');
+  if(_aplicsTab==='hist') renderCultivoHist();
+  toast(`✓ "${oldNom}" → "${newNom}"`, 'ok');
+}
+
+function reasignarBaja(bajaIdx){
+  const sel=document.getElementById('reas-baja-sel-'+bajaIdx);
+  if(!sel||!sel.value){ toast('Elegí especie destino','err'); return; }
+  const targetIdx=parseInt(sel.value);
+  if(isNaN(targetIdx)||!spp[targetIdx]){ toast('Especie no encontrada','err'); return; }
+  const oldNom=spp[bajaIdx].nom;
+  const newNom=spp[targetIdx].nom;
+  reasignarNom(oldNom,newNom);
+  spp.splice(bajaIdx,1);
+  save('pr_spp',spp);
+  renderCfg(); renderSem(); renderPlan();
+  if(_aplicsTab==='hist') renderCultivoHist();
+  toast(`✓ "${oldNom}" → "${newNom}"`, 'ok');
 }
 function delHuerfanos(idx){
   const oldNom=_huerfanosList[idx];
@@ -1469,7 +1522,7 @@ function saveEst(){
     const parcial=sc&&sc.size<e.ncamas;
     const camasTag=parcial?` · camas ${[...sc].sort((a,b)=>a-b).join(',')}` : '';
     eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-      fecha, especie:espId(e), min:0, mm:mmC, tipo:'fertilizacion',
+      fecha, especie:e.nom, min:0, mm:mmC, tipo:'fertilizacion',
       nota:`Estanque ${L}L ÷ ${tot} camas = ${lC.toFixed(1)} L/cama${camasTag}`,
       camas: parcial?[...sc].sort((a,b)=>a-b):null });
   });
@@ -1617,7 +1670,7 @@ function openModal(tipo, ctx){
         <label>Reasignar a</label>
         <select id="reas-sel">
           <option value="">— Elegir especie activa —</option>
-          ${spp.map((e,i)=>`<option value="${i}">${espId(e)}</option>`).join('')}
+          ${spp.filter(e=>!e.baja).map((e,i)=>`<option value="${spp.indexOf(e)}">${e.nom}</option>`).join('')}
         </select>
       </div>
       <button class="btn-pri" onclick="doReasignar(${parseInt(ctx)})">Reasignar eventos</button>
@@ -1635,16 +1688,22 @@ function openModal(tipo, ctx){
     const goteros=parseGoteros(e?e.config:'');
     mi.innerHTML=`
       <div class="modal-tit">${e?'Editar':'Nueva'} especie</div>
-      <div class="mfield"><label>Nombre del cultivo</label><input id="ae-nom" value="${e?e.nom:''}" placeholder="ej: Lisianthus, Snapdragon, Perritos"></div>
       <div class="mfield">
-        <label>Etapa actual <span style="font-weight:400;color:var(--tx3)">(se puede cambiar cuando crece)</span></label>
-        <input id="ae-etapa" value="${e?e.etapa||'':''}" placeholder="ej: Semillero, Crecimiento veg., Floración">
+        <label>Nombre del cultivo <span style="font-weight:400;color:var(--tx3);font-size:10px">— identificador fijo</span></label>
+        <input id="ae-nom" value="${e?e.nom:''}" placeholder="ej: Lisianthus, Snapdragon, Ranúnculo">
+      </div>
+      <div class="mfield">
+        <label>Etapa actual</label>
+        <input id="ae-etapa" value="${e?e.etapa||'':''}" placeholder="ej: Post-trasplante, Floración">
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">
-          ${['Semillero','Crecimiento veg.','Trasplante','Floración','Producción'].map(t=>
+          ${['Post-trasplante','Crecimiento vegetativo','Floración'].map(t=>
             `<button type="button" class="pbtn" style="font-size:10px" onclick="document.getElementById('ae-etapa').value='${t}'">${t}</button>`
           ).join('')}
         </div>
       </div>
+      <details style="margin-bottom:12px">
+        <summary style="font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;padding:6px 0">⚙ Configuración de riego</summary>
+        <div style="padding-top:8px">
       <div class="mgrid2">
         <div class="mfield"><label>Cintas por cama</label>
           <input type="number" id="ae-cintas" value="${cintas}" min="1" max="8" inputmode="numeric" oninput="updateCfgPreview()">
@@ -1668,6 +1727,8 @@ function openModal(tipo, ctx){
         <input type="number" id="ae-tasa" value="${e?e.tasaH:''}" min="1" inputmode="numeric">
         <div style="font-size:9.5px;color:var(--tx3);margin-top:5px">Se calcula automáticamente al cambiar cintas o goteros</div>
       </div>
+        </div>
+      </details>
       <button class="btn-pri" onclick="saveEsp('${tipo}',${ctx!==undefined?ctx:'null'})">Guardar</button>
       <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
     ov.classList.add('on');
@@ -1840,7 +1901,7 @@ function saveRiego(){
   const camasArr=allCamas?null:[..._camasSelRiego].sort((a,b)=>a-b);
   const nota=allCamas?'':`camas ${camasArr.join(',')}`;
   eventos.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-    fecha, especie:espId(esp), min:minSave, mm, tipo:'riego', nota, camas:camasArr });
+    fecha, especie:esp.nom, min:minSave, mm, tipo:'riego', nota, camas:camasArr });
   save('pr_eventos',eventos);
   document.getElementById('ov').classList.remove('on');
   renderSem();
@@ -1915,22 +1976,7 @@ function saveEsp(tipo, idx){
     const oldNom=spp[idx].nom;
     const grupoId=spp[idx].grupoId||(Date.now()).toString(36);
     spp[idx]={...spp[idx],nom,cultivo,etapa,grp,ncamas:nc,tasaH:tasa,config:cfg,grupoId};
-    if(oldNom!==nom){
-      // Propagar el nuevo nombre a todos los eventos históricos
-      eventos.forEach(ev=>{
-        if(ev.especie===oldNom) ev.especie=nom;
-        if(ev.especies) ev.especies=ev.especies.map(n=>n===oldNom?nom:n);
-      });
-      fito_eventos.forEach(ev=>{
-        if(ev.especies) ev.especies=ev.especies.map(n=>n===oldNom?nom:n);
-      });
-      agenda_plan.forEach(ev=>{
-        if(ev.especies) ev.especies=ev.especies.map(n=>n===oldNom?nom:n);
-      });
-      save('pr_eventos',eventos);
-      save('pr_fito_eventos',fito_eventos);
-      saveAgendaPlan();
-    }
+    if(oldNom!==nom) reasignarNom(oldNom,nom);
   } else {
     const grupoId=(Date.now()).toString(36)+Math.random().toString(36).slice(2,4);
     spp.push({nom,cultivo,etapa,grp,tasaH:tasa,config:cfg,ncamas:nc,planes:[],grupoId});
