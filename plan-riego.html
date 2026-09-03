@@ -862,6 +862,15 @@ let fert_planes = JSON.parse(localStorage.getItem('pr_fert_planes')||'null') || 
     if(changed) localStorage.setItem('pr_fert_planes',JSON.stringify(fert_planes));
   }
 })();
+// migración: asignar grupoId a especies que no lo tienen
+(()=>{
+  let changed=false;
+  spp.forEach((s,i)=>{
+    if(!s.grupoId){ s.grupoId=(Date.now()+i).toString(36)+Math.random().toString(36).slice(2,4); changed=true; }
+  });
+  if(changed) localStorage.setItem('pr_spp',JSON.stringify(spp));
+})();
+
 let fito_eventos = JSON.parse(localStorage.getItem('pr_fito_eventos') || '[]');
 let fertWeekOff = 0;
 let _fertSel=new Set(), _fertDosis={};
@@ -1628,6 +1637,12 @@ function openModal(tipo, ctx){
       <div class="modal-tit">${e?'Editar':'Nueva'} especie</div>
       <div class="mfield"><label>Nombre</label><input id="ae-nom" value="${e?e.nom:''}"></div>
       <div class="mfield"><label>Cultivo base (opcional)</label><input id="ae-cultivo" value="${e?e.cultivo||e.nom:''}" placeholder="ej: Snapdragon, Lisianthus"></div>
+      <div class="mfield"><label>Continúa desde (mismas camas, renombradas)</label>
+        <select id="ae-grupo">
+          <option value="">— Tanda nueva independiente —</option>
+          ${spp.filter(s=>!e||s.nom!==e.nom).map(s=>`<option value="${s.grupoId}"${e&&e.grupoId===s.grupoId?' selected':''}>${s.nom}${s.baja?' (dada de baja)':''}</option>`).join('')}
+        </select>
+      </div>
       <div class="mfield"><label>Etapa / Fase (opcional)</label>
         <input id="ae-etapa" value="${e?e.etapa||'':''}" placeholder="ej: Floración, Crecimiento veg., Trasplante">
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">
@@ -1901,9 +1916,15 @@ function saveEsp(tipo, idx){
   const cintasV=parseInt(document.getElementById('ae-cintas').value)||1;
   const goterosV=document.getElementById('ae-goteros').value||'20';
   const cfg=cintasV+' cinta'+(cintasV>1?'s':'')+' · goteros c/'+goterosV+'cm';
+  const grupoSel=document.getElementById('ae-grupo').value;
   if(!nom){ toast('Ingresá un nombre','err'); return; }
-  if(tipo==='edit-esp'&&idx!=null){ spp[idx]={...spp[idx],nom,cultivo,etapa,grp,ncamas:nc,tasaH:tasa,config:cfg}; }
-  else { spp.push({nom,cultivo,etapa,grp,tasaH:tasa,config:cfg,ncamas:nc,planes:[]}); }
+  if(tipo==='edit-esp'&&idx!=null){
+    const grupoId=grupoSel||spp[idx].grupoId||(Date.now()).toString(36);
+    spp[idx]={...spp[idx],nom,cultivo,etapa,grp,ncamas:nc,tasaH:tasa,config:cfg,grupoId};
+  } else {
+    const grupoId=grupoSel||(Date.now()).toString(36)+Math.random().toString(36).slice(2,4);
+    spp.push({nom,cultivo,etapa,grp,tasaH:tasa,config:cfg,ncamas:nc,planes:[],grupoId});
+  }
   save('pr_spp',spp);
   document.getElementById('ov').classList.remove('on');
   renderCfg();
@@ -2175,19 +2196,41 @@ function renderFertHist(){
   }).join('');
 }
 
+let _chOpen=new Set();
+function _toggleCh(c){
+  if(_chOpen.has(c)) _chOpen.delete(c); else _chOpen.add(c);
+  renderCultivoHist();
+}
+
 function renderCultivoHist(){
   const el=document.getElementById('aplics-hist');
   if(!el) return;
   const cultOf=nom=>{ const s=spp.find(x=>x.nom===nom); return s?.cultivo||nom; };
+  const grupoOf=nom=>{ const s=spp.find(x=>x.nom===nom); return s?.grupoId||nom; };
+
+  // byC[cultivo][grupoId] = [{...ev, _k}]
   const byC={};
-  const add=(c,ev)=>{ if(!byC[c]) byC[c]=[]; byC[c].push(ev); };
+  const add=(cultivo,grupoId,ev)=>{
+    if(!byC[cultivo]) byC[cultivo]={};
+    if(!byC[cultivo][grupoId]) byC[cultivo][grupoId]=[];
+    byC[cultivo][grupoId].push(ev);
+  };
 
   eventos.filter(ev=>ev.tipo==='fertilizacion').forEach(ev=>{
     const esps=(ev.especies&&ev.especies.length)?ev.especies:(ev.especie?[ev.especie]:[]);
-    [...new Set(esps.map(cultOf))].forEach(c=>add(c,{...ev,_k:'fert'}));
+    const seen=new Set();
+    esps.forEach(nom=>{
+      const k=cultOf(nom)+'|'+grupoOf(nom);
+      if(!seen.has(k)){ seen.add(k); add(cultOf(nom),grupoOf(nom),{...ev,_k:'fert'}); }
+    });
   });
   fito_eventos.forEach(ev=>{
-    [...new Set((ev.especies||[]).map(cultOf))].forEach(c=>add(c,{...ev,_k:'fito'}));
+    const esps=ev.especies||[];
+    const seen=new Set();
+    esps.forEach(nom=>{
+      const k=cultOf(nom)+'|'+grupoOf(nom);
+      if(!seen.has(k)){ seen.add(k); add(cultOf(nom),grupoOf(nom),{...ev,_k:'fito'}); }
+    });
   });
 
   const cultivos=Object.keys(byC).sort();
@@ -2196,44 +2239,67 @@ function renderCultivoHist(){
     return;
   }
 
+  // Helper: chain name for a grupoId (all spp in that grupo, order by array idx = creation order)
+  const chainName=gid=>{
+    const chain=spp.filter(s=>s.grupoId===gid);
+    return chain.length?chain.map(s=>s.nom).join(' → '):gid;
+  };
+
+  const evHtml=(ev)=>{
+    const dateStr=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{day:'numeric',month:'short',year:'numeric'});
+    if(ev._k==='fert'){
+      const prods=(ev.prods||[]).filter(p=>p.nom).map(p=>{
+        const dosis=p.dosis?` · ${p.dosis}${p.uni==='cc'?'cc':'g'}/L`:'';
+        const qty=p.amt?` (${p.amt}${p.uni||'g'})`:'';
+        return `<li>${p.nom}${dosis}${qty}</li>`;
+      }).join('');
+      return `<div class="ch-ev">
+        <div class="ch-ev-hdr">
+          <span class="ch-tag fert">🌿 Fertil</span>
+          <span class="ch-date">${dateStr}</span>
+          ${ev.etapa?`<span class="ch-etapa">${ev.etapa}</span>`:''}
+          ${ev.litros?`<span class="ch-etapa">${ev.litros}L</span>`:''}
+        </div>
+        ${prods?`<ul class="ch-prods">${prods}</ul>`:''}
+      </div>`;
+    } else {
+      const prods=(ev.prods||[]).filter(p=>p.nom).map(p=>{
+        const dosis=p.dosis?` · ${p.dosis}${p.uni||'g'}/L`:'';
+        const via=p.via?` · ${p.via}`:'';
+        return `<li>${p.nom}${dosis}${via}</li>`;
+      }).join('');
+      return `<div class="ch-ev">
+        <div class="ch-ev-hdr">
+          <span class="ch-tag fito">💊 Fito</span>
+          <span class="ch-date">${dateStr}</span>
+        </div>
+        ${prods?`<ul class="ch-prods">${prods}</ul>`:''}
+        ${ev.nota?`<div class="ch-note">${ev.nota}</div>`:''}
+      </div>`;
+    }
+  };
+
   el.innerHTML=cultivos.map(cultivo=>{
-    const evs=byC[cultivo].slice().sort((a,b)=>b.fecha.localeCompare(a.fecha));
-    const rows=evs.map(ev=>{
-      const dateStr=new Date(ev.fecha+'T12:00:00').toLocaleDateString('es-CL',{day:'numeric',month:'short',year:'numeric'});
-      if(ev._k==='fert'){
-        const prods=(ev.prods||[]).filter(p=>p.nom).map(p=>{
-          const dosis=p.dosis?` · ${p.dosis}${p.uni==='cc'?'cc':'g'}/L`:'';
-          const qty=p.amt?` (${p.amt}${p.uni||'g'})`:p.dosis&&ev.litros?` (${+(p.dosis*(ev.litros||0)).toFixed(1)}${p.uni==='cc'?'cc':'g'})`:'';
-          return `<li>${p.nom}${dosis}${qty}</li>`;
-        }).join('');
-        return `<div class="ch-ev">
-          <div class="ch-ev-hdr">
-            <span class="ch-tag fert">🌿 Fertil</span>
-            <span class="ch-date">${dateStr}</span>
-            ${ev.etapa?`<span class="ch-etapa">${ev.etapa}</span>`:''}
-            ${ev.litros?`<span class="ch-etapa">${ev.litros}L</span>`:''}
-          </div>
-          ${prods?`<ul class="ch-prods">${prods}</ul>`:''}
-        </div>`;
-      } else {
-        const prods=(ev.prods||[]).filter(p=>p.nom).map(p=>{
-          const dosis=p.dosis?` · ${p.dosis}${p.uni||'g'}/L`:'';
-          const via=p.via?` · ${p.via}`:'';
-          return `<li>${p.nom}${dosis}${via}</li>`;
-        }).join('');
-        return `<div class="ch-ev">
-          <div class="ch-ev-hdr">
-            <span class="ch-tag fito">💊 Fito</span>
-            <span class="ch-date">${dateStr}</span>
-          </div>
-          ${prods?`<ul class="ch-prods">${prods}</ul>`:''}
-          ${ev.nota?`<div class="ch-note">${ev.nota}</div>`:''}
-        </div>`;
-      }
+    const grupos=byC[cultivo];
+    const isOpen=_chOpen.has(cultivo);
+    const totalEvs=Object.values(grupos).reduce((s,a)=>s+a.length,0);
+    const grupoHtml=Object.entries(grupos).map(([gid,evs])=>{
+      const cname=chainName(gid);
+      const sorted=evs.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha));
+      return `<div style="border-top:1.5px solid var(--br);margin-top:2px">
+        <div style="padding:6px 13px;font-size:10px;font-weight:700;color:var(--tx3);background:var(--gris)">${cname}</div>
+        ${sorted.map(evHtml).join('')}
+      </div>`;
     }).join('');
     return `<div class="esp-card" style="margin:0 13px 11px">
-      <div style="padding:9px 13px;font-size:12px;font-weight:700;color:var(--bordo);border-bottom:1px solid var(--br)">${cultivo}</div>
-      ${rows}
+      <div onclick="_toggleCh('${cultivo.replace(/'/g,"\\'")}');event.stopPropagation()" style="padding:11px 13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+        <div style="font-size:12px;font-weight:700;color:var(--bordo)">${cultivo}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;color:var(--tx3)">${totalEvs} aplic.</span>
+          <span style="font-size:14px;color:var(--tx3);transition:transform .2s;transform:rotate(${isOpen?'180':'0'}deg)">▾</span>
+        </div>
+      </div>
+      ${isOpen?`<div>${grupoHtml}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -2886,11 +2952,12 @@ function doPost(e) {
     }
 
     // ── Fertilización (append-only, detecta y migra formato viejo) ──
-    var hdrsF=['ID','Fecha','Semana','Cultivo','Etapa','Producto','Dosis','Cantidad','Litros estanque'];
+    var hdrsF=['ID','Fecha','Semana','Cultivo','Lote','Etapa','Producto','Dosis','Cantidad','Litros estanque'];
     var s2=ss.getSheetByName('Fertilización');
     if(!s2){ s2=ss.insertSheet('Fertilización'); }
-    var needsRebuildF = s2.getLastRow()<1 || s2.getRange(1,1).getValue()!=='ID' || s2.getRange(1,5).getValue()==='Especie';
-    if(needsRebuildF){ s2.clearContents(); s2.clearFormats(); s2.getRange(1,1,1,9).setValues([hdrsF]); styleHdr(s2.getRange(1,1,1,9),'#1a5c2e'); s2.setFrozenRows(1); s2.hideColumns(1); colWidths(s2,[1,95,130,130,120,140,80,80,90]); }
+    var col5F=s2.getLastRow()>0?s2.getRange(1,5).getValue():'';
+    var needsRebuildF = s2.getLastRow()<1 || s2.getRange(1,1).getValue()!=='ID' || col5F==='Especie' || col5F==='Etapa';
+    if(needsRebuildF){ s2.clearContents(); s2.clearFormats(); s2.getRange(1,1,1,10).setValues([hdrsF]); styleHdr(s2.getRange(1,1,1,10),'#1a5c2e'); s2.setFrozenRows(1); s2.hideColumns(1); colWidths(s2,[1,95,130,120,120,110,140,80,80,90]); }
     var existF={};
     var lrF=s2.getLastRow();
     if(lrF>1){ s2.getRange(2,1,lrF-1,1).getValues().forEach(function(r){ if(r[0]) existF[r[0]]=true; }); }
@@ -2898,9 +2965,9 @@ function doPost(e) {
     var nf=0;
     if(newF.length>0){
       var startF=s2.getLastRow()+1;
-      s2.getRange(startF,1,newF.length,9).setValues(newF);
-      newF.forEach(function(r,i){ s2.getRange(startF+i,1,1,9).setBackground(i%2===0?'#e8f5ed':'#ffffff'); });
-      s2.getRange(startF,9,newF.length,1).setNumberFormat('0.0');
+      s2.getRange(startF,1,newF.length,10).setValues(newF);
+      newF.forEach(function(r,i){ s2.getRange(startF+i,1,1,10).setBackground(i%2===0?'#e8f5ed':'#ffffff'); });
+      s2.getRange(startF,10,newF.length,1).setNumberFormat('0.0');
       nf=newF.length;
     }
     // Fusionar celdas Fecha para filas del mismo evento
@@ -2918,11 +2985,12 @@ function doPost(e) {
     }
 
     // ── Fito (append-only, detecta y migra formato viejo) ──────────
-    var hdrsI=['ID','Fecha','Semana','Cultivo','Producto','Vía','Dosis','Cantidad','Nota'];
+    var hdrsI=['ID','Fecha','Semana','Cultivo','Lote','Producto','Vía','Dosis','Cantidad','Nota'];
     var s3=ss.getSheetByName('Fito');
     if(!s3){ s3=ss.insertSheet('Fito'); }
-    var needsRebuildI = s3.getLastRow()<1 || s3.getRange(1,1).getValue()!=='ID' || s3.getRange(1,5).getValue()==='Especie';
-    if(needsRebuildI){ s3.clearContents(); s3.clearFormats(); s3.getRange(1,1,1,9).setValues([hdrsI]); styleHdr(s3.getRange(1,1,1,9),'#8b1a4a'); s3.setFrozenRows(1); s3.hideColumns(1); colWidths(s3,[1,95,130,130,140,70,80,80,200]); }
+    var col5I=s3.getLastRow()>0?s3.getRange(1,5).getValue():'';
+    var needsRebuildI = s3.getLastRow()<1 || s3.getRange(1,1).getValue()!=='ID' || col5I==='Especie' || col5I==='Producto';
+    if(needsRebuildI){ s3.clearContents(); s3.clearFormats(); s3.getRange(1,1,1,10).setValues([hdrsI]); styleHdr(s3.getRange(1,1,1,10),'#8b1a4a'); s3.setFrozenRows(1); s3.hideColumns(1); colWidths(s3,[1,95,130,120,120,140,70,80,80,200]); }
     var existI={};
     var lrI=s3.getLastRow();
     if(lrI>1){ s3.getRange(2,1,lrI-1,1).getValues().forEach(function(r){ if(r[0]) existI[r[0]]=true; }); }
@@ -2930,9 +2998,9 @@ function doPost(e) {
     var nfi=0;
     if(newI.length>0){
       var startI=s3.getLastRow()+1;
-      s3.getRange(startI,1,newI.length,9).setValues(newI);
-      newI.forEach(function(r,i){ s3.getRange(startI+i,1,1,9).setBackground(i%2===0?'#fdf0f5':'#ffffff'); });
-      s3.getRange(startI,9,newI.length,1).setWrap(true);
+      s3.getRange(startI,1,newI.length,10).setValues(newI);
+      newI.forEach(function(r,i){ s3.getRange(startI+i,1,1,10).setBackground(i%2===0?'#fdf0f5':'#ffffff'); });
+      s3.getRange(startI,10,newI.length,1).setWrap(true);
       nfi=newI.length;
     }
     // Fusionar celdas Fecha para filas del mismo evento
@@ -3010,8 +3078,9 @@ async function syncSheets(){
   if(!url){ toast('Configurá la URL en Config → Google Sheets','err'); showSec('cfg'); return; }
   toast('Sincronizando...','');
 
-  // helper: cultivo de una especie (busca en spp incluyendo bajas)
   const cultOf=nom=>{ const s=spp.find(x=>x.nom===nom); return s?.cultivo||nom; };
+  // lote = nombre original del grupoId (primero en el array spp con ese grupoId)
+  const loteOf=nom=>{ const s=spp.find(x=>x.nom===nom); if(!s?.grupoId) return nom; const first=spp.find(x=>x.grupoId===s.grupoId); return first?.nom||nom; };
 
   // Fertilización: 1 fila por producto × especie × evento
   const fertRows=[];
@@ -3028,6 +3097,7 @@ async function syncSheets(){
         const espLitros=totalCamas>0?+(totalLitros*espCamas/totalCamas).toFixed(1):0;
         const cultivo=cultOf(espNom);
         const prods=(ev.prods||[]).filter(p=>p.nom);
+        const lote=loteOf(espNom);
         if(prods.length){
           prods.forEach(p=>{
             const dosis=p.dosis?`${p.dosis}${p.uni==='cc'?'cc':'g'}/L`:'';
@@ -3035,12 +3105,12 @@ async function syncSheets(){
             fertRows.push([
               ev.id+'_'+espNom+'_'+p.nom,
               ev.fecha, _fertSemLbl(ev.fecha),
-              cultivo, ev.etapa||'',
+              cultivo, lote, ev.etapa||'',
               p.nom, dosis, qty, espLitros
             ]);
           });
         } else {
-          fertRows.push([ev.id+'_'+espNom, ev.fecha, _fertSemLbl(ev.fecha), cultivo, ev.etapa||'', '', '', '', espLitros]);
+          fertRows.push([ev.id+'_'+espNom, ev.fecha, _fertSemLbl(ev.fecha), cultivo, lote, ev.etapa||'', '', '', '', espLitros]);
         }
       });
     });
@@ -3052,14 +3122,15 @@ async function syncSheets(){
     const espStr=esps.join(', ');
     const cultivoStr=[...new Set(esps.map(cultOf))].join(', ')||espStr;
     const prods=(ev.prods||[]).filter(p=>p.nom);
+    const loteStr=[...new Set(esps.map(loteOf))].join(', ')||cultivoStr;
     if(prods.length){
       prods.forEach(p=>{
         const dosis=p.dosis?`${p.dosis}${p.uni||'g'}/L`:'';
         const qty=p.qty?`${p.qty}${p.uni||'g'}`:'';
-        fitoRows.push([ev.id+'_'+p.nom, ev.fecha, _fertSemLbl(ev.fecha), cultivoStr, p.nom, p.via||'', dosis, qty, ev.nota||'']);
+        fitoRows.push([ev.id+'_'+p.nom, ev.fecha, _fertSemLbl(ev.fecha), cultivoStr, loteStr, p.nom, p.via||'', dosis, qty, ev.nota||'']);
       });
     } else {
-      fitoRows.push([ev.id, ev.fecha, _fertSemLbl(ev.fecha), cultivoStr, '', '', '', '', ev.nota||'']);
+      fitoRows.push([ev.id, ev.fecha, _fertSemLbl(ev.fecha), cultivoStr, loteStr, '', '', '', '', ev.nota||'']);
     }
   });
 
