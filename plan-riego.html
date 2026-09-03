@@ -879,6 +879,7 @@ function badgeHtml(e){
 }
 function sortedSpp(){
   return spp.map((e,i)=>({...e,_idx:i}))
+    .filter(e=>!e.baja)
     .sort((a,b)=>{
       const ea=a.etapa||'zzz', eb=b.etapa||'zzz';
       if(ea!==eb) return ea.localeCompare(eb,'es');
@@ -1238,13 +1239,13 @@ function toggleRegla(i){
 
 // ── CONFIG ────────────────────────────────────────────────────────────────
 function getHuerfanos(){
-  const ids=new Set(spp.map(e=>espId(e)));
-  const groups={};
+  const ids=new Set(spp.map(e=>espId(e)));  // incluye baja, no son huérfanos
+  const grupos={};
   eventos.forEach(ev=>{
     if(ev.tipo==='lluvia'||ev.tipo==='fertilizacion'||!ev.especie||ev.especie==='*lluvia') return;
-    if(!ids.has(ev.especie)){ groups[ev.especie]=(groups[ev.especie]||0)+1; }
+    if(!ids.has(ev.especie)){ grupos[ev.especie]=(grupos[ev.especie]||0)+1; }
   });
-  return groups;
+  return grupos;
 }
 
 function renderCfg(){
@@ -1259,12 +1260,26 @@ function renderCfg(){
     return hdr+`<div class="cfg-esp-item">
       <div class="cfg-esp-info">
         <div class="cfg-esp-nom">${e.nom} ${badgeHtml(e)}</div>
-        <div class="cfg-esp-sub">${e.tasaH} mm/h · ${e.ncamas} camas · ${(e.planes||[]).length} plan(es)</div>
+        <div class="cfg-esp-sub">${e.cultivo&&e.cultivo!==e.nom?`Cultivo: ${e.cultivo} · `:''}${e.tasaH} mm/h · ${e.ncamas} camas · ${(e.planes||[]).length} plan(es)</div>
       </div>
       <button class="icon-btn" onclick="openModal('edit-esp',${e._idx})">✏️</button>
       <button class="icon-btn" onclick="delEsp(${e._idx})">🗑️</button>
     </div>`;
   }).join('');
+
+  // sección de bajas
+  const bajas = spp.map((e,i)=>({...e,_idx:i})).filter(e=>e.baja);
+  if(bajas.length){
+    const bajasHtml = `<div style="margin:8px 13px 4px;font-size:9.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em">Dadas de baja</div>`+
+      bajas.map(e=>`<div class="cfg-esp-item" style="opacity:.55">
+        <div class="cfg-esp-info">
+          <div class="cfg-esp-nom" style="text-decoration:line-through">${e.nom}</div>
+          <div class="cfg-esp-sub">Historial conservado</div>
+        </div>
+        <button class="icon-btn" onclick="restoreEsp(${e._idx})" title="Restaurar">↩️</button>
+      </div>`).join('');
+    document.getElementById('cfg-spp').innerHTML += bajasHtml;
+  }
 
   document.getElementById('cfg-reglas').innerHTML = reglas.map((r,i)=>`
     <div class="regla-card">
@@ -1327,7 +1342,19 @@ function delHuerfanos(idx){
   renderCfg(); renderSem();
   toast('Eventos eliminados','ok');
 }
-function delEsp(i){ if(!confirm('¿Eliminar '+spp[i].nom+'?')) return; spp.splice(i,1); save('pr_spp',spp); renderCfg(); renderPlan(); renderDash(); toast('Especie eliminada'); }
+function delEsp(i){
+  if(!confirm('¿Dar de baja a '+spp[i].nom+'? Sus eventos se conservan.')) return;
+  spp[i].baja=true;
+  save('pr_spp',spp);
+  renderCfg(); renderPlan(); renderDash();
+  toast('Especie dada de baja');
+}
+function restoreEsp(i){
+  spp[i].baja=false;
+  save('pr_spp',spp);
+  renderCfg(); renderPlan(); renderDash();
+  toast('Especie restaurada');
+}
 function delRegla(i){ reglas.splice(i,1); save('pr_reglas',reglas); renderCfg(); renderPlan(); toast('Regla eliminada'); }
 
 // ── ESTANQUE ──────────────────────────────────────────────────────────────
@@ -1582,6 +1609,7 @@ function openModal(tipo, ctx){
     mi.innerHTML=`
       <div class="modal-tit">${e?'Editar':'Nueva'} especie</div>
       <div class="mfield"><label>Nombre</label><input id="ae-nom" value="${e?e.nom:''}"></div>
+      <div class="mfield"><label>Cultivo base (opcional)</label><input id="ae-cultivo" value="${e?e.cultivo||e.nom:''}" placeholder="ej: Snapdragon, Lisianthus"></div>
       <div class="mfield"><label>Etapa / Fase (opcional)</label>
         <input id="ae-etapa" value="${e?e.etapa||'':''}" placeholder="ej: Floración, Crecimiento veg., Trasplante">
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">
@@ -1847,6 +1875,7 @@ function savePlan(tipo,espIdx){
 
 function saveEsp(tipo, idx){
   const nom=document.getElementById('ae-nom').value.trim();
+  const cultivo=document.getElementById('ae-cultivo').value.trim()||nom;
   const etapa=document.getElementById('ae-etapa').value.trim();
   const grp=document.getElementById('ae-grp').value;
   const nc=+document.getElementById('ae-nc').value||1;
@@ -1855,8 +1884,8 @@ function saveEsp(tipo, idx){
   const goterosV=document.getElementById('ae-goteros').value||'20';
   const cfg=cintasV+' cinta'+(cintasV>1?'s':'')+' · goteros c/'+goterosV+'cm';
   if(!nom){ toast('Ingresá un nombre','err'); return; }
-  if(tipo==='edit-esp'&&idx!=null){ spp[idx]={...spp[idx],nom,etapa,grp,ncamas:nc,tasaH:tasa,config:cfg}; }
-  else { spp.push({nom,etapa,grp,tasaH:tasa,config:cfg,ncamas:nc,planes:[]}); }
+  if(tipo==='edit-esp'&&idx!=null){ spp[idx]={...spp[idx],nom,cultivo,etapa,grp,ncamas:nc,tasaH:tasa,config:cfg}; }
+  else { spp.push({nom,cultivo,etapa,grp,tasaH:tasa,config:cfg,ncamas:nc,planes:[]}); }
   save('pr_spp',spp);
   document.getElementById('ov').classList.remove('on');
   renderCfg();
@@ -2731,11 +2760,10 @@ function doPost(e) {
     var fitoRows = data.fitoRows || [];
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // Eliminar hoja antigua si existe
     var oldRiego = ss.getSheetByName('Registro Riego');
     if(oldRiego && ss.getSheets().length > 1) ss.deleteSheet(oldRiego);
 
-    // ── Hoja 1: Riego x Semana (siempre se recalcula) ───────────
+    // ── Riego x Semana (siempre recalcula) ──────────────────────
     var s1 = ss.getSheetByName('Riego x Semana');
     if (!s1) s1 = ss.insertSheet('Riego x Semana');
     s1.clearContents(); s1.clearFormats();
@@ -2758,12 +2786,8 @@ function doPost(e) {
       var nc=h1[0].length;
       s1.getRange(1,1,1,nc).setValues(h1);
       styleHdr(s1.getRange(1,1,1,nc),'#1a3c8b');
-      if(nc>3){
-        s1.getRange(1,2,1,nc-2).setTextRotation(90).setFontSize(9).setHorizontalAlignment('center').setVerticalAlignment('bottom');
-        for(var ci=2;ci<=nc-2;ci++) s1.setColumnWidth(ci,52);
-      }
-      s1.setRowHeight(1,110);
-      s1.setFrozenRows(1);
+      if(nc>3){ s1.getRange(1,2,1,nc-2).setTextRotation(90).setFontSize(9).setHorizontalAlignment('center').setVerticalAlignment('bottom'); for(var ci=2;ci<=nc-2;ci++) s1.setColumnWidth(ci,52); }
+      s1.setRowHeight(1,110); s1.setFrozenRows(1);
       var rows1=sems.map(function(sem){
         var row=[sem]; var tot=0;
         esps.forEach(function(esp){ var v=Math.round((semMap[sem].d[esp]||0)*10)/10; row.push(v); tot+=v; });
@@ -2777,14 +2801,15 @@ function doPost(e) {
       s1.getRange(2,nc-1,rows1.length,1).setBackground('#e0f3ff');
       s1.getRange(1,1,rows1.length+1,nc).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
       s1.getRange(2,2,rows1.length,nc-1).setNumberFormat('0.0');
-      s1.setColumnWidth(1,165);
-      s1.setColumnWidth(nc-1,80);
-      s1.setColumnWidth(nc,90);
+      s1.setColumnWidth(1,165); s1.setColumnWidth(nc-1,80); s1.setColumnWidth(nc,90);
     }
 
-    // ── Hoja 2: Fertilización (append-only por ID) ───────────────
-    var s2 = ss.getSheetByName('Fertilización');
-    if (!s2) { s2 = ss.insertSheet('Fertilización'); s2.getRange(1,1,1,8).setValues([['ID','Fecha','Semana','Etapa','Especie','Camas','Litros','Productos aplicados']]); styleHdr(s2.getRange(1,1,1,8),'#1a5c2e'); s2.setFrozenRows(1); colWidths(s2,[1,95,135,120,130,60,60,280]); s2.hideColumns(1); }
+    // ── Fertilización (append-only, detecta y migra formato viejo) ──
+    var hdrsF=['ID','Fecha','Semana','Cultivo','Especie','Etapa','Producto','Dosis','Cantidad','Litros estanque'];
+    var s2=ss.getSheetByName('Fertilización');
+    if(!s2){ s2=ss.insertSheet('Fertilización'); }
+    var needsRebuildF = s2.getLastRow()<1 || s2.getRange(1,1).getValue()!=='ID';
+    if(needsRebuildF){ s2.clearContents(); s2.clearFormats(); s2.getRange(1,1,1,10).setValues([hdrsF]); styleHdr(s2.getRange(1,1,1,10),'#1a5c2e'); s2.setFrozenRows(1); s2.hideColumns(1); colWidths(s2,[1,95,130,120,130,120,140,80,80,90]); }
     var existF={};
     var lrF=s2.getLastRow();
     if(lrF>1){ s2.getRange(2,1,lrF-1,1).getValues().forEach(function(r){ if(r[0]) existF[r[0]]=true; }); }
@@ -2792,36 +2817,37 @@ function doPost(e) {
     var nf=0;
     if(newF.length>0){
       var startF=s2.getLastRow()+1;
-      s2.getRange(startF,1,newF.length,8).setValues(newF);
-      newF.forEach(function(r,i){ s2.getRange(startF+i,1,1,8).setBackground(i%2===0?'#e8f5ed':'#ffffff'); });
-      s2.getRange(startF,6,newF.length,2).setNumberFormat('0.0');
-      s2.getRange(startF,8,newF.length,1).setWrap(true);
+      s2.getRange(startF,1,newF.length,10).setValues(newF);
+      newF.forEach(function(r,i){ s2.getRange(startF+i,1,1,10).setBackground(i%2===0?'#e8f5ed':'#ffffff'); });
+      s2.getRange(startF,10,newF.length,1).setNumberFormat('0.0');
       nf=newF.length;
     }
 
-    // ── Hoja 3: Fito aplicaciones (append-only por ID) ───────────
-    var s3 = ss.getSheetByName('Fito');
-    if (!s3) { s3 = ss.insertSheet('Fito'); s3.getRange(1,1,1,6).setValues([['ID','Fecha','Semana','Camas','Productos aplicados','Nota']]); styleHdr(s3.getRange(1,1,1,6),'#8b1a4a'); s3.setFrozenRows(1); colWidths(s3,[1,95,135,180,320,180]); s3.hideColumns(1); }
-    var existFi={};
-    var lrFi=s3.getLastRow();
-    if(lrFi>1){ s3.getRange(2,1,lrFi-1,1).getValues().forEach(function(r){ if(r[0]) existFi[r[0]]=true; }); }
-    var newFi=fitoRows.filter(function(r){ return !existFi[r[0]]; });
+    // ── Fito (append-only, detecta y migra formato viejo) ──────────
+    var hdrsI=['ID','Fecha','Semana','Cultivo','Especie','Producto','Vía','Dosis','Cantidad','Nota'];
+    var s3=ss.getSheetByName('Fito');
+    if(!s3){ s3=ss.insertSheet('Fito'); }
+    var needsRebuildI = s3.getLastRow()<1 || s3.getRange(1,1).getValue()!=='ID';
+    if(needsRebuildI){ s3.clearContents(); s3.clearFormats(); s3.getRange(1,1,1,10).setValues([hdrsI]); styleHdr(s3.getRange(1,1,1,10),'#8b1a4a'); s3.setFrozenRows(1); s3.hideColumns(1); colWidths(s3,[1,95,130,120,160,140,70,80,80,200]); }
+    var existI={};
+    var lrI=s3.getLastRow();
+    if(lrI>1){ s3.getRange(2,1,lrI-1,1).getValues().forEach(function(r){ if(r[0]) existI[r[0]]=true; }); }
+    var newI=fitoRows.filter(function(r){ return !existI[r[0]]; });
     var nfi=0;
-    if(newFi.length>0){
-      var startFi=s3.getLastRow()+1;
-      s3.getRange(startFi,1,newFi.length,6).setValues(newFi);
-      newFi.forEach(function(r,i){ s3.getRange(startFi+i,1,1,6).setBackground(i%2===0?'#fdf0f5':'#ffffff'); });
-      s3.getRange(startFi,5,newFi.length,2).setWrap(true);
-      nfi=newFi.length;
+    if(newI.length>0){
+      var startI=s3.getLastRow()+1;
+      s3.getRange(startI,1,newI.length,10).setValues(newI);
+      newI.forEach(function(r,i){ s3.getRange(startI+i,1,1,10).setBackground(i%2===0?'#fdf0f5':'#ffffff'); });
+      s3.getRange(startI,10,newI.length,1).setWrap(true);
+      nfi=newI.length;
     }
 
-    // ── Hoja 4: Temperaturas (siempre se recalcula) ──────────────
-    var s4 = ss.getSheetByName('Temperaturas');
-    if (!s4) s4 = ss.insertSheet('Temperaturas');
+    // ── Temperaturas (siempre recalcula) ────────────────────────
+    var s4=ss.getSheetByName('Temperaturas');
+    if(!s4) s4=ss.insertSheet('Temperaturas');
     s4.clearContents(); s4.clearFormats();
     s4.getRange(1,1,1,5).setValues([['Fecha','Mínima (°C)','Máxima (°C)','Helada','Notas']]);
-    styleHdr(s4.getRange(1,1,1,5),'#0e6494');
-    s4.setFrozenRows(1);
+    styleHdr(s4.getRange(1,1,1,5),'#0e6494'); s4.setFrozenRows(1);
     if(temps.length>0){
       var tempsOrd=temps.slice().sort(function(a,b){ return a.fecha>b.fecha?1:-1; });
       var rows4=tempsOrd.map(function(t){ return [t.fecha,t.tMin,t.tMax,t.tMin<0?'❄️ Sí':'No',t.nota||'']; });
@@ -2841,20 +2867,14 @@ function doPost(e) {
   }
 }
 
-function styleHdr(range, color){
-  range.setBackground(color).setFontColor('#ffffff').setFontWeight('bold').setFontSize(11).setHorizontalAlignment('center');
-}
-function colWidths(sheet, ws){ ws.forEach(function(w,i){ sheet.setColumnWidth(i+1,w); }); }
-
-function semana(fechaStr) {
-  var d = new Date(fechaStr + 'T12:00:00');
-  var dw = d.getDay();
-  var mon = new Date(d);
-  mon.setDate(d.getDate() + (dw===0 ? -6 : 1-dw));
-  var sun = new Date(mon);
-  sun.setDate(mon.getDate() + 6);
-  function fmt(x){ return x.getDate() + '/' + (x.getMonth()+1); }
-  return fmt(mon) + ' – ' + fmt(sun);
+function styleHdr(range,color){ range.setBackground(color).setFontColor('#ffffff').setFontWeight('bold').setFontSize(11).setHorizontalAlignment('center'); }
+function colWidths(sheet,ws){ ws.forEach(function(w,i){ sheet.setColumnWidth(i+1,w); }); }
+function semana(fechaStr){
+  var d=new Date(fechaStr+'T12:00:00'), dw=d.getDay();
+  var mon=new Date(d); mon.setDate(d.getDate()+(dw===0?-6:1-dw));
+  var sun=new Date(mon); sun.setDate(mon.getDate()+6);
+  function fmt(x){ return x.getDate()+'/'+(x.getMonth()+1); }
+  return fmt(mon)+' – '+fmt(sun);
 }`;
 
 function copyCode(){
@@ -2883,7 +2903,10 @@ async function syncSheets(){
   if(!url){ toast('Configurá la URL en Config → Google Sheets','err'); showSec('cfg'); return; }
   toast('Sincronizando...','');
 
-  // Fertilización: 1 fila por especie × evento, con ID único para append-only
+  // helper: cultivo de una especie (busca en spp incluyendo bajas)
+  const cultOf=nom=>{ const s=spp.find(x=>x.nom===nom); return s?.cultivo||nom; };
+
+  // Fertilización: 1 fila por producto × especie × evento
   const fertRows=[];
   [...eventos]
     .filter(ev=>ev.tipo==='fertilizacion')
@@ -2896,34 +2919,42 @@ async function syncSheets(){
         const espObj=spp.find(s=>s.nom===espNom);
         const espCamas=espObj?.ncamas||Math.round(totalCamas/Math.max(especiesList.length,1));
         const espLitros=totalCamas>0?+(totalLitros*espCamas/totalCamas).toFixed(1):0;
-        const prodsStr=(ev.prods&&ev.prods.length)
-          ?ev.prods.filter(p=>p.nom).map(p=>{
-              const amt=p.dosis?+(p.dosis*espLitros).toFixed(1):(p.amt||'');
-              return `${p.nom}: ${amt}${p.uni||'g'}`;
-            }).join(' · ')
-          :'';
-        fertRows.push([
-          ev.id+'_'+espNom,          // ID único (para dedup)
-          ev.fecha, _fertSemLbl(ev.fecha),
-          ev.etapa||'',
-          espNom, espCamas, espLitros,
-          prodsStr
-        ]);
+        const cultivo=cultOf(espNom);
+        const prods=(ev.prods||[]).filter(p=>p.nom);
+        if(prods.length){
+          prods.forEach(p=>{
+            const dosis=p.dosis?`${p.dosis}${p.uni==='cc'?'cc':'g'}/L`:'';
+            const qty=p.amt?`${p.amt}${p.uni||'g'}`:(p.dosis&&espLitros?`${+(p.dosis*espLitros).toFixed(1)}${p.uni==='cc'?'cc':'g'}`:'');
+            fertRows.push([
+              ev.id+'_'+espNom+'_'+p.nom,
+              ev.fecha, _fertSemLbl(ev.fecha),
+              cultivo, espNom, ev.etapa||'',
+              p.nom, dosis, qty, espLitros
+            ]);
+          });
+        } else {
+          fertRows.push([ev.id+'_'+espNom, ev.fecha, _fertSemLbl(ev.fecha), cultivo, espNom, ev.etapa||'', '', '', '', espLitros]);
+        }
       });
     });
 
-  // Fito: 1 fila por evento
-  const fitoRows=fito_eventos
-    .slice().sort((a,b)=>a.fecha.localeCompare(b.fecha))
-    .map(ev=>{
-      const espStr=(ev.especies||[]).join(', ');
-      const prodsStr=(ev.prods||[]).filter(p=>p.nom).map(p=>{
-        const qty=p.qty?` ${p.qty}${p.uni||'g'}`:'';
-        const dosis=p.dosis?` (${p.dosis}${p.uni||'g'}/L)`:'';
-        return p.nom+qty+dosis+(p.via?' · '+p.via:'');
-      }).join(' · ');
-      return [ev.id, ev.fecha, _fertSemLbl(ev.fecha), espStr, prodsStr, ev.nota||''];
-    });
+  // Fito: 1 fila por producto × evento
+  const fitoRows=[];
+  fito_eventos.slice().sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(ev=>{
+    const esps=ev.especies||[];
+    const espStr=esps.join(', ');
+    const cultivoStr=[...new Set(esps.map(cultOf))].join(', ')||espStr;
+    const prods=(ev.prods||[]).filter(p=>p.nom);
+    if(prods.length){
+      prods.forEach(p=>{
+        const dosis=p.dosis?`${p.dosis}${p.uni||'g'}/L`:'';
+        const qty=p.qty?`${p.qty}${p.uni||'g'}`:'';
+        fitoRows.push([ev.id+'_'+p.nom, ev.fecha, _fertSemLbl(ev.fecha), cultivoStr, espStr, p.nom, p.via||'', dosis, qty, ev.nota||'']);
+      });
+    } else {
+      fitoRows.push([ev.id, ev.fecha, _fertSemLbl(ev.fecha), cultivoStr, espStr, '', '', '', '', ev.nota||'']);
+    }
+  });
 
   try {
     const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},
