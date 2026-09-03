@@ -744,7 +744,7 @@ let fito_prods=(()=>{
 const DEF_FERT_PLANES = [
   {
     id:'fp_gen', nom:'General (sin Ranúnculo)',
-    frecSem:1, etapaActual:1,
+    ncamas:20, litros:500, frecSem:1, etapaActual:1,
     orden:'',
     ordenMezcla:[
       {prodId:'prod_acidofos', nota:'pH 6.0-6.5 en estanque'},
@@ -774,7 +774,7 @@ const DEF_FERT_PLANES = [
   },
   {
     id:'fp_ran', nom:'Ranúnculo',
-    frecSem:1, etapaActual:1,
+    ncamas:7, litros:175, frecSem:1, etapaActual:1,
     orden:'',
     ordenMezcla:[
       {prodId:'prod_nitcalcio', nota:'R1 · SOLO. NUNCA mezclar con fosfatos'},
@@ -1252,13 +1252,12 @@ function renderFertPlanRef(){
       <div style="padding:6px 0 2px">${om.map((it,si)=>{
         const prod=getProd(it.prodId);
         const ep=etapaActiva.prods.find(pp=>pp.prodId===it.prodId);
-        const dispUni=prod&&prod.unidad==='L'?'cc/L':'g/L';
-        const dosisStr=ep?`${ep.dosisPorL} ${dispUni}`:'';
+        const dosis=ep?`${ep.dosisPorL} ${prod&&prod.unidad==='L'?'cc/L':'g/L'} · ${fmtAmt(calcProdAmt(ep.dosisPorL,pl.litros),prod?prod.unidad:'g')}`:'';
         return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--br)">
           <span style="font-size:11px;font-weight:700;color:var(--am);flex-shrink:0;min-width:18px">${si+1}°</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;color:var(--tx)">${prod?prod.nom:it.prodId}</div>
-            ${dosisStr?`<div style="font-size:10px;color:var(--verde);margin-top:1px">${dosisStr}</div>`:''}
+            ${dosis?`<div style="font-size:10px;color:var(--verde);margin-top:1px">${dosis}</div>`:''}
             ${it.nota?`<div style="font-size:10px;color:var(--tx2);margin-top:1px">${it.nota}</div>`:''}
           </div>
         </div>`;
@@ -1273,14 +1272,17 @@ function renderFertPlanRef(){
     const etapasHtml=etapas.map((et,ei)=>{
       const prodsHtml=et.prods.length?et.prods.map(pp=>{
         const prod=getProd(pp.prodId);
-        const dispUni=prod&&prod.unidad==='L'?'cc/L':'g/L';
+        const amtBase=calcProdAmt(pp.dosisPorL, pl.litros);
         const riLabel=pp.riego!=='U'?` <span style="font-size:9px;background:var(--azul-l);color:var(--azul);padding:1px 6px;border-radius:6px;font-weight:700">${pp.riego}</span>`:'';
         return `<div style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--br)">
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600">${prod?prod.nom:pp.prodId}${riLabel}</div>
             ${pp.nota?`<div style="font-size:10px;color:var(--verde);margin-top:1px">⚠ ${pp.nota}</div>`:''}
           </div>
-          <div style="font-size:13px;font-weight:700;color:var(--verde);flex-shrink:0;margin-left:8px">${pp.dosisPorL} ${dispUni}</div>
+          <div style="text-align:right;flex-shrink:0;margin-left:8px">
+            <div style="font-size:13px;font-weight:700;color:var(--verde)">${fmtAmt(amtBase,prod?prod.unidad:'g')}</div>
+            <div style="font-size:9px;color:var(--tx3)">${pp.dosisPorL} ${prod&&prod.unidad==='L'?'cc/L':'g/L'}</div>
+          </div>
         </div>`;
       }).join(''):`<div style="padding:7px 0;font-size:11px;color:var(--tx3)">Sin productos.</div>`;
       return `<div${ei>0?' style="border-top:2px solid var(--br)"':''}>
@@ -1298,7 +1300,7 @@ function renderFertPlanRef(){
       <div class="plan-hdr">
         <div>
           <div class="plan-nom">${pl.nom}</div>
-          <div class="plan-cfg">${pl.frecSem||1}×/sem · ${(pl.etapas||[]).length} etapas</div>
+          <div class="plan-cfg">${pl.ncamas} camas · ${pl.litros}L · ${pl.frecSem||1}×/sem</div>
         </div>
         <div style="display:flex;gap:2px">
           <button class="icon-btn" onclick="addEtapaAlPlan(${i})" title="Nueva etapa">＋</button>
@@ -2554,15 +2556,13 @@ let _frCtx=null; // {planIdx, stageIdx, espSel:Set, dosisOverride:{}, extraProds
 function openFertRegModal(planIdx, stageIdx){
   const pl=fert_planes[planIdx];
   if(!pl) return;
-  _frCtx={planIdx, stageIdx, litros:0, espSel:new Set(), prodDesel:new Set(), dosisOverride:{}, extraProds:[], extraCatSel:new Set(), extraCatDosis:{}};
+  _frCtx={planIdx, stageIdx, espSel:new Set(), prodDesel:new Set(), dosisOverride:{}, extraProds:[], extraCatSel:new Set(), extraCatDosis:{}};
   renderFertRegModal();
   document.getElementById('ov').classList.add('on');
 }
 
 function saveDosisFromDOM(){
   if(!_frCtx) return;
-  const lInp=document.getElementById('fr-litros');
-  if(lInp) _frCtx.litros=parseFloat((lInp.value||'').replace(',','.'))||0;
   const pl=fert_planes[_frCtx.planIdx];
   const etapa=pl&&pl.etapas&&pl.etapas[_frCtx.stageIdx];
   if(etapa){
@@ -2637,21 +2637,20 @@ function delExtraProd(i){
   renderFertRegModal();
 }
 
-function frLitrosChange(v){
-  saveDosisFromDOM();
-  _frCtx.litros=parseFloat((v||'').replace(',','.'))||0;
-  renderFertRegModal();
-}
 function renderFertRegModal(){
   const pl=fert_planes[_frCtx.planIdx];
   if(!pl) return;
   const etapaIdx=_frCtx.stageIdx;
   const etapa=pl.etapas&&pl.etapas[etapaIdx];
-  const litros=_frCtx.litros||0;
+  const ncamasBase=pl.ncamas;
+  const litrosBase=pl.litros;
+  const sel=[..._frCtx.espSel];
+  const camas=sel.reduce((s,i)=>s+(spp[i]?.ncamas||0),0);
+  const litros=camas>0?+(litrosBase*(camas/ncamasBase)).toFixed(1):0;
 
   let prodsHtml='';
 
-  if(litros>0&&etapa&&etapa.prods.length){
+  if(camas>0&&etapa&&etapa.prods.length){
     const riegos=[...new Set(etapa.prods.map(pp=>pp.riego))];
     prodsHtml=riegos.map(r=>{
       const rProds=etapa.prods.filter(pp=>pp.riego===r);
@@ -2686,7 +2685,7 @@ function renderFertRegModal(){
   }
 
   const om=pl.ordenMezcla||[];
-  const ordenHtml=om.length&&litros>0?`<details style="margin-bottom:10px">
+  const ordenHtml=om.length&&camas>0?`<details style="margin-bottom:10px">
     <summary style="font-size:10px;font-weight:700;color:var(--am);cursor:pointer;padding:8px 11px;background:var(--am-l);border-radius:var(--rs);list-style:none;display:flex;align-items:center;justify-content:space-between">
       <span>⚗️ Orden de mezcla</span><span style="font-size:9px;opacity:.7">${om.length} pasos ▸</span>
     </summary>
@@ -2710,7 +2709,7 @@ function renderFertRegModal(){
 
   // Productos del catálogo que NO están en la etapa actual
   let extraCatHtml='';
-  if(litros>0){
+  if(camas>0){
     const etapaProdIds=new Set((etapa?.prods||[]).map(pp=>pp.prodId));
     const catExtras=prods.filter(p=>!etapaProdIds.has(p.id));
     if(catExtras.length){
@@ -2759,20 +2758,16 @@ function renderFertRegModal(){
   mi.innerHTML=`
     <div class="modal-tit">🧪 ${pl.nom}</div>
     ${etapa?`<div style="font-size:11px;font-weight:600;color:var(--verde);margin-bottom:10px">E${etapaIdx+1}: ${etapa.nom}</div>`:''}
-    <div class="mfield" style="margin-bottom:14px">
-      <label>Litros a aplicar</label>
-      <div class="big-row" style="padding-bottom:3px">
-        <input class="big-inp" type="text" id="fr-litros" inputmode="decimal" placeholder="0" value="${litros||''}" oninput="frLitrosChange(this.value)" style="font-size:36px">
-        <span class="big-unit">L</span>
-      </div>
-    </div>
-    <div style="font-size:9.5px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Especies / camas (para el registro)</div>
+    <div style="font-size:9.5px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Especies fertilizadas</div>
     ${chipsHtml}
-    ${litros>0?'':`<div style="font-size:11px;color:var(--tx3);padding:4px 0 10px">Ingresá los litros para ver las dosis calculadas</div>`}
+    ${camas>0?`<div style="display:flex;justify-content:space-between;align-items:center;background:var(--verde-l);border-radius:var(--rs);padding:9px 13px;margin:10px 0 14px">
+      <span style="font-size:12px;font-weight:700;color:var(--verde)">${camas} camas</span>
+      <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--verde)">${litros.toFixed(0)} L</span>
+    </div>`:`<div style="font-size:11px;color:var(--tx3);padding:6px 0 14px">Seleccioná al menos una especie para ver las dosis</div>`}
     ${ordenHtml}
     ${prodsHtml?`<div>${prodsHtml}</div>`:''}
     ${extraCatHtml}
-    ${litros>0?`<div style="margin-top:2px">
+    ${camas>0?`<div style="margin-top:2px">
       ${(_frCtx.extraProds||[]).map((ep,i)=>`
         <div style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--br)">
           <input id="fr-extra-nom-${i}" value="${ep.nom||''}" placeholder="Producto..." style="flex:1;min-width:0;padding:6px 9px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:12px;background:var(--gris);color:var(--tx);outline:none">
@@ -2785,10 +2780,10 @@ function renderFertRegModal(){
         </div>`).join('')}
       <button onclick="addExtraProd()" style="width:100%;margin-top:6px;padding:9px;border:1.5px dashed var(--br);border-radius:var(--rs);background:none;font-size:12px;color:var(--bordo);cursor:pointer;font-family:'Montserrat',sans-serif;font-weight:600">+ Agregar producto</button>
     </div>`:''}
-    ${litros>0?`
+    ${camas>0?`
     <div class="mfield" style="margin-top:10px"><label>Fecha</label><input type="date" id="fr-fecha" value="${fpDs(new Date())}"></div>
     <div class="mfield"><label>Nota (opcional)</label><textarea id="fr-nota" style="width:100%;padding:9px 11px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);outline:none;resize:none;height:52px"></textarea></div>
-    <button class="btn-pri" style="margin-top:6px" onclick="saveFertReg()">✓ Registrar · ${litros.toFixed(0)}L</button>
+    <button class="btn-pri" style="margin-top:6px" onclick="saveFertReg()">✓ Registrar · ${litros.toFixed(0)}L · ${camas} camas</button>
     `:''}
     <button class="btn-sec" onclick="closeOv()">Cancelar</button>`;
 }
@@ -2799,9 +2794,12 @@ function saveFertReg(){
   if(!pl) return;
   const etapaIdx=_frCtx.stageIdx;
   const etapa=pl.etapas&&pl.etapas[etapaIdx];
-  const L=_frCtx.litros||0;
-  if(!L){ toast('Ingresá los litros','err'); return; }
+  const ncamasBase=pl.ncamas;
+  const litrosBase=pl.litros;
   const sel=[..._frCtx.espSel];
+  const camas=sel.reduce((s,i)=>s+(spp[i]?.ncamas||0),0);
+  if(!camas){ toast('Seleccioná al menos una especie','err'); return; }
+  const L=+(litrosBase*(camas/ncamasBase)).toFixed(1);
   const especiesList=sel.map(i=>spp[i]?.nom).filter(Boolean);
   const fecha=(document.getElementById('fr-fecha')||{}).value||fpDs(new Date());
   const nota=(document.getElementById('fr-nota')||{}).value||'';
@@ -2845,7 +2843,7 @@ function saveFertReg(){
   closeOv();
   renderFertSem();
   renderSem();
-  toast(`✓ ${especiesList.length?especiesList.join(', ')+' · ':''}${L}L`, 'ok');
+  toast(`✓ ${especiesList.join(', ')} · ${L}L`, 'ok');
 }
 
 // ── FERT PLAN CONFIG ──────────────────────────────────────────────────────
@@ -2860,7 +2858,7 @@ function renderFertPlanesConfig(){
     <div class="cfg-esp-item">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700">${pl.nom}</div>
-        <div style="font-size:11px;color:var(--tx3)">${pl.frecSem||1}×/sem · ${(pl.etapas||[]).length} etapas</div>
+        <div style="font-size:11px;color:var(--tx3)">${pl.ncamas} camas · ${pl.litros}L · ${pl.frecSem||1}×/sem · ${(pl.etapas||[]).length} etapas</div>
       </div>
       <button class="icon-btn" onclick="openFertPlanModal('edit',${i})">✏️</button>
       <button class="icon-btn" onclick="delFertPlan(${i})" style="color:var(--rojo)">🗑️</button>
@@ -2917,6 +2915,10 @@ function openFertPlanModal(tipo,idx){
   mi.innerHTML=`
     <div class="modal-tit">📋 ${pl?'Editar':'Nuevo'} plan de fertilización</div>
     <div class="mfield"><label>Nombre</label><input id="fp-nom" value="${pl?pl.nom:''}" placeholder="ej: General, Ranúnculo"></div>
+    <div class="mgrid2">
+      <div class="mfield"><label>N° camas</label><input type="number" id="fp-nc" value="${pl?pl.ncamas:20}" min="1" inputmode="numeric"></div>
+      <div class="mfield"><label>Litros estanque</label><input type="number" id="fp-l" value="${pl?pl.litros:500}" min="1" inputmode="numeric"></div>
+    </div>
     <div class="mfield"><label>Frecuencia (aplicaciones/semana)</label>
       <select id="fp-frec">
         ${[1,2,3].map(n=>`<option value="${n}"${pl&&pl.frecSem===n?' selected':''}>${n}×/semana</option>`).join('')}
@@ -2962,15 +2964,17 @@ function saveOrdenMezcla(planIdx){
 function saveFertPlan(tipo,idx){
   const nom=(document.getElementById('fp-nom').value||'').trim();
   if(!nom){toast('Ingresá un nombre','err');return;}
+  const ncamas=parseInt(document.getElementById('fp-nc').value)||20;
+  const litros=parseInt(document.getElementById('fp-l').value)||500;
   const frecSem=parseInt(document.getElementById('fp-frec').value)||1;
   const ordenMezcla=collectFpOrden();
   if(tipo==='add'){
-    fert_planes.push({id:'fp_'+Date.now(),nom,frecSem,orden:'',ordenMezcla,etapaActual:0,etapas:[
+    fert_planes.push({id:'fp_'+Date.now(),nom,ncamas,litros,frecSem,orden:'',ordenMezcla,etapaActual:0,etapas:[
       {nom:'Etapa 1',prods:[]}
     ]});
   } else {
     const pl=fert_planes[idx];
-    pl.nom=nom; pl.frecSem=frecSem; pl.ordenMezcla=ordenMezcla;
+    pl.nom=nom; pl.ncamas=ncamas; pl.litros=litros; pl.frecSem=frecSem; pl.ordenMezcla=ordenMezcla;
   }
   save('pr_fert_planes',fert_planes);
   closeOv();
