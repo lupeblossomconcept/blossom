@@ -435,7 +435,14 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 <!-- FERTIL -->
 <!-- APLICS (Fertil + Fito) -->
 <div class="sec" id="sec-aplics">
-  <div class="fito-mode-btns">
+  <div style="margin:4px 13px 0;background:var(--sf);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden">
+    <button onclick="toggleRiegoPlanRef()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:none;border:none;font-family:'Montserrat',sans-serif;cursor:pointer">
+      <span style="font-size:10px;font-weight:700;color:var(--azul);text-transform:uppercase;letter-spacing:.06em">💧 Plan de riego</span>
+      <span id="rpr-chev" style="font-size:10px;color:var(--tx3)">▸</span>
+    </button>
+    <div id="aplics-riego-ref" style="display:none;border-top:1px solid var(--br)"></div>
+  </div>
+  <div class="fito-mode-btns" style="padding-top:8px">
     <button class="fito-mode-btn on" id="aplics-btn-fert" onclick="setAplicsTab('fert')">🌿 Fertil</button>
     <button class="fito-mode-btn" id="aplics-btn-fito" onclick="setAplicsTab('fito')">💊 Fito</button>
     <button class="fito-mode-btn" id="aplics-btn-hist" onclick="setAplicsTab('hist')">📋 Por cultivo</button>
@@ -549,7 +556,6 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 
 <!-- PLAN -->
 <div class="sec" id="sec-plan">
-  <div class="mes-bar" id="mes-bar"></div>
   <div id="plan-cards"></div>
   <button class="add-btn" onclick="openModal('add-esp')">+ Agregar especie</button>
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 13px 6px">
@@ -1037,8 +1043,13 @@ function planForMes(esp, mk){
   const exact = esp.planes.find(p=>p.mes===mk);
   if(exact) return exact;
   const sorted = [...esp.planes].sort((a,b)=>a.mes.localeCompare(b.mes));
-  // próximo plan hacia adelante; si no hay, el último disponible
   return sorted.find(p=>p.mes>=mk) || sorted[sorted.length-1];
+}
+function planDefault(e){
+  if(!e.planes||!e.planes.length) return null;
+  return e.planes.find(p=>p.mes==='default')
+    || e.planes.find(p=>p.mes==='2026-07')
+    || [...e.planes].sort((a,b)=>b.mes.localeCompare(a.mes))[0];
 }
 
 let weekNotaDirty=false;
@@ -1063,7 +1074,7 @@ function eventsWeek(off){
 }
 
 function renderSem(){
-  const mon=wMon(weekOff), mk=mesKey(mon);
+  const mon=wMon(weekOff);
   document.getElementById('week-lbl').textContent = fdDate(mon)+' – '+fdDate(new Date(mon.getTime()+6*864e5));
   document.getElementById('hdr-sub').textContent = 'Blossom Concept · '+mon.toLocaleDateString('es-CL',{month:'long',year:'numeric'});
 
@@ -1071,7 +1082,7 @@ function renderSem(){
   const lluvia = wEvts.filter(e=>e.tipo==='lluvia').reduce((s,e)=>s+e.mm,0);
 
   let tRiego=0,tFert=0,tPlan=0;
-  spp.forEach(e=>{ const p=planForMes(e,mk); if(p) tPlan+=p.mmSem; });
+  spp.forEach(e=>{ const p=planDefault(e); if(p) tPlan+=p.mmSem; });
 
   // Dashboard
   const allNonLluvia = wEvts.filter(e=>e.tipo!=='lluvia');
@@ -1094,7 +1105,7 @@ function renderSem(){
   const cont = document.getElementById('esp-cards');
   let _le='';
   cont.innerHTML = sortedSpp().map(e=>{
-    const plan = planForMes(e, mk);
+    const plan = planDefault(e);
     if(!plan) return '';
     const evE   = wEvts.filter(v=>v.especie===e.nom||v.especie===espId(e));
     const mmR   = evE.filter(v=>v.tipo==='riego').reduce((s,v)=>s+v.mm,0);
@@ -1161,20 +1172,10 @@ function renderSem(){
 function delEv(id){ eventos=eventos.filter(e=>e.id!==id); save('pr_eventos',eventos); renderSem(); renderFertSem(); }
 
 // ── PLAN ──────────────────────────────────────────────────────────────────
-function allMeses(){
-  const set=new Set();
-  spp.forEach(e=>e.planes&&e.planes.forEach(p=>set.add(p.mes)));
-  return [...set].sort();
-}
 function renderPlan(){
-  const meses = allMeses();
-  if(!planMes||!meses.includes(planMes)) planMes=meses[0]||'';
-  document.getElementById('mes-bar').innerHTML =
-    meses.map(m=>`<button class="mes-chip${m===planMes?' on':''}" onclick="setPlanMes('${m}')">${m}</button>`).join('')+
-    `<button class="mes-chip add" onclick="openModal('add-mes')">+ Mes</button>`;
   let _lep='';
   document.getElementById('plan-cards').innerHTML = sortedSpp().map(e=>{
-    const p=e.planes&&e.planes.find(pl=>pl.mes===planMes);
+    const p=planDefault(e);
     const hdr=e.etapa&&e.etapa!==_lep?etapaHdr(e.etapa):'';
     _lep=e.etapa||'';
     return hdr+`<div class="plan-card">
@@ -1199,7 +1200,7 @@ function renderPlan(){
         <div class="pn"><div class="pn-lbl">mm/sem</div><div class="pn-val" style="color:var(--bordo)">${p.mmSem}</div><div class="pn-unit">mm</div></div>
       </div>
       <div class="plan-nota${p.nota&&p.nota.startsWith('⚠')?' warn':''}">${p.nota||''}</div>`
-      :`<div class="plan-no">Sin plan para este mes — <span style="color:var(--bordo);cursor:pointer" onclick="openModal('add-plan',${e._idx})">Agregar</span></div>`}
+      :`<div class="plan-no">Sin plan — <span style="color:var(--bordo);cursor:pointer" onclick="openModal('add-plan',${e._idx})">Agregar</span></div>`}
     </div>`;
   }).join('');
 
@@ -1272,7 +1273,39 @@ function renderFertPlanRef(){
   }).join('');
 }
 
-function setPlanMes(m){ planMes=m; renderPlan(); }
+let _riegoPlanRefOpen=false;
+function toggleRiegoPlanRef(){
+  _riegoPlanRefOpen=!_riegoPlanRefOpen;
+  const el=document.getElementById('aplics-riego-ref');
+  const ch=document.getElementById('rpr-chev');
+  if(_riegoPlanRefOpen){
+    renderRiegoPlanRef();
+    el.style.display='';
+    if(ch) ch.textContent='▾';
+  } else {
+    el.style.display='none';
+    if(ch) ch.textContent='▸';
+  }
+}
+function renderRiegoPlanRef(){
+  const el=document.getElementById('aplics-riego-ref');
+  if(!el) return;
+  const rows=sortedSpp().filter(e=>planDefault(e)).map(e=>{
+    const p=planDefault(e);
+    return `<div style="display:flex;align-items:center;padding:8px 13px;border-bottom:1px solid var(--br);gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:var(--tx)">${e.nom}${e.etapa?`<span style="font-size:10px;font-weight:500;color:var(--tx3);margin-left:5px">· ${e.etapa}</span>`:''}</div>
+        ${p.nota?`<div style="font-size:9.5px;color:var(--rojo);margin-top:1px">⚠ ${p.nota}</div>`:''}
+      </div>
+      <div style="display:flex;gap:10px;flex-shrink:0;text-align:right">
+        <div><div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--azul)">${p.min}</div><div style="font-size:8px;color:var(--tx3)">min</div></div>
+        <div><div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--tx)">${p.evts}×</div><div style="font-size:8px;color:var(--tx3)">/sem</div></div>
+        <div><div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--bordo)">${p.mmSem}</div><div style="font-size:8px;color:var(--tx3)">mm/sem</div></div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML=rows.length?rows.join(''):`<div style="padding:10px 13px;font-size:12px;color:var(--tx3)">Sin planes configurados. Editá en la pestaña Plan.</div>`;
+}
 function toggleRegla(i){
   const b=document.getElementById('rb-'+i),c=document.getElementById('rch-'+i);
   b.classList.toggle('open'); c.classList.toggle('open',b.classList.contains('open'));
@@ -1319,7 +1352,7 @@ function renderCfg(){
     return hdr+`<div class="cfg-esp-item">
       <div class="cfg-esp-info">
         <div class="cfg-esp-nom">${e.nom} ${badgeHtml(e)}</div>
-        <div class="cfg-esp-sub">${e.cultivo&&e.cultivo!==e.nom?`Cultivo: ${e.cultivo} · `:''}${e.tasaH} mm/h · ${e.ncamas} camas · ${(e.planes||[]).length} plan(es)</div>
+        <div class="cfg-esp-sub">${e.tasaH} mm/h · ${e.ncamas} camas${planDefault(e)?' · Plan ✓':''}</div>
       </div>
       <button class="icon-btn" onclick="openModal('edit-esp',${e._idx})">✏️</button>
       <button class="icon-btn" onclick="delEsp(${e._idx})">🗑️</button>
@@ -1543,12 +1576,19 @@ function openModal(tipo, ctx){
   if(tipo==='riego'){
     const esp = spp[parseInt(ctx)];
     if(!esp) return;
-    const mk  = mesKey(wMon(weekOff));
-    const p   = planForMes(esp, mk);
+    const p   = planDefault(esp);
     const pre = p ? [...new Set([p.min, Math.max(1,p.min-2), p.min+2, 5, 10].sort((a,b)=>a-b))] : [5,10,15];
     mi.innerHTML=`
       <div class="modal-tit">💧 Registrar riego</div>
-      <div class="modal-sub">${esp.nom} · ${esp.tasaH} mm/h${p?' · Plan: '+p.min+' min':''}</div>
+      <div class="modal-sub">${esp.nom} · ${esp.tasaH} mm/h</div>
+      ${p?`<div style="background:var(--azul-l);border-radius:var(--rs);padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--azul);display:flex;gap:14px;flex-wrap:wrap">
+        <span><strong>Plan:</strong> ${p.min} min</span>
+        <span>${p.evts} evts/sem</span>
+        <span>${p.mmEvt} mm/evt</span>
+        <span style="font-weight:700">${p.mmSem} mm/sem</span>
+        ${p.nota?`<span style="color:var(--rojo);font-size:10px;width:100%">⚠ ${p.nota}</span>`:''}
+      </div>`:''}
+
       <div style="margin-bottom:13px">
         <div class="ctit" style="margin-bottom:7px">Camas (${esp.ncamas} total)</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px" id="m-camas"></div>
@@ -1599,11 +1639,10 @@ function openModal(tipo, ctx){
 
   if(tipo==='add-plan'||tipo==='edit-plan'){
     const esp=spp[parseInt(ctx)];
-    const p=tipo==='edit-plan'&&esp?esp.planes.find(pl=>pl.mes===planMes):null;
+    const p=tipo==='edit-plan'&&esp?planDefault(esp):null;
     mi.innerHTML=`
-      <div class="modal-tit">${tipo==='edit-plan'?'Editar':'Agregar'} plan</div>
-      <div class="modal-sub">${espId(esp)}${p?' · '+planMes:''}</div>
-      ${tipo==='add-plan'?`<div class="mfield"><label>Mes</label><input type="month" id="mp-mes" value="${planMes||new Date().toISOString().slice(0,7)}"></div>`:''}
+      <div class="modal-tit">${tipo==='edit-plan'?'Editar':'Agregar'} plan de riego</div>
+      <div class="modal-sub">${espId(esp)}</div>
       <div class="mgrid2">
         <div class="mfield"><label>Min/evento</label><input type="text" id="mp-min" value="${p?p.min:''}" inputmode="decimal" placeholder="0"></div>
         <div class="mfield"><label>Eventos/sem</label><input type="number" id="mp-evts" value="${p?p.evts:''}" min="1" inputmode="numeric"></div>
@@ -1627,7 +1666,7 @@ function openModal(tipo, ctx){
       const riego=evts.filter(e=>e.tipo==='riego').reduce((s,e)=>s+e.mm,0);
       const fert=evts.filter(e=>e.tipo==='fertilizacion').reduce((s,e)=>s+e.mm,0);
       const total=riego+fert+lluvia;
-      let plan=0; spp.forEach(e=>{ const p=planForMes(e,wk); if(p) plan+=p.mmSem; });
+      let plan=0; spp.forEach(e=>{ const p=planDefault(e); if(p) plan+=p.mmSem; });
       rows.push({mon,sun,total,riego,fert,lluvia,plan,off:i});
     }
     const hasAny=rows.some(r=>r.total>0);
@@ -1939,25 +1978,21 @@ function addMes(){
 function savePlan(tipo,espIdx){
   const esp=spp[parseInt(espIdx)];
   if(!esp){ toast('Especie no encontrada','err'); return; }
-  const mes=tipo==='add-plan'
-    ?(document.getElementById('mp-mes')||{value:planMes}).value
-    :planMes;
   const pDec=s=>parseFloat((s||'').replace(',','.'))||0;
   const min=pDec(document.getElementById('mp-min').value);
   const evts=+document.getElementById('mp-evts').value;
   const mmEvt=pDec(document.getElementById('mp-mme').value);
   const mmSem=pDec(document.getElementById('mp-mms').value);
   const nota=document.getElementById('mp-nota').value.trim();
-  if(!mes||!min||!evts){ toast('Completa min, eventos y mes','err'); return; }
+  if(!min||!evts){ toast('Completa min y eventos','err'); return; }
   if(!esp.planes) esp.planes=[];
-  const idx=esp.planes.findIndex(p=>p.mes===mes);
-  const plan={mes,min,evts,mmEvt,mmSem,nota};
-  if(idx>=0) esp.planes[idx]=plan; else esp.planes.push(plan);
-  esp.planes.sort((a,b)=>a.mes.localeCompare(b.mes));
+  const plan={mes:'default',min,evts,mmEvt,mmSem,nota};
+  const idx=esp.planes.findIndex(p=>p.mes==='default');
+  if(idx>=0) esp.planes[idx]=plan; else esp.planes.unshift(plan);
   save('pr_spp',spp);
-  planMes=mes;
   document.getElementById('ov').classList.remove('on');
   renderPlan();
+  renderRiegoPlanRef();
   toast('Plan guardado','ok');
 }
 
