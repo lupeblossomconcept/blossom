@@ -1250,13 +1250,12 @@ function renderFertPlanRef(){
       </summary>
       <div style="padding:6px 0 2px">${om.map((it,si)=>{
         const prod=getProd(it.prodId);
-        const dispUni=prod&&prod.unidad==='L'?'cc/L':'g/L';
         return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--br)">
           <span style="font-size:11px;font-weight:700;color:var(--am);flex-shrink:0;min-width:18px">${si+1}°</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;color:var(--tx)">${prod?prod.nom:it.prodId}</div>
           </div>
-          ${it.dosis?`<div style="font-size:13px;font-weight:700;color:var(--verde);flex-shrink:0">${it.dosis} ${dispUni}</div>`:''}
+          ${it.dosis?`<div style="font-size:13px;font-weight:700;color:var(--verde);flex-shrink:0">${it.dosis} ${it.uni||'cc/L'}</div>`:''}
         </div>`;
       }).join('')}
       <div style="padding:6px 10px">
@@ -2689,15 +2688,16 @@ function renderFertRegModal(){
     <div style="border:1.5px solid var(--am-l);border-radius:0 0 var(--rs) var(--rs);padding:4px 0 2px">
       ${om.map((it,si)=>{
         const prod=getProd(it.prodId);
-        const dispUni=prod&&prod.unidad==='L'?'cc/L':'g/L';
+        const uni=it.uni||'cc/L';
         const amt=it.dosis&&litros?calcProdAmt(it.dosis,litros):null;
+        const amtUni=uni==='cc/L'?'cc':'g';
         return `<div style="display:flex;align-items:center;gap:8px;padding:6px 11px;border-bottom:1px solid var(--br)">
           <span style="font-size:11px;font-weight:700;color:var(--am);flex-shrink:0;min-width:20px">${si+1}°</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600">${prod?prod.nom:it.prodId}</div>
-            ${it.dosis?`<div style="font-size:10px;color:var(--tx3);margin-top:1px">${it.dosis} ${dispUni}</div>`:''}
+            ${it.dosis?`<div style="font-size:10px;color:var(--tx3);margin-top:1px">${it.dosis} ${uni}</div>`:''}
           </div>
-          ${amt!=null?`<div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--verde);flex-shrink:0">${fmtAmt(amt,prod?prod.unidad:'g')}</div>`:''}
+          ${amt!=null?`<div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--verde);flex-shrink:0">${fmtAmt(amt,amtUni==='cc'?'L':'g')}</div>`:''}
         </div>`;
       }).join('')}
     </div>
@@ -2882,7 +2882,10 @@ function renderFpOrdenList(){
         ${prodOpts}
       </select>
       <input type="text" id="fo-dosis-${i}" value="${it.dosis||''}" inputmode="decimal" placeholder="0" style="width:52px;padding:6px 7px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;font-weight:700;font-family:'Playfair Display',serif;background:var(--gris);color:var(--tx);text-align:center;outline:none;-webkit-appearance:none;flex-shrink:0">
-      <span style="font-size:9px;color:var(--tx3);flex-shrink:0">cc/L</span>
+      <select id="fo-uni-${i}" style="width:52px;padding:5px 4px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:11px;background:var(--gris);color:var(--tx);outline:none;flex-shrink:0">
+        <option value="cc/L"${(it.uni||'cc/L')==='cc/L'?' selected':''}>cc/L</option>
+        <option value="g/L"${it.uni==='g/L'?' selected':''}>g/L</option>
+      </select>
       <button onclick="removeOrdenRow(${i})" style="background:none;border:none;color:var(--tx3);font-size:20px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">×</button>
     </div>`).join('');
   // set dropdown values after render
@@ -2892,7 +2895,7 @@ function renderFpOrdenList(){
   });
 }
 function addOrdenRow(){
-  _fpOrden.push({prodId:'',dosis:''});
+  _fpOrden.push({prodId:'',dosis:'',uni:'cc/L'});
   renderFpOrdenList();
 }
 function removeOrdenRow(i){
@@ -2902,7 +2905,8 @@ function removeOrdenRow(i){
 function collectFpOrden(){
   return _fpOrden.map((_,i)=>({
     prodId:(document.getElementById('fo-prod-'+i)||{}).value||'',
-    dosis:parseFloat((document.getElementById('fo-dosis-'+i)||{}).value||'')||0
+    dosis:parseFloat((document.getElementById('fo-dosis-'+i)||{}).value||'')||0,
+    uni:(document.getElementById('fo-uni-'+i)||{}).value||'cc/L'
   })).filter(it=>it.prodId);
 }
 function openFertPlanModal(tipo,idx){
