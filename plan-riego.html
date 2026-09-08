@@ -80,6 +80,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--gris);color:var(--tx);
 .cob-ninguna{display:none;}
 .cob-antimaleza{background:#e8f5e9;color:#2e7d32;}
 .cob-nylon{background:#fff3e0;color:#e65100;}
+.cob-nave{background:#ede7f6;color:#4527a0;}
 .lluvia-prev{margin-top:8px;border-radius:var(--rs);overflow:hidden;border:1px solid rgba(14,100,148,.15);}
 .lluvia-prev-row{display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:11px;border-bottom:1px solid rgba(14,100,148,.08);}
 .lluvia-prev-row:last-child{border-bottom:none;}
@@ -685,8 +686,8 @@ const DEF_SPP = [
            {mes:'2026-07',min:4,evts:3,mmEvt:2.0,mmSem:6.0,nota:'Tolerante frío. Menos frecuencia en julio.'}]},
 ];
 
-const LLUVIA_FACTORES = {ninguna:1, antimaleza:0.85, nylon:0.65};
-function lluviaFactor(esp){ return LLUVIA_FACTORES[esp.cobertura||'ninguna']||1; }
+const LLUVIA_FACTORES = {ninguna:1, antimaleza:0.85, nylon:0.65, nave:0};
+function lluviaFactor(esp){ const f=LLUVIA_FACTORES[esp.cobertura||'ninguna']; return f===undefined?1:f; }
 
 const DEF_REGLAS = [
   {id:'r1',icon:'🧊',cond:'Helada pronosticada esa noche (<3°C)',
@@ -1150,7 +1151,7 @@ function renderSem(){
       <div class="esp-top">
         <div>
           <div class="esp-nom">${e.nom}${e.etapa?`<span style="font-size:10px;font-weight:500;color:var(--tx3);margin-left:5px">· ${e.etapa}</span>`:''}</div>
-          <div class="esp-cfg">${e.tasaH} mm/h · ${plan.evts} evts/sem · ${plan.mmEvt} mm/evt${e.cobertura&&e.cobertura!=='ninguna'?`<span class="cob-badge cob-${e.cobertura}">${e.cobertura==='antimaleza'?'🕸 Antimaleza':'🔲 Nylon'} ${(lluviaFactor(e)*100).toFixed(0)}%</span>`:''}</div>
+          <div class="esp-cfg">${e.tasaH} mm/h · ${plan.evts} evts/sem · ${plan.mmEvt} mm/evt${e.cobertura&&e.cobertura!=='ninguna'?`<span class="cob-badge cob-${e.cobertura}">${{antimaleza:'🕸 Antimaleza',nylon:'🔲 Nylon',nave:'🏠 Nave'}[e.cobertura]||e.cobertura} ${(lluviaFactor(e)*100).toFixed(0)}%</span>`:''}</div>
         </div>
         ${badgeHtml(e)}
       </div>
@@ -1824,6 +1825,7 @@ function openModal(tipo, ctx){
           <option value="ninguna"${(!e||!e.cobertura||e.cobertura==='ninguna')?' selected':''}>Sin malla (100% pasa)</option>
           <option value="antimaleza"${e&&e.cobertura==='antimaleza'?' selected':''}>Malla antimaleza (85% pasa)</option>
           <option value="nylon"${e&&e.cobertura==='nylon'?' selected':''}>Nylon (65% pasa)</option>
+          <option value="nave"${e&&e.cobertura==='nave'?' selected':''}>Nave / invernadero (0% — no recibe lluvia)</option>
         </select>
       </div>
       <button class="btn-pri" onclick="saveEsp('${tipo}',${ctx!==undefined?ctx:'null'})">Guardar</button>
@@ -2012,7 +2014,7 @@ function renderLluviaPreview(){
   if(!el) return;
   const activas=sortedSpp().filter(e=>!e.baja);
   if(!mm||mm<=0||!activas.length){ el.innerHTML=''; return; }
-  const COB_LABEL={ninguna:'Sin malla · 100%',antimaleza:'Antimaleza · 85%',nylon:'Nylon · 65%'};
+  const COB_LABEL={ninguna:'Sin malla · 100%',antimaleza:'Antimaleza · 85%',nylon:'Nylon · 65%',nave:'Nave · 0%'};
   const rows=activas.map(e=>{
     const f=lluviaFactor(e);
     const eff=(mm*f).toFixed(1);
