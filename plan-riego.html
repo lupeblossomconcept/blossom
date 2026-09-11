@@ -3582,7 +3582,7 @@ function renderAgenda(){
       const prods=(ev.prods||[]).filter(p=>p.nom).map(p=>
         p.nom+(p.qty?' '+p.qty+(p.uni||'g'):'')+
         (p.dosis?' · '+p.dosis+(p.uni||'g')+'/L':'')+
-        (p.nBomba>1?' · '+p.nBomba+' bombas':'')+
+        (p.nBomba&&p.nBomba!==1?' · '+String(p.nBomba).replace('.',',')+' bombas':'')+
         ' ('+p.via+')'
       ).join(' · ');
       items+=`<div class="ag-ev-item">
@@ -4173,7 +4173,7 @@ function renderFitoHist(){
         <div style="flex:1;min-width:0">
           <span style="font-size:12px;font-weight:600;color:var(--tx)">${p.nom}</span>${viaBadge}
           ${p.dosis?`<span style="font-size:10px;color:var(--tx3);margin-left:4px">· ${p.dosis}${p.uni}/L</span>`:''}
-          ${p.nBomba>1?`<span style="font-size:10px;color:var(--tx3)">· ${p.nBomba} bombas</span>`:''}
+          ${p.nBomba&&p.nBomba!==1?`<span style="font-size:10px;color:var(--tx3)">· ${String(p.nBomba).replace('.',',')} bombas</span>`:''}
         </div>
         ${p.qty?`<span style="font-size:12px;font-weight:700;color:var(--verde);flex-shrink:0">${p.qty} ${p.uni||'g'}</span>`:''}
       </div>`;
@@ -4283,7 +4283,7 @@ function openFitoModal(){
 function incFitoNBomba(nom, delta){
   _fitoSaveInputs();
   const cur=_fitoNBomba[nom]||1;
-  _fitoNBomba[nom]=Math.max(1, cur+delta);
+  _fitoNBomba[nom]=Math.max(0.25, +((cur+delta).toFixed(2)));
   renderFitoModal();
 }
 
@@ -4357,10 +4357,11 @@ function renderFitoModal(){
         <input type="text" id="fito-dosis-${safeName}" value="${curDosis}" inputmode="decimal" style="width:52px;padding:3px 6px;border:1.5px solid var(--br);border-radius:8px;font-size:12px;font-weight:700;font-family:'Playfair Display',serif;background:var(--gris);color:var(--tx);text-align:center;-webkit-appearance:none;outline:none">
         <span style="font-size:10px;color:var(--tx3)">${p.uni}/L</span>
         ${isFoliar&&camas>0?`<div style="display:flex;align-items:center;gap:4px;margin-left:4px">
-          <button onclick="incFitoNBomba('${p.nom}',-1)" style="${btnSt}">−</button>
-          <span style="font-size:12px;font-weight:700;min-width:14px;text-align:center">${nBomba}</span>
-          <button onclick="incFitoNBomba('${p.nom}',1)" style="${btnSt}">+</button>
-          <span style="font-size:10px;color:var(--tx3)">bomba${nBomba>1?'s':''}</span>
+          <button onclick="incFitoNBomba('${p.nom}',-0.25)" style="${btnSt}">−</button>
+          <input type="text" id="fito-nbomba-${safeName}" value="${String(nBomba).replace('.',',')}" inputmode="decimal"
+            style="width:42px;padding:3px 4px;border:1.5px solid var(--br);border-radius:8px;font-size:12px;font-weight:700;font-family:'Playfair Display',serif;background:var(--gris);color:var(--tx);text-align:center;-webkit-appearance:none;outline:none">
+          <button onclick="incFitoNBomba('${p.nom}',0.25)" style="${btnSt}">+</button>
+          <span style="font-size:10px;color:var(--tx3)">bomba${nBomba!==1?'s':''}</span>
         </div>`:''}
         ${!isFoliar&&camas>0?`<span style="font-size:10px;color:var(--tx3)">× ${riegoL.toFixed(0)}L</span>`:''}
       </div>`:''}
@@ -4392,6 +4393,8 @@ function _fitoSaveInputs(){
       if(di) _fitoDosisOverride[p.nom]=parseFloat(di.value.replace(',','.'))||0;
       const vi=document.getElementById('fito-via-'+safeName);
       if(vi) _fitoViaTmp[p.nom]=vi.value;
+      const ni=document.getElementById('fito-nbomba-'+safeName);
+      if(ni){ const v=parseFloat(ni.value.replace(',','.'))||1; _fitoNBomba[p.nom]=Math.max(0.25,v); }
     }
   });
 }
