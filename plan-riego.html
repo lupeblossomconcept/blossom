@@ -1877,6 +1877,8 @@ function openModal(tipo, ctx){
 
   if(tipo==='add-fito-prod'||tipo==='edit-fito-prod'){
     const p=tipo==='edit-fito-prod'?fito_prods[ctx]:null;
+    const initVia=p?p.via:'Foliar';
+    const isAmbasInit=initVia==='Ambas';
     mi.innerHTML=`
       <div class="modal-tit">💊 ${p?'Editar':'Nuevo'} fitosanitario</div>
       <div class="mfield"><label>Nombre</label><input id="fp-nom" value="${p?p.nom:''}" placeholder="ej: Amistar Top" autocomplete="off"></div>
@@ -1889,19 +1891,31 @@ function openModal(tipo, ctx){
           </select>
         </div>
         <div class="mfield"><label>Vía</label>
-          <select id="fp-via">
+          <select id="fp-via" onchange="fpViaChange()">
             <option value="Foliar"${(!p||p.via==='Foliar')?' selected':''}>Foliar</option>
             <option value="Riego"${p&&p.via==='Riego'?' selected':''}>Riego</option>
             <option value="Ambas"${p&&p.via==='Ambas'?' selected':''}>Ambas</option>
           </select>
         </div>
       </div>
-      <div class="mgrid2">
-        <div class="mfield"><label>Dosis prev./única (por litro)</label>
-          <input type="text" id="fp-dosis" value="${p?p.dosis||0:0}" inputmode="decimal" placeholder="ej: 2">
+      <div id="fp-dosis-single" style="${isAmbasInit?'display:none':''}">
+        <div class="mgrid2">
+          <div class="mfield"><label>Dosis prev./única (por litro)</label>
+            <input type="text" id="fp-dosis" value="${p?p.dosis||0:0}" inputmode="decimal" placeholder="ej: 2">
+          </div>
+          <div class="mfield"><label>Dosis curativa (0 si igual)</label>
+            <input type="text" id="fp-dosis-cur" value="${p?p.dosisCur||0:0}" inputmode="decimal" placeholder="ej: 0.5">
+          </div>
         </div>
-        <div class="mfield"><label>Dosis curativa (0 si igual)</label>
-          <input type="text" id="fp-dosis-cur" value="${p?p.dosisCur||0:0}" inputmode="decimal" placeholder="ej: 0.5">
+      </div>
+      <div id="fp-dosis-ambas" style="${isAmbasInit?'':'display:none'}">
+        <div class="mgrid2">
+          <div class="mfield"><label>Dosis Foliar (por litro)</label>
+            <input type="text" id="fp-dosis-foliar" value="${p?p.dosisFoliar??p.dosis??0:0}" inputmode="decimal" placeholder="ej: 2">
+          </div>
+          <div class="mfield"><label>Dosis Riego (por litro)</label>
+            <input type="text" id="fp-dosis-riego" value="${p?p.dosisRiego??p.dosis??0:0}" inputmode="decimal" placeholder="ej: 0.5">
+          </div>
         </div>
       </div>
       <button class="btn-pri" onclick="saveFitoProd('${tipo}',${ctx!==undefined?ctx:'null'})">Guardar</button>
@@ -3091,15 +3105,29 @@ function delFitoProd(i){
   renderFitoProdsConfig();
   toast('Eliminado');
 }
+function fpViaChange(){
+  const v=document.getElementById('fp-via')?.value;
+  const s=document.getElementById('fp-dosis-single');
+  const a=document.getElementById('fp-dosis-ambas');
+  if(s) s.style.display=v==='Ambas'?'none':'';
+  if(a) a.style.display=v==='Ambas'?'':'none';
+}
 function saveFitoProd(tipo,ctx){
   const nom=(document.getElementById('fp-nom').value||'').trim();
   if(!nom){toast('Ingresá un nombre','err');return;}
   const nota=(document.getElementById('fp-nota').value||'').trim();
   const uni=document.getElementById('fp-uni').value;
   const via=document.getElementById('fp-via').value;
-  const dosis=parseFloat((document.getElementById('fp-dosis')?.value||'').replace(',','.'))||0;
-  const dosisCur=parseFloat((document.getElementById('fp-dosis-cur')?.value||'').replace(',','.'))||0;
-  const prod={nom,uni,nota,via,dosis,dosisCur};
+  let dosis=0,dosisCur=0,dosisFoliar,dosisRiego;
+  if(via==='Ambas'){
+    dosisFoliar=parseFloat((document.getElementById('fp-dosis-foliar')?.value||'').replace(',','.'))||0;
+    dosisRiego=parseFloat((document.getElementById('fp-dosis-riego')?.value||'').replace(',','.'))||0;
+    dosis=dosisFoliar;
+  } else {
+    dosis=parseFloat((document.getElementById('fp-dosis')?.value||'').replace(',','.'))||0;
+    dosisCur=parseFloat((document.getElementById('fp-dosis-cur')?.value||'').replace(',','.'))||0;
+  }
+  const prod={nom,uni,nota,via,dosis,dosisCur,...(via==='Ambas'?{dosisFoliar,dosisRiego}:{})};
   if(tipo==='add-fito-prod') fito_prods.push(prod);
   else fito_prods[ctx]=prod;
   save('pr_fito_prods',fito_prods);
@@ -3665,16 +3693,32 @@ function _agFitoSaveInputs(){
     if(vi) _agFitoVia[p.nom]=vi.value;
   });
 }
+function _agDosisParaVia(p, via){
+  if(p.via!=='Ambas') return p.dosis||0;
+  return via==='Foliar'?(p.dosisFoliar??p.dosis??0):(p.dosisRiego??p.dosis??0);
+}
+function togAgFitoViaChange(safeName){
+  _agFitoSaveInputs();
+  const nom=fito_prods.find(p=>p.nom.replace(/[\s']/g,'_')===safeName)?.nom;
+  if(!nom) return;
+  const p=fito_prods.find(f=>f.nom===nom);
+  const vi=document.getElementById('ag-fito-via-'+safeName);
+  if(!vi||!p) return;
+  _agFitoVia[nom]=vi.value;
+  _agFitoDosis[nom]=_agDosisParaVia(p,vi.value);
+  renderAgFitoProds();
+}
 function renderAgFitoProds(){
   const el=document.getElementById('ag-fito-prods-wrap');
   if(!el) return;
   el.innerHTML=fito_prods.map(p=>{
     const on=_agFitoProdSel.has(p.nom);
-    const dosis=_agFitoDosis[p.nom]??p.dosis??0;
     const dispUni=p.uni==='ml'?'cc/L':'g/L';
     const safeName=p.nom.replace(/[\s']/g,'_');
     const isAmbas=p.via==='Ambas';
     const viaActual=_agFitoVia[p.nom]||(isAmbas?'Foliar':p.via||'');
+    const dosisDefault=_agDosisParaVia(p,viaActual);
+    const dosis=_agFitoDosis[p.nom]??dosisDefault;
     const viaLabel=isAmbas?'':`<span style="font-size:10px;color:var(--tx3);flex-shrink:0">${p.via||''}</span>`;
     return `<div style="padding:9px 0;border-bottom:1px solid var(--br)">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer;opacity:${on?1:.45}" onclick="togAgFitoProd('${p.nom}')">
@@ -3686,7 +3730,7 @@ function renderAgFitoProds(){
         ${viaLabel}
       </div>
       ${on?`<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-left:27px;flex-wrap:wrap">
-        ${isAmbas?`<select id="ag-fito-via-${safeName}" style="padding:3px 6px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:10px;color:var(--tx2);background:var(--gris);outline:none">
+        ${isAmbas?`<select id="ag-fito-via-${safeName}" onchange="togAgFitoViaChange('${safeName}')" style="padding:3px 6px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:10px;color:var(--tx2);background:var(--gris);outline:none">
           <option value="Foliar"${viaActual==='Foliar'?' selected':''}>Foliar</option>
           <option value="Riego"${viaActual==='Riego'?' selected':''}>Riego</option>
         </select>`:''}
@@ -3704,8 +3748,8 @@ function togAgFitoProd(nom){
   else {
     _agFitoProdSel.add(nom);
     const p=fito_prods.find(f=>f.nom===nom);
-    if(p&&!(_agFitoDosis[nom]>0)) _agFitoDosis[nom]=p.dosis||0;
     if(p&&p.via==='Ambas'&&!_agFitoVia[nom]) _agFitoVia[nom]='Foliar';
+    if(p&&!(_agFitoDosis[nom]>0)) _agFitoDosis[nom]=_agDosisParaVia(p,_agFitoVia[nom]||p.via||'Foliar');
   }
   renderAgFitoProds();
 }
@@ -4279,9 +4323,11 @@ function renderFitoModal(){
     const safeName=p.nom.replace(/[\s']/g,'_');
     const hasCur=(p.dosisCur||0)>0;
     const isCur=!!_fitoCurativo[p.nom];
-    const baseDosis=hasCur&&isCur?(p.dosisCur||0):(p.dosis||0);
-    const curDosis=_fitoDosisOverride[p.nom]!=null?_fitoDosisOverride[p.nom]:baseDosis;
     const via=_fitoViaTmp[p.nom]||(p.via&&p.via!=='Ambas'?p.via:'Foliar');
+    const isFoliarVia=via==='Foliar';
+    const dosisParaVia=p.via==='Ambas'?(isFoliarVia?(p.dosisFoliar??p.dosis??0):(p.dosisRiego??p.dosis??0)):(p.dosis||0);
+    const baseDosis=hasCur&&isCur?(p.dosisCur||0):dosisParaVia;
+    const curDosis=_fitoDosisOverride[p.nom]!=null?_fitoDosisOverride[p.nom]:baseDosis;
     const isFoliar=via==='Foliar';
     const nBomba=isFoliar?(_fitoNBomba[p.nom]||1):1;
     const litros=isFoliar?(foliarL*nBomba):riegoL;
@@ -4377,6 +4423,8 @@ function togFitoCur(nom,isCur){
 
 function togFitoVia(safeName){
   _fitoSaveInputs();
+  const nom=fito_prods.find(p=>p.nom.replace(/[\s']/g,'_')===safeName)?.nom;
+  if(nom) delete _fitoDosisOverride[nom];
   renderFitoModal();
 }
 
@@ -4392,9 +4440,11 @@ function saveFitoReg(){
   const prodsList=fito_prods.filter(p=>_fitoChecked[p.nom]).map(p=>{
     const hasCur=(p.dosisCur||0)>0;
     const isCur=!!_fitoCurativo[p.nom];
-    const baseDosis=hasCur&&isCur?(p.dosisCur||0):(p.dosis||0);
-    const curDosis=_fitoDosisOverride[p.nom]!=null?_fitoDosisOverride[p.nom]:baseDosis;
     const via=_fitoViaTmp[p.nom]||(p.via&&p.via!=='Ambas'?p.via:'Foliar');
+    const isFoliarVia2=via==='Foliar';
+    const dosisParaVia2=p.via==='Ambas'?(isFoliarVia2?(p.dosisFoliar??p.dosis??0):(p.dosisRiego??p.dosis??0)):(p.dosis||0);
+    const baseDosis=hasCur&&isCur?(p.dosisCur||0):dosisParaVia2;
+    const curDosis=_fitoDosisOverride[p.nom]!=null?_fitoDosisOverride[p.nom]:baseDosis;
     const isFoliar=via==='Foliar';
     const nBomba=isFoliar?(_fitoNBomba[p.nom]||1):1;
     const litros=isFoliar?(foliarL*nBomba):riegoL;
