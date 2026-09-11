@@ -1017,10 +1017,15 @@ async function loadAll(){
       localStorage.setItem('pr_fito_eventos',JSON.stringify(fito_eventos));
     }
     if(d.fito_prods!=null){
-      const savedNames=new Set(d.fito_prods.map(p=>p.nom));
-      fito_prods=[...d.fito_prods,...DEF_FITO_PRODS.filter(p=>!savedNames.has(p.nom))];
-      fito_prods.forEach(mp=>{const df=DEF_FITO_PRODS.find(d=>d.nom===mp.nom);if(df){if(mp.dosis==null)mp.dosis=df.dosis||0;if(mp.dosisCur==null)mp.dosisCur=df.dosisCur||0;}else{if(mp.dosis==null)mp.dosis=0;if(mp.dosisCur==null)mp.dosisCur=0;}});
+      // Merge: Firebase base + productos locales personalizados que Firebase no tiene
+      const defNames=new Set(DEF_FITO_PRODS.map(p=>p.nom));
+      const fbNames=new Set(d.fito_prods.map(p=>p.nom));
+      const localCustom=fito_prods.filter(p=>!defNames.has(p.nom)&&!fbNames.has(p.nom));
+      const merged=[...d.fito_prods,...DEF_FITO_PRODS.filter(p=>!fbNames.has(p.nom)),...localCustom];
+      merged.forEach(mp=>{const df=DEF_FITO_PRODS.find(d=>d.nom===mp.nom);if(df){if(mp.dosis==null)mp.dosis=df.dosis||0;if(mp.dosisCur==null)mp.dosisCur=df.dosisCur||0;}else{if(mp.dosis==null)mp.dosis=0;if(mp.dosisCur==null)mp.dosisCur=0;}});
+      fito_prods=merged;
       localStorage.setItem('pr_fito_prods',JSON.stringify(fito_prods));
+      if(localCustom.length>0){const tok2=await fbToken();fetch(`${FB_URL}/fito_prods.json?auth=${tok2}`,{method:'PUT',body:JSON.stringify(fito_prods)}).catch(()=>{});}
     } else {
       const tok2=await fbToken();
       fetch(`${FB_URL}/fito_prods.json?auth=${tok2}`,{method:'PUT',body:JSON.stringify(fito_prods)}).catch(()=>{});
