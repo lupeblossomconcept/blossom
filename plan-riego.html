@@ -981,7 +981,7 @@ function updateCfgPreview(){
 
 async function save(k,v){
   localStorage.setItem(k,JSON.stringify(v));
-  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps',pr_notas:'notas',pr_prods:'prods',pr_fert_planes:'fert_planes',pr_fito_eventos:'fito_eventos'}[k];
+  const fk={pr_spp:'spp',pr_reglas:'reglas',pr_eventos:'eventos',pr_tareas:'tareas',pr_temps:'temps',pr_notas:'notas',pr_prods:'prods',pr_fert_planes:'fert_planes',pr_fito_eventos:'fito_eventos',pr_fito_prods:'fito_prods'}[k];
   if(!fk)return;
   try{
     const tok=await fbToken();
@@ -1015,6 +1015,15 @@ async function loadAll(){
       const raw=d.fito_eventos;
       fito_eventos=Array.isArray(raw)?raw:Object.values(raw).filter(v=>v&&v.id);
       localStorage.setItem('pr_fito_eventos',JSON.stringify(fito_eventos));
+    }
+    if(d.fito_prods!=null){
+      const savedNames=new Set(d.fito_prods.map(p=>p.nom));
+      fito_prods=[...d.fito_prods,...DEF_FITO_PRODS.filter(p=>!savedNames.has(p.nom))];
+      fito_prods.forEach(mp=>{const df=DEF_FITO_PRODS.find(d=>d.nom===mp.nom);if(df){if(mp.dosis==null)mp.dosis=df.dosis||0;if(mp.dosisCur==null)mp.dosisCur=df.dosisCur||0;}else{if(mp.dosis==null)mp.dosis=0;if(mp.dosisCur==null)mp.dosisCur=0;}});
+      localStorage.setItem('pr_fito_prods',JSON.stringify(fito_prods));
+    } else {
+      const tok2=await fbToken();
+      fetch(`${FB_URL}/fito_prods.json?auth=${tok2}`,{method:'PUT',body:JSON.stringify(fito_prods)}).catch(()=>{});
     }
   }catch(e){}
 }
@@ -3640,7 +3649,17 @@ function renderAgenda(){
 
 const _SEL_STYLE='width:100%;padding:10px 12px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:13px;background:var(--gris);color:var(--tx);font-family:\'Montserrat\',sans-serif;outline:none';
 
-let _agFitoProdSel=new Set(), _agFitoDosis={};
+let _agFitoProdSel=new Set(), _agFitoDosis={}, _agFitoVia={};
+function _agFitoSaveInputs(){
+  fito_prods.forEach(p=>{
+    if(!_agFitoProdSel.has(p.nom)) return;
+    const safeName=p.nom.replace(/[\s']/g,'_');
+    const di=document.getElementById('ag-fito-dosis-'+safeName);
+    if(di) _agFitoDosis[p.nom]=parseFloat(di.value.replace(',','.'))||0;
+    const vi=document.getElementById('ag-fito-via-'+safeName);
+    if(vi) _agFitoVia[p.nom]=vi.value;
+  });
+}
 function renderAgFitoProds(){
   const el=document.getElementById('ag-fito-prods-wrap');
   if(!el) return;
@@ -3648,6 +3667,10 @@ function renderAgFitoProds(){
     const on=_agFitoProdSel.has(p.nom);
     const dosis=_agFitoDosis[p.nom]??p.dosis??0;
     const dispUni=p.uni==='ml'?'cc/L':'g/L';
+    const safeName=p.nom.replace(/[\s']/g,'_');
+    const isAmbas=p.via==='Ambas';
+    const viaActual=_agFitoVia[p.nom]||(isAmbas?'Foliar':p.via||'');
+    const viaLabel=isAmbas?'':`<span style="font-size:10px;color:var(--tx3);flex-shrink:0">${p.via||''}</span>`;
     return `<div style="padding:9px 0;border-bottom:1px solid var(--br)">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer;opacity:${on?1:.45}" onclick="togAgFitoProd('${p.nom}')">
         <div style="font-size:17px;flex-shrink:0">${on?'●':'○'}</div>
@@ -3655,11 +3678,15 @@ function renderAgFitoProds(){
           <span style="font-size:13px;font-weight:600;${!on?'color:var(--tx3)':''}">${p.nom}</span>
           ${p.nota?`<span style="font-size:10px;color:var(--tx3);margin-left:5px">${p.nota}</span>`:''}
         </div>
-        <span style="font-size:10px;color:var(--tx3);flex-shrink:0">${p.via||''}</span>
+        ${viaLabel}
       </div>
-      ${on?`<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-left:27px">
+      ${on?`<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-left:27px;flex-wrap:wrap">
+        ${isAmbas?`<select id="ag-fito-via-${safeName}" style="padding:3px 6px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:10px;color:var(--tx2);background:var(--gris);outline:none">
+          <option value="Foliar"${viaActual==='Foliar'?' selected':''}>Foliar</option>
+          <option value="Riego"${viaActual==='Riego'?' selected':''}>Riego</option>
+        </select>`:''}
         <span style="font-size:10px;color:var(--tx3)">Dosis:</span>
-        <input type="text" id="ag-fito-dosis-${p.nom.replace(/\s/g,'_')}" value="${dosis}" inputmode="decimal"
+        <input type="text" id="ag-fito-dosis-${safeName}" value="${dosis}" inputmode="decimal"
           style="width:60px;padding:4px 7px;border:1.5px solid var(--br);border-radius:8px;font-size:13px;font-weight:700;font-family:'Playfair Display',serif;background:var(--gris);color:var(--tx);text-align:center;outline:none">
         <span style="font-size:10px;color:var(--tx3)">${dispUni}</span>
       </div>`:''}
@@ -3667,13 +3694,14 @@ function renderAgFitoProds(){
   }).join('');
 }
 function togAgFitoProd(nom){
-  fito_prods.forEach(p=>{
-    const key='ag-fito-dosis-'+p.nom.replace(/\s/g,'_');
-    const inp=document.getElementById(key);
-    if(inp) _agFitoDosis[p.nom]=parseFloat(inp.value)||0;
-  });
+  _agFitoSaveInputs();
   if(_agFitoProdSel.has(nom)) _agFitoProdSel.delete(nom);
-  else { _agFitoProdSel.add(nom); const p=fito_prods.find(f=>f.nom===nom); if(p&&!(_agFitoDosis[nom]>0)) _agFitoDosis[nom]=p.dosis||0; }
+  else {
+    _agFitoProdSel.add(nom);
+    const p=fito_prods.find(f=>f.nom===nom);
+    if(p&&!(_agFitoDosis[nom]>0)) _agFitoDosis[nom]=p.dosis||0;
+    if(p&&p.via==='Ambas'&&!_agFitoVia[nom]) _agFitoVia[nom]='Foliar';
+  }
   renderAgFitoProds();
 }
 
@@ -3700,7 +3728,7 @@ function _agTogEsp(nom){
 }
 
 function openAgPlanModal(fecha){
-  _agExtraCatSel=new Set(); _agExtraCatDosis={}; _agEspSel=new Set(); _agFitoProdSel=new Set(); _agFitoDosis={}; _agFertMode='estandar'; _agProdDesel=new Set();
+  _agExtraCatSel=new Set(); _agExtraCatDosis={}; _agEspSel=new Set(); _agFitoProdSel=new Set(); _agFitoDosis={}; _agFitoVia={}; _agFertMode='estandar'; _agProdDesel=new Set();
   const mo=document.getElementById('modal-inner');
   const ov=document.getElementById('ov');
   const def=fecha||(()=>{const d=new Date();d.setDate(d.getDate()+7);return ds(d);})();
@@ -3872,11 +3900,12 @@ function saveAgPlan(){
   const entry={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),fecha,tipo,nota};
   if(tipo==='fito'){
     entry.desc=(document.getElementById('ag-desc')?.value||'').trim();
-    fito_prods.forEach(p=>{const inp=document.getElementById('ag-fito-dosis-'+p.nom.replace(/\s/g,'_'));if(inp)_agFitoDosis[p.nom]=parseFloat(inp.value)||0;});
+    _agFitoSaveInputs();
     if(_agFitoProdSel.size>0){
       entry.prods=[..._agFitoProdSel].map(nom=>{
         const p=fito_prods.find(f=>f.nom===nom);
-        return {nom,via:p?.via||'',dosis:_agFitoDosis[nom]??p?.dosis??0,uni:p?.uni||'g'};
+        const viaGuardada=p?.via==='Ambas'?(_agFitoVia[nom]||'Foliar'):(p?.via||'');
+        return {nom,via:viaGuardada,dosis:_agFitoDosis[nom]??p?.dosis??0,uni:p?.uni||'g'};
       });
     }
   } else {
