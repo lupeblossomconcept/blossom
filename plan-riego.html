@@ -1416,7 +1416,7 @@ function renderCfg(){
     return hdr+`<div class="cfg-esp-item">
       <div class="cfg-esp-info">
         <div class="cfg-esp-nom">${e.nom} ${badgeHtml(e)}</div>
-        <div class="cfg-esp-sub">${e.tasaH} mm/h · ${e.ncamas} camas${planDefault(e)?' · Plan ✓':''}</div>
+        <div class="cfg-esp-sub">${e.tasaH} mm/h · ${e.ncamas} camas${e.metros?' · '+e.metros+'m/cama':''}${planDefault(e)?' · Plan ✓':''}</div>
       </div>
       <button class="icon-btn" onclick="openModal('edit-esp',${e._idx})">✏️</button>
       <button class="icon-btn" onclick="delEsp(${e._idx})">🗑️</button>
@@ -1805,7 +1805,10 @@ function openModal(tipo, ctx){
           ).join('')}
         </div>
       </div>
-      <div class="mfield"><label>N° de camas</label><input type="number" id="ae-nc" value="${e?e.ncamas:''}" min="1" inputmode="numeric" placeholder="ej: 10"></div>
+      <div class="mgrid2">
+        <div class="mfield"><label>N° de camas</label><input type="number" id="ae-nc" value="${e?e.ncamas:''}" min="1" inputmode="numeric" placeholder="ej: 10"></div>
+        <div class="mfield"><label>Metros por cama</label><input type="number" id="ae-metros" value="${e?e.metros||'':''}" min="1" inputmode="numeric" placeholder="ej: 17"></div>
+      </div>
       <details style="margin-bottom:12px">
         <summary style="font-size:11px;font-weight:600;color:var(--tx3);cursor:pointer;padding:6px 0">⚙ Configuración de riego</summary>
         <div style="padding-top:8px">
@@ -2110,6 +2113,7 @@ function saveEsp(tipo, idx){
   const cultivo=nom; // el nombre del cultivo es el identificador permanente
   const grp=document.getElementById('ae-grp').value;
   const nc=+document.getElementById('ae-nc').value||1;
+  const metros=+document.getElementById('ae-metros').value||0;
   const tasa=+document.getElementById('ae-tasa').value||1;
   const cintasV=parseInt(document.getElementById('ae-cintas').value)||1;
   const goterosV=document.getElementById('ae-goteros').value||'20';
@@ -2119,11 +2123,11 @@ function saveEsp(tipo, idx){
   if(tipo==='edit-esp'&&idx!=null){
     const oldNom=spp[idx].nom;
     const grupoId=spp[idx].grupoId||(Date.now()).toString(36);
-    spp[idx]={...spp[idx],nom,cultivo,etapa,grp,ncamas:nc,tasaH:tasa,config:cfg,grupoId,cobertura};
+    spp[idx]={...spp[idx],nom,cultivo,etapa,grp,ncamas:nc,metros,tasaH:tasa,config:cfg,grupoId,cobertura};
     if(oldNom!==nom) reasignarNom(oldNom,nom);
   } else {
     const grupoId=(Date.now()).toString(36)+Math.random().toString(36).slice(2,4);
-    spp.push({nom,cultivo,etapa,grp,tasaH:tasa,config:cfg,ncamas:nc,planes:[],grupoId,cobertura});
+    spp.push({nom,cultivo,etapa,grp,tasaH:tasa,config:cfg,ncamas:nc,metros,planes:[],grupoId,cobertura});
   }
   save('pr_spp',spp);
   document.getElementById('ov').classList.remove('on');
@@ -3180,26 +3184,18 @@ const APPS_SCRIPT_CODE = `function doGet(e) {
 function doPost(e) {
   try {
     var data    = JSON.parse(e.postData.contents);
-    var evs     = data.eventos  || [];
-    var temps   = data.temps    || [];
-    var fertRows= data.fertRows || [];
-    var fitoRows= data.fitoRows || [];
+    var temps    = data.temps     || [];
+    var fertRows = data.fertRows  || [];
+    var fitoRows = data.fitoRows  || [];
+    var riegoRows= data.riegoRows || [];
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
     // ── Riego (append-only, ordenado por especie → fecha) ─────────
-    // Columnas: Especie | Fecha | Semana | mm | Camas | Nota
+    // Columnas: ID | Especie (ncamas) | Fecha | Semana | mm | Camas | Nota
     var hdrsR=['ID','Especie','Fecha','Semana','mm','Camas','Nota'];
-    var sr=ensureSheet(ss,'Riego',hdrsR,'#1a3c8b',[1,150,95,130,65,80,200],['Riego x Semana','Registro Riego']);
+    var sr=ensureSheet(ss,'Riego',hdrsR,'#1a3c8b',[1,160,95,130,65,80,200],['Riego x Semana','Registro Riego']);
     var existR=getIds(sr);
-    var newR=[];
-    evs.forEach(function(ev){
-      if(existR[ev.id]) return;
-      if(ev.tipo==='lluvia'||ev.especie==='*lluvia'){
-        newR.push([ev.id,'Lluvia',ev.fecha,semana(ev.fecha),+(Number(ev.mm)||0).toFixed(2),'',ev.nota||'']);
-      } else if(ev.tipo==='riego'){
-        newR.push([ev.id,ev.especie||'',ev.fecha,semana(ev.fecha),+(Number(ev.mm)||0).toFixed(2),ev.camas?ev.camas.join(','):'Todas',ev.nota||'']);
-      }
-    });
+    var newR=riegoRows.filter(function(r){return !existR[r[0]];});
     appendSort(sr,newR,7);
     var nr=newR.length;
 
@@ -3370,7 +3366,7 @@ async function syncSheets(){
         const espObj=spp.find(s=>s.nom===espNom);
         const espCamas=espObj?.ncamas||Math.round(totalCamas/Math.max(especiesList.length,1));
         const espLitros=totalCamas>0?+(totalLitros*espCamas/totalCamas).toFixed(1):0;
-        const lote=loteOf(espNom);
+        const lote=loteOf(espNom)+(espObj&&espObj.ncamas?' ('+espObj.ncamas+'c)':'');
         const prods=(ev.prods||[]).filter(p=>p.nom);
         if(prods.length){
           prods.forEach(p=>{
@@ -3390,7 +3386,8 @@ async function syncSheets(){
     const esps=(ev.especies&&ev.especies.length)?ev.especies:[''];
     const prods=(ev.prods||[]).filter(p=>p.nom);
     esps.forEach(espNom=>{
-      const lote=loteOf(espNom)||espNom;
+      const espObj=spp.find(s=>s.nom===espNom);
+      const lote=(loteOf(espNom)||espNom)+(espObj&&espObj.ncamas?' ('+espObj.ncamas+'c)':'');
       if(prods.length){
         prods.forEach(p=>{
           const prodDef=fito_prods.find(fp=>fp.nom===p.nom);
@@ -3406,9 +3403,21 @@ async function syncSheets(){
     });
   });
 
+  // Riego: 1 fila por evento riego (lluvia excluida), con ncamas en especie
+  const riegoRows=[];
+  [...eventos]
+    .filter(ev=>ev.tipo==='riego')
+    .sort((a,b)=>a.fecha.localeCompare(b.fecha))
+    .forEach(ev=>{
+      const espNom=ev.especie||'';
+      const espObj=spp.find(s=>s.nom===espNom);
+      const lote=loteOf(espNom)+(espObj&&espObj.ncamas?' ('+espObj.ncamas+'c)':'');
+      riegoRows.push([ev.id, lote, ev.fecha, _fertSemLbl(ev.fecha), +(Number(ev.mm)||0).toFixed(2), ev.camas?ev.camas.join(','):'Todas', ev.nota||'']);
+    });
+
   try {
     const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({eventos,temps,fertRows,fitoRows})});
+      body:JSON.stringify({eventos,temps,fertRows,fitoRows,riegoRows})});
     const txt=await r.text();
     let d={};
     try{ d=JSON.parse(txt); }catch(e){}
