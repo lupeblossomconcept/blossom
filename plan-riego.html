@@ -3387,18 +3387,23 @@ async function syncSheets(){
   // Fito: 1 fila por producto × evento
   const fitoRows=[];
   fito_eventos.slice().sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(ev=>{
-    const esps=ev.especies||[];
-    const loteStr=[...new Set(esps.map(loteOf))].join(', ')||esps.join(', ');
+    const esps=(ev.especies&&ev.especies.length)?ev.especies:[''];
     const prods=(ev.prods||[]).filter(p=>p.nom);
-    if(prods.length){
-      prods.forEach(p=>{
-        const dosis=p.dosis?`${p.dosis}${p.uni||'g'}/L`:'';
-        const qty=p.qty?`${p.qty}${p.uni||'g'}`:'';
-        fitoRows.push([ev.id+'_'+p.nom, loteStr, ev.fecha, _fertSemLbl(ev.fecha), p.nom, p.via||'', dosis, qty, ev.nota||'']);
-      });
-    } else {
-      fitoRows.push([ev.id, loteStr, ev.fecha, _fertSemLbl(ev.fecha), '', '', '', '', ev.nota||'']);
-    }
+    esps.forEach(espNom=>{
+      const lote=loteOf(espNom)||espNom;
+      if(prods.length){
+        prods.forEach(p=>{
+          const prodDef=fito_prods.find(fp=>fp.nom===p.nom);
+          const dosisVal=p.dosis||(prodDef&&prodDef.dosis)||'';
+          const dosisUni=p.uni||(prodDef&&prodDef.uni)||'g';
+          const dosis=dosisVal?`${dosisVal}${dosisUni}/L`:'';
+          const qty=p.qty?`${p.qty}${dosisUni}`:'';
+          fitoRows.push([ev.id+'_'+espNom+'_'+p.nom, lote, ev.fecha, _fertSemLbl(ev.fecha), p.nom, p.via||'', dosis, qty, ev.nota||'']);
+        });
+      } else {
+        fitoRows.push([ev.id+'_'+espNom, lote, ev.fecha, _fertSemLbl(ev.fecha), '', '', '', '', ev.nota||'']);
+      }
+    });
   });
 
   try {
