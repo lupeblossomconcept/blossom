@@ -3188,30 +3188,47 @@ function doPost(e) {
     var fertRows = data.fertRows  || [];
     var fitoRows = data.fitoRows  || [];
     var riegoRows= data.riegoRows || [];
+    var spp      = data.spp       || [];
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // ── Riego (append-only, ordenado por especie → fecha) ─────────
-    // Columnas: ID | Especie (ncamas) | Fecha | Semana | mm | Camas | Nota
+    // ── Crear/validar sheets ──────────────────────────────────────
     var hdrsR=['ID','Especie','Fecha','Semana','mm','Camas','Nota'];
     var sr=ensureSheet(ss,'Riego',hdrsR,'#1a3c8b',[1,160,95,130,65,80,200],['Riego x Semana','Registro Riego']);
+    var hdrsF=['ID','Especie','Fecha','Semana','Etapa','Producto','Dosis/L','Cantidad','Vol. estanque (L)'];
+    var s2=ensureSheet(ss,'Fertilización',hdrsF,'#1a5c2e',[1,160,95,130,120,150,90,85,90],[]);
+    var hdrsI=['ID','Especie','Fecha','Semana','Producto','Vía','Dosis/L','Cantidad','Nota'];
+    var s3=ensureSheet(ss,'Fito',hdrsI,'#8b1a4a',[1,160,95,130,150,65,90,85,200],[]);
+
+    // ── Migrar filas existentes: agregar (Nc) a especies sin él ──
+    if(spp.length>0){
+      var ncMap={};
+      spp.forEach(function(s){ if(s.nom&&s.ncamas) ncMap[s.nom]=s.ncamas; });
+      [sr,s2,s3].forEach(function(sh){
+        var lr=sh.getLastRow();
+        if(lr<2) return;
+        var col=sh.getRange(2,2,lr-1,1).getValues();
+        var changed=false;
+        col.forEach(function(r,i){
+          var esp=String(r[0]);
+          if(esp&&ncMap[esp]!==undefined){ col[i][0]=esp+' ('+ncMap[esp]+'c)'; changed=true; }
+        });
+        if(changed) sh.getRange(2,2,lr-1,1).setValues(col);
+      });
+    }
+
+    // ── Riego (append-only, ordenado por especie → fecha) ─────────
     var existR=getIds(sr);
     var newR=riegoRows.filter(function(r){return !existR[r[0]];});
     appendSort(sr,newR,7);
     var nr=newR.length;
 
     // ── Fertilización (append-only, ordenado por especie → fecha) ─
-    // Columnas: Especie | Fecha | Semana | Etapa | Producto | Dosis/L | Cantidad | Vol.L
-    var hdrsF=['ID','Especie','Fecha','Semana','Etapa','Producto','Dosis/L','Cantidad','Vol. estanque (L)'];
-    var s2=ensureSheet(ss,'Fertilización',hdrsF,'#1a5c2e',[1,150,95,130,120,150,90,85,90],[]);
     var existF=getIds(s2);
     var newF=fertRows.filter(function(r){return !existF[r[0]];});
     appendSort(s2,newF,9);
     var nf=newF.length;
 
     // ── Fito (append-only, ordenado por especie → fecha) ──────────
-    // Columnas: Especie | Fecha | Semana | Producto | Vía | Dosis/L | Cantidad | Nota
-    var hdrsI=['ID','Especie','Fecha','Semana','Producto','Vía','Dosis/L','Cantidad','Nota'];
-    var s3=ensureSheet(ss,'Fito',hdrsI,'#8b1a4a',[1,150,95,130,150,65,90,85,200],[]);
     var existI=getIds(s3);
     var newI=fitoRows.filter(function(r){return !existI[r[0]];});
     appendSort(s3,newI,9);
@@ -3417,7 +3434,7 @@ async function syncSheets(){
 
   try {
     const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({eventos,temps,fertRows,fitoRows,riegoRows})});
+      body:JSON.stringify({eventos,temps,fertRows,fitoRows,riegoRows,spp})});
     const txt=await r.text();
     let d={};
     try{ d=JSON.parse(txt); }catch(e){}
