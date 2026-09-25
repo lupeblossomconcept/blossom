@@ -3271,6 +3271,7 @@ function ensureSheet(ss,name,hdrs,color,widths,delOld){
   styleHdr(sh.getRange(1,1,1,hdrs.length),color);
   sh.setFrozenRows(1); sh.hideColumns(1);
   colWidths(sh,widths);
+  if(!sh.getFilter()) sh.getDataRange().createFilter();
   return sh;
 }
 
@@ -3302,8 +3303,6 @@ function appendSort(sheet,newRows,nc){
     sheet.getRange(2,1,lr-1,nc).setBackgrounds(bg);
     sheet.getRange(1,1,lr,nc).setBorder(true,true,true,true,true,true,'#d4c4cc',SpreadsheetApp.BorderStyle.SOLID);
   }
-  // Filtro nativo para poder filtrar por especie, producto, etc.
-  if(!sheet.getFilter()) sheet.getDataRange().createFilter();
 }
 
 function styleHdr(range,color){range.setBackground(color).setFontColor('#ffffff').setFontWeight('bold').setFontSize(11).setHorizontalAlignment('center');}
@@ -3319,20 +3318,12 @@ function semana(fechaStr){
 // Correr UNA VEZ desde el editor para renombrar "Snapdragon" → "Snapdragon junio 26'"
 function migrarSnapdragon(){
   var ss=SpreadsheetApp.getActiveSpreadsheet();
-  var oldNom='Snapdragon', newNom="Snapdragon junio 26'";
   var total=0;
   ['Fertilización','Fito','Riego'].forEach(function(name){
     var sh=ss.getSheetByName(name);
-    if(!sh||sh.getLastRow()<2) return;
-    var hdrs=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
-    var col=-1;
-    for(var i=0;i<hdrs.length;i++){ if(hdrs[i]==='Especie'||hdrs[i]==='Lote'){col=i+1;break;} }
-    if(col<0) return;
-    var lr=sh.getLastRow();
-    var vals=sh.getRange(2,col,lr-1,1).getValues();
-    var changed=false;
-    vals.forEach(function(r,i){ if(r[0]===oldNom){vals[i][0]=newNom;changed=true;total++;} });
-    if(changed) sh.getRange(2,col,lr-1,1).setValues(vals);
+    if(!sh) return;
+    var n=sh.createTextFinder('Snapdragon').matchEntireCell(true).replaceAllWith("Snapdragon junio 26'");
+    total+=n;
   });
   SpreadsheetApp.getUi().alert('Listo: '+total+' celdas renombradas.');
 }`;
