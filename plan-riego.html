@@ -3314,6 +3314,27 @@ function semana(fechaStr){
   var sun=new Date(mon); sun.setDate(mon.getDate()+6);
   function fmt(x){return x.getDate()+'/'+(x.getMonth()+1);}
   return fmt(mon)+' – '+fmt(sun);
+}
+
+// Correr UNA VEZ desde el editor para renombrar "Snapdragon" → "Snapdragon junio 26'"
+function migrarSnapdragon(){
+  var ss=SpreadsheetApp.getActiveSpreadsheet();
+  var oldNom='Snapdragon', newNom="Snapdragon junio 26'";
+  var total=0;
+  ['Fertilización','Fito','Riego'].forEach(function(name){
+    var sh=ss.getSheetByName(name);
+    if(!sh||sh.getLastRow()<2) return;
+    var hdrs=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+    var col=-1;
+    for(var i=0;i<hdrs.length;i++){ if(hdrs[i]==='Especie'||hdrs[i]==='Lote'){col=i+1;break;} }
+    if(col<0) return;
+    var lr=sh.getLastRow();
+    var vals=sh.getRange(2,col,lr-1,1).getValues();
+    var changed=false;
+    vals.forEach(function(r,i){ if(r[0]===oldNom){vals[i][0]=newNom;changed=true;total++;} });
+    if(changed) sh.getRange(2,col,lr-1,1).setValues(vals);
+  });
+  SpreadsheetApp.getUi().alert('Listo: '+total+' celdas renombradas.');
 }`;
 
 function copyCode(){
