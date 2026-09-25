@@ -3339,6 +3339,19 @@ function migrarSnapdragon(){
     total+=n;
   });
   SpreadsheetApp.getUi().alert('Listo: '+total+' celdas renombradas.');
+}
+
+// Correr UNA VEZ para unificar "Snapdragon junio 26'" (comilla recta) → "Snapdragon junio 26´ (10c)"
+function fixSnapdragonNc(){
+  var ss=SpreadsheetApp.getActiveSpreadsheet();
+  var total=0;
+  ['Fertilización','Fito','Riego'].forEach(function(name){
+    var sh=ss.getSheetByName(name);
+    if(!sh) return;
+    var n=sh.createTextFinder("Snapdragon junio 26'").matchEntireCell(true).replaceAllWith("Snapdragon junio 26´ (10c)");
+    total+=n;
+  });
+  SpreadsheetApp.getUi().alert('Listo: '+total+' celdas corregidas.');
 }`;
 
 function copyCode(){
